@@ -1,15 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGPIM-SLZ | MVP Refinado</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="loginScreen" class="login-screen"></div>
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Sistema SIGPIM-SLZ completo (cópia)</title>
-    </head>
+  <div id="app" class="app-shell hidden">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">SI</div>
+        <div>
+          <h1>SIGPIM-SLZ</h1>
+          <p>MVP operacional refinado</p>
+        </div>
+      </div>
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+      <nav class="menu" id="menu">
+        <button data-route="dashboard" class="menu-item active">Dashboard</button>
+        <button data-route="imoveis" class="menu-item">Imóveis</button>
+        <button data-route="novo-imovel" class="menu-item">Novo imóvel</button>
+        <button data-route="documentos" class="menu-item">Documentos</button>
+        <button data-route="pendencias" class="menu-item">Pendências</button>
+        <button data-route="auditoria" class="menu-item">Auditoria</button>
+        <button data-route="relatorios" class="menu-item">Relatórios</button>
+        <button data-route="usuarios" class="menu-item">Usuários</button>
+        <button data-route="configuracoes" class="menu-item">Configurações</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="mini-panel">
+          <strong>Modo demo</strong>
+          <p>Dados persistidos no navegador para apresentação do MVP.</p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <button id="toggleSidebar" class="ghost only-mobile">☰</button>
+          <h2 id="pageTitle">Dashboard</h2>
+          <p id="pageSubtitle">Visão rápida do MVP do SIGPIM</p>
+        </div>
+        <div class="topbar-actions">
+          <button id="seedDataBtn" class="secondary">Restaurar demo</button>
+          <button id="printBtn" class="ghost">Imprimir tela</button>
+          <div id="userChip" class="user-chip"></div>
+          <button id="logoutBtn" class="ghost">Sair</button>
+        </div>
+      </header>
+
+      <section id="content" class="content"></section>
+    </main>
+  </div>
+
+  <div id="modalRoot"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
