@@ -1,5 +1,8 @@
 import { createBrowserRouter } from "react-router";
 import { MainLayout } from "./components/layout/MainLayout";
+import { Login } from "./pages/auth/Login";
+import { RecuperarSenha } from "./pages/auth/RecuperarSenha";
+import { CriarConta } from "./pages/auth/CriarConta";
 import { Dashboard } from "./pages/Dashboard";
 import { ListaUsuarios } from "./pages/admin/ListaUsuarios";
 import { CadastroUsuario } from "./pages/admin/CadastroUsuario";
@@ -26,6 +29,18 @@ import { Relatorios } from "./pages/Relatorios";
 import { Configuracoes } from "./pages/Configuracoes";
 
 export const router = createBrowserRouter([
+  {
+    path: "/login",
+    Component: Login,
+  },
+  {
+    path: "/auth/recuperar-senha",
+    Component: RecuperarSenha,
+  },
+  {
+    path: "/auth/criar-conta",
+    Component: CriarConta,
+  },
   {
     path: "/",
     Component: MainLayout,

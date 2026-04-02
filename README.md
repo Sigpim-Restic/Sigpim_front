@@ -1,5 +1,6 @@
 
-  # Sistema SIGPIM-SLZ 1.0
+  # Sistema SIGPIM-SLZ
+
 
   ## Running the code
 

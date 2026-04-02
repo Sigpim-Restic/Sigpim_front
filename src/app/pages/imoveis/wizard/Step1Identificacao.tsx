@@ -10,271 +10,95 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../../components/ui/select";
-import { HierarchicalCombobox } from "../../../components/ui/hierarchical-combobox";
 import { AlertBox } from "../../../components/layout/States";
 
-const unidadesGestoras = [
-  {
-    secretaria: "Secretaria Municipal de Administração",
-    sigla: "SEMAD",
-    unidades: [
-      {
-        value: "semad-coordenacao-bens-patrimoniais",
-        label: "Coordenação de Bens Patrimoniais",
-      },
-      {
-        value: "semad-departamento-patrimonio",
-        label: "Departamento de Patrimônio Imobiliário",
-      },
-      {
-        value: "semad-gestao-predios",
-        label: "Gestão de Prédios Públicos",
-      },
-      {
-        value: "semad-servicos-gerais",
-        label: "Serviços Gerais",
-      },
-      {
-        value: "semad-almoxarifado",
-        label: "Almoxarifado Central",
-      },
-      {
-        value: "semad-diretoria-administrativa",
-        label: "Diretoria Administrativa",
-      },
-    ],
-  },
-  {
-    secretaria: "Secretaria Municipal de Urbanismo e Habitação",
-    sigla: "SEMURH",
-    unidades: [
-      {
-        value: "semurh-coordenacao-habitacao",
-        label: "Coordenação de Habitação Popular",
-      },
-      {
-        value: "semurh-departamento-urbanismo",
-        label: "Departamento de Urbanismo",
-      },
-      {
-        value: "semurh-regularizacao-fundiaria",
-        label: "Regularização Fundiária",
-      },
-      {
-        value: "semurh-planejamento-urbano",
-        label: "Planejamento Urbano e Territorial",
-      },
-      {
-        value: "semurh-fiscalizacao-obras",
-        label: "Fiscalização de Obras Particulares",
-      },
-    ],
-  },
-  {
-    secretaria: "Secretaria Municipal de Obras e Serviços Públicos",
-    sigla: "SEMOSP",
-    unidades: [
-      {
-        value: "semosp-obras-publicas",
-        label: "Obras Públicas",
-      },
-      {
-        value: "semosp-manutencao-urbana",
-        label: "Manutenção Urbana",
-      },
-      {
-        value: "semosp-engenharia-projetos",
-        label: "Engenharia e Projetos",
-      },
-      {
-        value: "semosp-infraestrutura",
-        label: "Infraestrutura Municipal",
-      },
-      {
-        value: "semosp-conservacao-vias",
-        label: "Conservação de Vias Públicas",
-      },
-    ],
-  },
-  {
-    secretaria: "Secretaria Municipal de Planejamento",
-    sigla: "SEPLAN",
-    unidades: [
-      {
-        value: "seplan-diretoria-patrimonio",
-        label: "Diretoria de Patrimônio Público",
-      },
-      {
-        value: "seplan-coordenacao-cadastro",
-        label: "Coordenação de Cadastro Imobiliário",
-      },
-      {
-        value: "seplan-gis-georreferenciamento",
-        label: "GIS e Georreferenciamento",
-      },
-      {
-        value: "seplan-planejamento-territorial",
-        label: "Planejamento Territorial",
-      },
-      {
-        value: "seplan-gestao-projetos",
-        label: "Gestão de Projetos Estratégicos",
-      },
-      {
-        value: "seplan-desenvolvimento-urbano",
-        label: "Desenvolvimento Urbano",
-      },
-    ],
-  },
-  {
-    secretaria: "Secretaria Municipal da Fazenda",
-    sigla: "SEMFAZ",
-    unidades: [
-      {
-        value: "semfaz-auditoria-patrimonial",
-        label: "Auditoria Patrimonial",
-      },
-      {
-        value: "semfaz-controle-interno",
-        label: "Controle Interno",
-      },
-      {
-        value: "semfaz-gestao-contratos",
-        label: "Gestão de Contratos",
-      },
-      {
-        value: "semfaz-tributacao-imobiliaria",
-        label: "Tributação Imobiliária",
-      },
-      {
-        value: "semfaz-fiscalizacao-receitas",
-        label: "Fiscalização de Receitas",
-      },
-    ],
-  },
-  {
-    secretaria: "Secretaria Municipal de Meio Ambiente",
-    sigla: "SEMMAM",
-    unidades: [
-      {
-        value: "semmam-gestao-ambiental",
-        label: "Gestão Ambiental",
-      },
-      {
-        value: "semmam-fiscalizacao-ambiental",
-        label: "Fiscalização Ambiental",
-      },
-      {
-        value: "semmam-areas-protegidas",
-        label: "Áreas Protegidas e Unidades de Conservação",
-      },
-      {
-        value: "semmam-licenciamento",
-        label: "Licenciamento Ambiental",
-      },
-      {
-        value: "semmam-educacao-ambiental",
-        label: "Educação Ambiental",
-      },
-    ],
-  },
-  {
-    secretaria: "Secretaria Municipal de Projetos Especiais",
-    sigla: "SEMISPE",
-    unidades: [
-      {
-        value: "semispe-coordenacao-projetos",
-        label: "Coordenação de Projetos Especiais",
-      },
-      {
-        value: "semispe-captacao-recursos",
-        label: "Captação de Recursos",
-      },
-      {
-        value: "semispe-convenios",
-        label: "Gestão de Convênios",
-      },
-      {
-        value: "semispe-desenvolvimento-institucional",
-        label: "Desenvolvimento Institucional",
-      },
-    ],
-  },
-  {
-    secretaria: "Instituto da Cidade",
-    sigla: "INCID",
-    unidades: [
-      {
-        value: "incid-pesquisa-urbana",
-        label: "Pesquisa e Desenvolvimento Urbano",
-      },
-      {
-        value: "incid-observatorio-cidade",
-        label: "Observatório da Cidade",
-      },
-      {
-        value: "incid-cartografia",
-        label: "Cartografia e Geoprocessamento",
-      },
-      {
-        value: "incid-estudos-territoriais",
-        label: "Estudos Territoriais",
-      },
-      {
-        value: "incid-informacao-urbana",
-        label: "Sistema de Informação Urbana",
-      },
-    ],
-  },
-  {
-    secretaria: "Instituto Municipal de Paisagem Urbana",
-    sigla: "IMPUR",
-    unidades: [
-      {
-        value: "impur-ordenamento-paisagistico",
-        label: "Ordenamento Paisagístico",
-      },
-      {
-        value: "impur-fiscalizacao-publicidade",
-        label: "Fiscalização de Publicidade",
-      },
-      {
-        value: "impur-mobiliario-urbano",
-        label: "Mobiliário Urbano",
-      },
-      {
-        value: "impur-espacos-publicos",
-        label: "Gestão de Espaços Públicos",
-      },
-    ],
-  },
-  {
-    secretaria: "Fundação Municipal do Patrimônio Histórico",
-    sigla: "FUMPH",
-    unidades: [
-      {
-        value: "fumph-preservacao-historica",
-        label: "Preservação Histórica",
-      },
-      {
-        value: "fumph-tombamento",
-        label: "Tombamento e Inventário",
-      },
-      {
-        value: "fumph-restauracao",
-        label: "Restauração e Conservação",
-      },
-      {
-        value: "fumph-educacao-patrimonial",
-        label: "Educação Patrimonial",
-      },
-      {
-        value: "fumph-acervo-documental",
-        label: "Acervo Documental",
-      },
-    ],
-  },
+// Órgãos Responsáveis
+const orgaosResponsaveis = [
+  { sigla: "SEMAD", nome: "Secretaria Municipal de Administração" },
+  { sigla: "SEMURH", nome: "Secretaria Municipal de Urbanismo e Habitação" },
+  { sigla: "SEMOSP", nome: "Secretaria Municipal de Obras e Serviços Públicos" },
+  { sigla: "SEPLAN", nome: "Secretaria Municipal de Planejamento" },
+  { sigla: "SEMFAZ", nome: "Secretaria Municipal da Fazenda" },
+  { sigla: "SEMMAM", nome: "Secretaria Municipal de Meio Ambiente" },
+  { sigla: "SEMISPE", nome: "Secretaria Municipal de Projetos Especiais" },
+  { sigla: "INCID", nome: "Instituto da Cidade" },
+  { sigla: "IMPUR", nome: "Instituto Municipal de Paisagem Urbana" },
+  { sigla: "FUMPH", nome: "Fundação Municipal do Patrimônio Histórico" },
 ];
+
+// Unidades Gestoras por Órgão
+const unidadesGestorasPorOrgao: Record<string, string[]> = {
+  SEMAD: [
+    "Coordenação de Bens Patrimoniais",
+    "Departamento de Patrimônio Imobiliário",
+    "Gestão de Prédios Públicos",
+    "Serviços Gerais",
+    "Almoxarifado Central",
+    "Diretoria Administrativa",
+  ],
+  SEMURH: [
+    "Coordenação de Habitação Popular",
+    "Departamento de Urbanismo",
+    "Regularização Fundiária",
+    "Planejamento Urbano e Territorial",
+    "Fiscalização de Obras Particulares",
+  ],
+  SEMOSP: [
+    "Obras Públicas",
+    "Manutenção Urbana",
+    "Engenharia e Projetos",
+    "Infraestrutura Municipal",
+    "Conservação de Vias Públicas",
+  ],
+  SEPLAN: [
+    "Diretoria de Patrimônio Público",
+    "Coordenação de Cadastro Imobiliário",
+    "GIS e Georreferenciamento",
+    "Planejamento Territorial",
+    "Gestão de Projetos Estratégicos",
+    "Desenvolvimento Urbano",
+  ],
+  SEMFAZ: [
+    "Auditoria Patrimonial",
+    "Controle Interno",
+    "Gestão de Contratos",
+    "Tributação Imobiliária",
+    "Fiscalização de Receitas",
+  ],
+  SEMMAM: [
+    "Gestão Ambiental",
+    "Fiscalização Ambiental",
+    "Áreas Protegidas e Unidades de Conservação",
+    "Licenciamento Ambiental",
+    "Educação Ambiental",
+  ],
+  SEMISPE: [
+    "Coordenação de Projetos Especiais",
+    "Captação de Recursos",
+    "Gestão de Convênios",
+    "Desenvolvimento Institucional",
+  ],
+  INCID: [
+    "Pesquisa e Desenvolvimento Urbano",
+    "Observatório da Cidade",
+    "Cartografia e Geoprocessamento",
+    "Estudos Territoriais",
+    "Sistema de Informação Urbana",
+  ],
+  IMPUR: [
+    "Ordenamento Paisagístico",
+    "Fiscalização de Publicidade",
+    "Mobiliário Urbano",
+    "Gestão de Espaços Públicos",
+  ],
+  FUMPH: [
+    "Preservação Histórica",
+    "Tombamento e Inventário",
+    "Restauração e Conservação",
+    "Educação Patrimonial",
+    "Acervo Documental",
+  ],
+};
 
 export function CadastroImovelStep1() {
   const [formData, setFormData] = useState({
@@ -287,6 +111,21 @@ export function CadastroImovelStep1() {
     telefone: "",
     observacoes: "",
   });
+
+  // Handler para mudança de órgão (reseta unidade gestora)
+  const handleOrgaoChange = (value: string) => {
+    setFormData({
+      ...formData,
+      orgaoResponsavel: value,
+      unidadeGestora: "", // Reseta a unidade gestora
+    });
+  };
+
+  // Obtém as unidades gestoras disponíveis para o órgão selecionado
+  const unidadesDisponiveis =
+    formData.orgaoResponsavel
+      ? unidadesGestorasPorOrgao[formData.orgaoResponsavel] || []
+      : [];
 
   return (
     <WizardLayout currentStep={1}>
@@ -348,17 +187,17 @@ export function CadastroImovelStep1() {
               </Label>
               <Select
                 value={formData.orgaoResponsavel}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, orgaoResponsavel: value })
-                }
+                onValueChange={handleOrgaoChange}
               >
                 <SelectTrigger id="orgaoResponsavel">
                   <SelectValue placeholder="Selecione o órgão" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SEPLAN">SEPLAN</SelectItem>
-                  <SelectItem value="SEMED">SEMED</SelectItem>
-                  <SelectItem value="SEMUS">SEMUS</SelectItem>
+                  {orgaosResponsaveis.map((orgao) => (
+                    <SelectItem key={orgao.sigla} value={orgao.sigla}>
+                      {orgao.sigla} – {orgao.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -367,16 +206,41 @@ export function CadastroImovelStep1() {
               <Label htmlFor="unidadeGestora">
                 Unidade Gestora <span className="text-red-600">*</span>
               </Label>
-              <HierarchicalCombobox
-                groups={unidadesGestoras}
+              <Select
                 value={formData.unidadeGestora}
                 onValueChange={(value) =>
                   setFormData({ ...formData, unidadeGestora: value })
                 }
-                placeholder="Selecione uma unidade gestora"
-                searchPlaceholder="Buscar unidade ou secretaria..."
-                emptyText="Nenhuma unidade encontrada."
-              />
+                disabled={!formData.orgaoResponsavel}
+              >
+                <SelectTrigger id="unidadeGestora">
+                  <SelectValue
+                    placeholder={
+                      formData.orgaoResponsavel
+                        ? "Selecione uma unidade gestora"
+                        : "Selecione primeiro o órgão"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {unidadesDisponiveis.length > 0 ? (
+                    unidadesDisponiveis.map((unidade) => (
+                      <SelectItem key={unidade} value={unidade}>
+                        {unidade}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      Nenhuma unidade disponível
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {!formData.orgaoResponsavel && (
+                <p className="text-xs text-gray-500">
+                  Selecione um órgão para visualizar as unidades gestoras
+                </p>
+              )}
             </div>
           </div>
 

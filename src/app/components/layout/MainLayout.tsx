@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Outlet, Link, useLocation } from "react-router";
+import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard,
   Building2,
@@ -51,6 +51,7 @@ export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
   const location = useLocation();
+  const navigate = useNavigate();
 
   const currentPage = menuItems.find((item) => item.path === location.pathname);
   const breadcrumbs = getBreadcrumbs(location.pathname);
@@ -60,6 +61,15 @@ export function MainLayout() {
       ...prev,
       [path]: !prev[path],
     }));
+  };
+
+  const handleLogout = () => {
+    // Limpa dados de autenticação (localStorage, sessionStorage, etc.)
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Redireciona para a página de login
+    navigate("/login");
   };
 
   return (
@@ -346,7 +356,7 @@ export function MainLayout() {
                     Configurações
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-600">
+                  <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sair do Sistema
                   </DropdownMenuItem>
