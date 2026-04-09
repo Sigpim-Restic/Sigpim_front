@@ -1,149 +1,154 @@
 import React, { useState } from "react";
-import { MapPin, Layers, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { Layers, MapPin, Search, ZoomIn, ZoomOut, Maximize2, Filter } from "lucide-react";
 import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
+import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Card } from "../components/ui/card";
+
+const imovelPins = [
+  { id: 1, codigo: "SIGPIM-000001", nome: "Ed. Sede SEMAD", bairro: "Centro", status: "VALIDADO" },
+  { id: 2, codigo: "SIGPIM-000045", nome: "UBS Cohama", bairro: "Cohama", status: "VALIDADO" },
+  { id: 3, codigo: "SIGPIM-000046", nome: "Escola Municipal Turu", bairro: "Turu", status: "PRE_CADASTRO" },
+  { id: 4, codigo: "SIGPIM-000043", nome: "Palácio da Cultura", bairro: "Centro Histórico", status: "VALIDADO" },
+  { id: 5, codigo: "SIGPIM-000042", nome: "Parque Bom Menino", bairro: "Calhau", status: "PENDENTE" },
+];
+
+const seloGis = [
+  { label: "Validado", count: 891, cor: "bg-green-500" },
+  { label: "Conflito", count: 47, cor: "bg-yellow-500" },
+  { label: "Não validado", count: 309, cor: "bg-gray-400" },
+];
 
 export function MapaGIS() {
-  const [camada, setCamada] = useState("base");
-  const [filtro, setFiltro] = useState("todos");
+  const [camada, setCamada] = useState("bairro");
+  const [origem, setOrigem] = useState("semurh");
+  const [search, setSearch] = useState("");
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm text-gray-600">
-          Visualização georreferenciada dos imóveis públicos municipais
-        </p>
+    <div className="space-y-4">
+      <p className="text-sm text-gray-500">
+        Visualização georreferenciada dos imóveis — Selo GIS-SEMURH como fonte autoritativa
+      </p>
+
+      {/* Selos resumo */}
+      <div className="flex flex-wrap gap-3">
+        {seloGis.map((s) => (
+          <div key={s.label} className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
+            <span className={`h-2.5 w-2.5 rounded-full ${s.cor}`} />
+            <span className="text-xs text-gray-700">{s.label}</span>
+            <span className="text-xs font-semibold text-gray-900">{s.count}</span>
+          </div>
+        ))}
       </div>
 
-      {/* Map Controls */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-3">
-          <Select value={camada} onValueChange={setCamada}>
-            <SelectTrigger className="w-48">
-              <Layers className="mr-2 h-4 w-4" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="base">Mapa Base</SelectItem>
-              <SelectItem value="satelite">Satélite</SelectItem>
-              <SelectItem value="hibrido">Híbrido</SelectItem>
-              <SelectItem value="topografico">Topográfico</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="flex flex-col gap-4 lg:flex-row">
+        {/* Controls */}
+        <div className="flex flex-col gap-3 lg:w-72">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input placeholder="Buscar imóvel..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
 
-          <Select value={filtro} onValueChange={setFiltro}>
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os Imóveis</SelectItem>
-              <SelectItem value="educacao">Educação</SelectItem>
-              <SelectItem value="saude">Saúde</SelectItem>
-              <SelectItem value="administrativo">Administrativo</SelectItem>
-              <SelectItem value="patrimonio">Patrimônio Histórico</SelectItem>
-            </SelectContent>
-          </Select>
+          <Card className="p-4">
+            <h3 className="mb-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">Camadas</h3>
+            <div className="space-y-2">
+              <Select value={camada} onValueChange={setCamada}>
+                <SelectTrigger className="text-sm">
+                  <Layers className="mr-2 h-4 w-4" /><SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bairro">Bairros</SelectItem>
+                  <SelectItem value="distrito">Distritos</SelectItem>
+                  <SelectItem value="zoneamento">Zoneamento</SelectItem>
+                  <SelectItem value="macrozona">Macrozona</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={origem} onValueChange={setOrigem}>
+                <SelectTrigger className="text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="semurh">SEMURH (oficial)</SelectItem>
+                  <SelectItem value="incid">INCID (revisão)</SelectItem>
+                  <SelectItem value="semfaz">SEMFAZ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h3 className="mb-3 text-xs font-semibold text-gray-700 uppercase tracking-wide">Filtrar por status</h3>
+            <div className="space-y-1.5">
+              {["Todos", "Validado", "Pré-cadastro", "Pendente"].map((s) => (
+                <label key={s} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" defaultChecked className="rounded" />
+                  <span className="text-xs text-gray-700">{s}</span>
+                </label>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h3 className="mb-2 text-xs font-semibold text-gray-700 uppercase tracking-wide">Imóveis na área</h3>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {imovelPins.filter(im => !search || im.nome.toLowerCase().includes(search.toLowerCase()) || im.codigo.toLowerCase().includes(search.toLowerCase())).map((im) => (
+                <div key={im.id} className="flex items-start gap-2 rounded-md p-2 hover:bg-gray-50 cursor-pointer">
+                  <MapPin className="h-3.5 w-3.5 mt-0.5 text-[#1351B4] shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs font-semibold text-[#1351B4]">{im.codigo}</p>
+                    <p className="text-xs text-gray-700 truncate">{im.nome}</p>
+                    <p className="text-xs text-gray-400">{im.bairro}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" size="icon">
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Map Container */}
-      <Card className="overflow-hidden">
-        <div className="relative h-[600px] bg-gray-100">
-          {/* Map Placeholder */}
-          <div className="flex h-full items-center justify-center border-2 border-dashed border-gray-300">
+        {/* Map area */}
+        <div className="relative flex-1 overflow-hidden rounded-xl border border-gray-200 bg-gray-100 shadow-sm" style={{ minHeight: "520px" }}>
+          {/* Placeholder map with São Luís feel */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-gray-100 to-green-50 flex items-center justify-center">
             <div className="text-center">
-              <MapPin className="mx-auto h-16 w-16 text-gray-400" />
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">
-                Sistema de Mapeamento GIS
-              </h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Visualização georreferenciada integrada
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/80 shadow-md">
+                <MapPin className="h-8 w-8 text-[#1351B4]" />
+              </div>
+              <p className="text-sm font-semibold text-gray-700">Mapa Interativo</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Integração com Leaflet + OpenStreetMap
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                1.247 imóveis georreferenciados
+                São Luís, Maranhão — WGS84
               </p>
-            </div>
-          </div>
-
-          {/* Map Legend */}
-          <div className="absolute bottom-4 left-4 rounded-lg bg-white p-4 shadow-lg">
-            <h4 className="mb-3 text-sm font-semibold text-gray-900">
-              Legenda
-            </h4>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full bg-blue-500"></div>
-                <span className="text-xs text-gray-600">Administrativo</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full bg-green-500"></div>
-                <span className="text-xs text-gray-600">Educação</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full bg-red-500"></div>
-                <span className="text-xs text-gray-600">Saúde</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full bg-amber-500"></div>
-                <span className="text-xs text-gray-600">Patrimônio Histórico</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 rounded-full bg-gray-400"></div>
-                <span className="text-xs text-gray-600">Outros</span>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {imovelPins.map((p) => (
+                  <Badge key={p.id} variant="secondary" className={`text-xs cursor-pointer ${p.status === "VALIDADO" ? "bg-green-100 text-green-800" : p.status === "PRE_CADASTRO" ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}`}>
+                    <MapPin className="mr-1 h-2.5 w-2.5" />{p.codigo}
+                  </Badge>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Map Info Panel */}
-          <div className="absolute right-4 top-4 w-80 rounded-lg bg-white p-4 shadow-lg">
-            <h4 className="mb-3 text-sm font-semibold text-gray-900">
-              Estatísticas do Mapa
-            </h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Total de Imóveis</span>
-                <Badge>1.247</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Georreferenciados</span>
-                <Badge className="bg-green-100 text-green-800">1.189</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Pendente GIS</span>
-                <Badge className="bg-yellow-100 text-yellow-800">58</Badge>
-              </div>
-            </div>
+          {/* Map controls overlay */}
+          <div className="absolute right-3 top-3 flex flex-col gap-2">
+            <Button size="icon" variant="secondary" className="h-8 w-8 shadow-md bg-white hover:bg-gray-50">
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button size="icon" variant="secondary" className="h-8 w-8 shadow-md bg-white hover:bg-gray-50">
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <Button size="icon" variant="secondary" className="h-8 w-8 shadow-md bg-white hover:bg-gray-50">
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Camada badge */}
+          <div className="absolute bottom-3 left-3">
+            <Badge className="bg-white/90 text-gray-700 shadow-sm text-xs" variant="secondary">
+              <Layers className="mr-1.5 h-3 w-3" />Camada: {camada} · Fonte: {origem.toUpperCase()}
+            </Badge>
           </div>
         </div>
-      </Card>
-
-      {/* Export Options */}
-      <div className="flex justify-end gap-3">
-        <Button variant="outline">Exportar KML</Button>
-        <Button variant="outline">Exportar Shapefile</Button>
-        <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
-          Gerar Relatório Geográfico
-        </Button>
       </div>
     </div>
   );

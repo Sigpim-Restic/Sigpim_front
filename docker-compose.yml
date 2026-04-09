@@ -1,0 +1,16 @@
+services:
+  sigpim-frontend:
+    build: .
+    container_name: sigpim-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      # Aponta para o back-end Spring Boot.
+      # Se back e front estiverem no mesmo docker-compose, troque por:
+      #   http://sigpim-backend:8080
+      - VITE_API_URL=http://localhost:8080
+    restart: unless-stopped

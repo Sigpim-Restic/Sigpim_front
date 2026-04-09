@@ -1,263 +1,90 @@
 import React from "react";
-import {
-  Settings as SettingsIcon,
-  Bell,
-  Shield,
-  Database,
-  Mail,
-  User,
-} from "lucide-react";
+import { Shield, Bell, Database, Users, Key, Info } from "lucide-react";
 import { Card } from "../components/ui/card";
-import { Label } from "../components/ui/label";
-import { Input } from "../components/ui/input";
-import { Switch } from "../components/ui/switch";
 import { Button } from "../components/ui/button";
-import { Textarea } from "../components/ui/textarea";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Switch } from "../components/ui/switch";
+import { Badge } from "../components/ui/badge";
 
 export function Configuracoes() {
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <p className="text-sm text-gray-600">
-          Gerencie as configurações gerais do sistema
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <p className="text-sm text-gray-500">Configurações do sistema — restrito ao Administrador do Sistema (SIN/SEMAD)</p>
 
-      {/* Sistema */}
       <Card className="p-6">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-            <SettingsIcon className="h-5 w-5 text-[#1351B4]" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Sistema</h3>
-            <p className="text-sm text-gray-600">
-              Configurações gerais da aplicação
-            </p>
-          </div>
+        <div className="mb-5 flex items-center gap-2">
+          <Info className="h-4 w-4 text-[#1351B4]" />
+          <h3 className="text-sm font-semibold text-gray-900">Informações do Sistema</h3>
         </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {[
+            { label: "Versão", value: "1.0.0 — Fase 1 (MVP)" },
+            { label: "Ambiente", value: "Produção" },
+            { label: "Banco de dados", value: "PostgreSQL 15 + PostGIS" },
+            { label: "Última atualização", value: "06/04/2026" },
+          ].map((i) => (
+            <div key={i.label} className="rounded-lg bg-gray-50 px-4 py-3">
+              <p className="text-xs text-gray-500">{i.label}</p>
+              <p className="text-sm font-medium text-gray-900">{i.value}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
 
+      <Card className="p-6">
+        <div className="mb-5 flex items-center gap-2">
+          <Bell className="h-4 w-4 text-[#1351B4]" />
+          <h3 className="text-sm font-semibold text-gray-900">Notificações e Alertas</h3>
+        </div>
         <div className="space-y-4">
+          {[
+            { label: "Imóveis em pré-cadastro há mais de 30 dias", desc: "Alerta para operadores responsáveis" },
+            { label: "Documentos pendentes de validação há mais de 7 dias", desc: "Notificação para validadores" },
+            { label: "Ocupações sem instrumento formal", desc: "Alerta diário para administradores patrimoniais" },
+            { label: "Imóveis sem validação GIS", desc: "Resumo semanal para equipe SEMURH" },
+          ].map((n) => (
+            <div key={n.label} className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm text-gray-900">{n.label}</p>
+                <p className="text-xs text-gray-500">{n.desc}</p>
+              </div>
+              <Switch defaultChecked />
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <div className="mb-5 flex items-center gap-2">
+          <Shield className="h-4 w-4 text-[#1351B4]" />
+          <h3 className="text-sm font-semibold text-gray-900">Segurança e Sessão</h3>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Tempo de sessão (minutos)</Label>
+            <Input type="number" defaultValue={60} className="max-w-32" />
+          </div>
           <div className="flex items-center justify-between">
             <div>
-              <Label>Modo de Manutenção</Label>
-              <p className="text-xs text-gray-500">
-                Desabilita acesso de usuários não administradores
-              </p>
+              <p className="text-sm text-gray-900">Forçar MFA para administradores</p>
+              <p className="text-xs text-gray-500">Exige autenticação de dois fatores</p>
             </div>
             <Switch />
           </div>
-
           <div className="flex items-center justify-between">
             <div>
-              <Label>Validação Automática GIS</Label>
-              <p className="text-xs text-gray-500">
-                Valida coordenadas automaticamente no cadastro
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Logs de Auditoria Detalhados</Label>
-              <p className="text-xs text-gray-500">
-                Registra todas as ações dos usuários
-              </p>
+              <p className="text-sm text-gray-900">Log de acesso completo</p>
+              <p className="text-xs text-gray-500">Registrar todos os acessos na auditoria</p>
             </div>
             <Switch defaultChecked />
           </div>
         </div>
       </Card>
 
-      {/* Notificações */}
-      <Card className="p-6">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-50">
-            <Bell className="h-5 w-5 text-yellow-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Notificações</h3>
-            <p className="text-sm text-gray-600">
-              Configure alertas e notificações do sistema
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Notificar Pendências Vencendo</Label>
-              <p className="text-xs text-gray-500">
-                Alerta 3 dias antes do vencimento
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Notificar Novos Cadastros</Label>
-              <p className="text-xs text-gray-500">
-                Alerta gestores sobre novos imóveis
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Relatórios Semanais Automáticos</Label>
-              <p className="text-xs text-gray-500">
-                Envia resumo semanal por e-mail
-              </p>
-            </div>
-            <Switch />
-          </div>
-        </div>
-      </Card>
-
-      {/* Segurança */}
-      <Card className="p-6">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50">
-            <Shield className="h-5 w-5 text-red-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Segurança</h3>
-            <p className="text-sm text-gray-600">
-              Políticas de segurança e acesso
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="sessaoTimeout">
-              Tempo de Sessão (minutos)
-            </Label>
-            <Input
-              id="sessaoTimeout"
-              type="number"
-              defaultValue="30"
-              className="max-w-xs"
-            />
-            <p className="text-xs text-gray-500">
-              Tempo de inatividade até logout automático
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Exigir Autenticação de Dois Fatores</Label>
-              <p className="text-xs text-gray-500">
-                Obrigatório para administradores
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Bloquear Após Tentativas Falhas</Label>
-              <p className="text-xs text-gray-500">
-                Bloqueia conta após 5 tentativas
-              </p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-        </div>
-      </Card>
-
-      {/* E-mail */}
-      <Card className="p-6">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
-            <Mail className="h-5 w-5 text-green-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">
-              Servidor de E-mail
-            </h3>
-            <p className="text-sm text-gray-600">
-              Configurações SMTP para envio de e-mails
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="smtpHost">Servidor SMTP</Label>
-              <Input id="smtpHost" placeholder="smtp.exemplo.com" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="smtpPort">Porta</Label>
-              <Input id="smtpPort" type="number" placeholder="587" />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="smtpEmail">E-mail Remetente</Label>
-            <Input
-              id="smtpEmail"
-              type="email"
-              placeholder="noreply@slz.ma.gov.br"
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Switch id="smtpSSL" defaultChecked />
-            <Label htmlFor="smtpSSL">Usar SSL/TLS</Label>
-          </div>
-
-          <Button variant="outline">Testar Conexão</Button>
-        </div>
-      </Card>
-
-      {/* Backup */}
-      <Card className="p-6">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
-            <Database className="h-5 w-5 text-purple-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">
-              Backup e Recuperação
-            </h3>
-            <p className="text-sm text-gray-600">
-              Gestão de backups automáticos
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>Backup Automático Diário</Label>
-              <p className="text-xs text-gray-500">Realizado às 02:00</p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Último Backup</Label>
-            <p className="text-sm text-gray-600">17/02/2026 às 02:00</p>
-          </div>
-
-          <div className="flex gap-3">
-            <Button variant="outline">Realizar Backup Agora</Button>
-            <Button variant="outline">Restaurar Backup</Button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Actions */}
       <div className="flex justify-end gap-3">
-        <Button variant="outline">Descartar Alterações</Button>
-        <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
-          Salvar Configurações
-        </Button>
+        <Button variant="outline">Cancelar</Button>
+        <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">Salvar Configurações</Button>
       </div>
     </div>
   );

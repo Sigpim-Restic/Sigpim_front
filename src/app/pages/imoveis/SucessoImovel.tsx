@@ -1,38 +1,35 @@
 import React from "react";
 import { Link } from "react-router";
-import { Building2, FileText, List } from "lucide-react";
-import { SuccessState } from "../../components/layout/States";
+import { CheckCircle2, Building2, Plus, Eye } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
 
 export function SucessoImovel() {
   return (
-    <div className="mx-auto max-w-2xl">
-      <SuccessState
-        title="Imóvel cadastrado com sucesso!"
-        description="O cadastro do imóvel foi concluído e registrado no sistema. O código de identificação IMO-2026-0048 foi gerado automaticamente. Todas as informações foram validadas e armazenadas com segurança."
-        actions={
-          <>
-            <Link to="/imoveis/novo/etapa-1">
-              <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
-                <Building2 className="mr-2 h-4 w-4" />
-                Cadastrar Novo Imóvel
-              </Button>
-            </Link>
-            <Link to="/imoveis">
-              <Button variant="outline">
-                <List className="mr-2 h-4 w-4" />
-                Ver Lista de Imóveis
-              </Button>
-            </Link>
-            <Link to="/relatorios">
-              <Button variant="ghost">
-                <FileText className="mr-2 h-4 w-4" />
-                Gerar Ficha do Imóvel
-              </Button>
-            </Link>
-          </>
-        }
-      />
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <Card className="max-w-md w-full p-8 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+          <CheckCircle2 className="h-9 w-9 text-green-600" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900">Imóvel Cadastrado!</h2>
+        <p className="mt-2 text-sm text-gray-500">O pré-cadastro foi salvo. O imóvel passará pelo processo de validação pela equipe responsável.</p>
+        <div className="mt-4 rounded-lg bg-gray-50 p-3">
+          <p className="text-xs text-gray-500">Código gerado</p>
+          <p className="font-mono text-lg font-bold text-[#1351B4]">SIGPIM-001249</p>
+        </div>
+        <div className="mt-6 flex flex-col gap-3">
+          <Link to="/imoveis/novo/etapa-1">
+            <Button className="w-full bg-[#1351B4] hover:bg-[#0c3b8d]">
+              <Plus className="mr-2 h-4 w-4" />Cadastrar Outro Imóvel
+            </Button>
+          </Link>
+          <Link to="/imoveis">
+            <Button variant="outline" className="w-full">
+              <Eye className="mr-2 h-4 w-4" />Ver Lista de Imóveis
+            </Button>
+          </Link>
+        </div>
+      </Card>
     </div>
   );
 }
