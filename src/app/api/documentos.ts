@@ -34,6 +34,9 @@ export interface DocumentoUploadParams {
 }
 
 export const documentosApi = {
+  listar(page = 0, size = 20): Promise<PageResponse<DocumentoResponse>> {
+    return api.get(`/documentos?page=${page}&size=${size}`);
+  },
   listarPorImovel(idImovel: number, page = 0, size = 20): Promise<PageResponse<DocumentoResponse>> {
     return api.get(`/documentos/imovel/${idImovel}?page=${page}&size=${size}`);
   },
@@ -43,10 +46,10 @@ export const documentosApi = {
     fd.append("idImovel", String(params.idImovel));
     fd.append("tipoDocumento", params.tipoDocumento);
     fd.append("descricao", params.descricao);
-    if (params.idOcupacao)      fd.append("idOcupacao", String(params.idOcupacao));
+    if (params.idOcupacao)       fd.append("idOcupacao", String(params.idOcupacao));
     if (params.referenciaNumero) fd.append("referenciaNumero", params.referenciaNumero);
-    if (params.dataDocumento)   fd.append("dataDocumento", params.dataDocumento);
-    if (params.dataValidade)    fd.append("dataValidade", params.dataValidade);
+    if (params.dataDocumento)    fd.append("dataDocumento", params.dataDocumento);
+    if (params.dataValidade)     fd.append("dataValidade", params.dataValidade);
     fd.append("imagemPrincipal", String(params.imagemPrincipal ?? false));
     return api.upload("/documentos/upload", fd);
   },
