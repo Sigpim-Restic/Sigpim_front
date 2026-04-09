@@ -1,4 +1,5 @@
-import { createBrowserRouter } from "react-router";
+import React from "react";
+import { createBrowserRouter, Outlet } from "react-router";
 import { MainLayout } from "./components/layout/MainLayout";
 import { Login } from "./pages/auth/Login";
 import { RecuperarSenha } from "./pages/auth/RecuperarSenha";
@@ -24,11 +25,21 @@ import { MapaGIS } from "./pages/MapaGIS";
 import { Catalogos } from "./pages/Catalogos";
 import { Configuracoes } from "./pages/Configuracoes";
 import { ProtectedRoute } from "./contexts/ProtectedRoute";
+import { CadastroImovelProvider } from "./contexts/CadastroImovelContext";
+
+// Provider do wizard — usa Outlet para renderizar as etapas filhas
+function WizardLayout() {
+  return (
+    <CadastroImovelProvider>
+      <Outlet />
+    </CadastroImovelProvider>
+  );
+}
 
 export const router = createBrowserRouter([
-  { path: "/login",                  Component: Login },
-  { path: "/auth/recuperar-senha",   Component: RecuperarSenha },
-  { path: "/auth/criar-conta",       Component: CriarConta },
+  { path: "/login",                Component: Login },
+  { path: "/auth/recuperar-senha", Component: RecuperarSenha },
+  { path: "/auth/criar-conta",     Component: CriarConta },
   {
     path: "/",
     element: (
@@ -37,26 +48,32 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { index: true,                             Component: Dashboard },
-      { path: "imoveis",                         Component: ListaImoveis },
-      { path: "imoveis/catalogos",               Component: Catalogos },
-      { path: "imoveis/sucesso",                 Component: SucessoImovel },
-      { path: "imoveis/novo/etapa-1",            Component: CadastroImovelStep1 },
-      { path: "imoveis/novo/etapa-2",            Component: CadastroImovelStep2 },
-      { path: "imoveis/novo/etapa-3",            Component: CadastroImovelStep3 },
-      { path: "imoveis/novo/etapa-4",            Component: CadastroImovelStep4 },
-      { path: "imoveis/novo/etapa-5",            Component: CadastroImovelStep5 },
-      { path: "imoveis/novo/etapa-6",            Component: CadastroImovelStep6 },
-      { path: "ocupacoes",                       Component: ListaOcupacoes },
-      { path: "documentos",                      Component: ListaDocumentos },
-      { path: "relatorios",                      Component: Relatorios },
-      { path: "auditoria",                       Component: Auditoria },
-      { path: "mapa",                            Component: MapaGIS },
-      { path: "usuarios",                        Component: ListaUsuarios },
-      { path: "usuarios/novo",                   Component: CadastroUsuario },
-      { path: "usuarios/:id/permissoes",         Component: Permissoes },
-      { path: "usuarios/sucesso",                Component: SucessoUsuario },
-      { path: "configuracoes",                   Component: Configuracoes },
+      { index: true,                         Component: Dashboard },
+      { path: "imoveis",                     Component: ListaImoveis },
+      { path: "imoveis/catalogos",           Component: Catalogos },
+      { path: "imoveis/sucesso",             Component: SucessoImovel },
+      {
+        path: "imoveis/novo",
+        Component: WizardLayout,
+        children: [
+          { path: "etapa-1", Component: CadastroImovelStep1 },
+          { path: "etapa-2", Component: CadastroImovelStep2 },
+          { path: "etapa-3", Component: CadastroImovelStep3 },
+          { path: "etapa-4", Component: CadastroImovelStep4 },
+          { path: "etapa-5", Component: CadastroImovelStep5 },
+          { path: "etapa-6", Component: CadastroImovelStep6 },
+        ],
+      },
+      { path: "ocupacoes",                   Component: ListaOcupacoes },
+      { path: "documentos",                  Component: ListaDocumentos },
+      { path: "relatorios",                  Component: Relatorios },
+      { path: "auditoria",                   Component: Auditoria },
+      { path: "mapa",                        Component: MapaGIS },
+      { path: "usuarios",                    Component: ListaUsuarios },
+      { path: "usuarios/novo",               Component: CadastroUsuario },
+      { path: "usuarios/:id/permissoes",     Component: Permissoes },
+      { path: "usuarios/sucesso",            Component: SucessoUsuario },
+      { path: "configuracoes",               Component: Configuracoes },
     ],
   },
 ]);

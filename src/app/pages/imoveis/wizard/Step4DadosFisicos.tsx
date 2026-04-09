@@ -8,6 +8,8 @@ import { Textarea } from "../../../components/ui/textarea";
 import { PropertyMap, Coordinate } from "../../../components/ui/property-map";
 import { AlertBox } from "../../../components/layout/States";
 import { Plus, Trash2, MapPin, AlertTriangle } from "lucide-react";
+import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
+import { useNavigate } from "react-router";
 
 interface Lateral { id: number; label: string; valor: string; }
 interface Ponto { id: number; lat: string; lng: string; }
@@ -16,9 +18,10 @@ let _lateralId = 3;
 let _pontoId = 5;
 
 export function CadastroImovelStep4() {
-  const [areaTerreno, setAreaTerreno] = useState("");
-  const [areaConstruida, setAreaConstruida] = useState("");
-  const [areaUtil, setAreaUtil] = useState("");
+  const { etapa4, setEtapa4 } = useCadastroImovel();
+  const navigate = useNavigate();
+
+  // Campos extras que ficam apenas na UI (não enviados ao back ainda)
   const [frente, setFrente] = useState("");
   const [fundo, setFundo] = useState("");
   const [laterais, setLaterais] = useState<Lateral[]>([
@@ -27,8 +30,6 @@ export function CadastroImovelStep4() {
   ]);
   const [topografia, setTopografia] = useState("");
   const [formatoTerreno, setFormatoTerreno] = useState("");
-  const [pavimentos, setPavimentos] = useState("");
-  const [estadoConservacao, setEstadoConservacao] = useState("");
   const [infraestrutura, setInfraestrutura] = useState("");
   const [pontos, setPontos] = useState<Ponto[]>([
     { id: 1, lat: "", lng: "" },
@@ -67,12 +68,17 @@ export function CadastroImovelStep4() {
   );
 
   const pontosValidos = pontos.filter(p => p.lat.trim() !== "" && p.lng.trim() !== "").length;
-
   const latValida = (val: string) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= -90 && parseFloat(val) <= 90);
   const lngValida = (val: string) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= -180 && parseFloat(val) <= 180);
 
+  const campo = (field: keyof typeof etapa4) => ({
+    value: etapa4[field],
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
+      setEtapa4({ ...etapa4, [field]: e.target.value }),
+  });
+
   return (
-    <WizardLayout currentStep={4}>
+    <WizardLayout currentStep={4} onNext={() => navigate("/imoveis/novo/etapa-5")}>
       <div className="p-6 space-y-8">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Dados Físicos</h3>
@@ -84,16 +90,16 @@ export function CadastroImovelStep4() {
           <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Áreas (m²)</h4>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <Label>Área do Terreno <span className="text-red-500">*</span></Label>
-              <Input type="number" step="0.01" min="0" value={areaTerreno} onChange={e => setAreaTerreno(e.target.value)} placeholder="0,00" />
+              <Label>Área do Terreno</Label>
+              <Input type="number" step="0.01" min="0" {...campo("areaTerrenoM2")} placeholder="0,00" />
             </div>
             <div className="space-y-1.5">
               <Label>Área Construída</Label>
-              <Input type="number" step="0.01" min="0" value={areaConstruida} onChange={e => setAreaConstruida(e.target.value)} placeholder="0,00" />
+              <Input type="number" step="0.01" min="0" {...campo("areaConstruidaM2")} placeholder="0,00" />
             </div>
             <div className="space-y-1.5">
-              <Label>Área Útil</Label>
-              <Input type="number" step="0.01" min="0" value={areaUtil} onChange={e => setAreaUtil(e.target.value)} placeholder="0,00" />
+              <Label>Ano de Construção</Label>
+              <Input type="number" min="1800" max="2030" {...campo("anoConstrucao")} placeholder="Ex: 1985" />
             </div>
           </div>
         </section>
@@ -109,8 +115,6 @@ export function CadastroImovelStep4() {
               <Plus className="mr-1.5 h-3.5 w-3.5" />Adicionar lateral
             </Button>
           </div>
-
-          {/* Frente e Fundo fixos */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Frente</Label>
@@ -121,8 +125,6 @@ export function CadastroImovelStep4() {
               <Input type="number" step="0.01" min="0" value={fundo} onChange={e => setFundo(e.target.value)} placeholder="0,00" />
             </div>
           </div>
-
-          {/* Laterais dinâmicas */}
           <div className="grid gap-4 sm:grid-cols-2">
             {laterais.map(lat => (
               <div key={lat.id} className="flex items-end gap-2">
@@ -131,17 +133,13 @@ export function CadastroImovelStep4() {
                   <Input type="number" step="0.01" min="0" value={lat.valor} onChange={e => atualizarLateral(lat.id, e.target.value)} placeholder="0,00" />
                 </div>
                 {laterais.length > 1 && (
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removerLateral(lat.id)} className="mb-0.5 h-9 w-9 text-gray-400 hover:text-red-500 hover:bg-red-50" title="Remover lateral">
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removerLateral(lat.id)} className="mb-0.5 h-9 w-9 text-gray-400 hover:text-red-500 hover:bg-red-50">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
               </div>
             ))}
           </div>
-
-          <p className="text-xs text-gray-400">
-            Total: {2 + laterais.length} lados — frente + fundo + {laterais.length} {laterais.length === 1 ? "lateral" : "laterais"}
-          </p>
         </section>
 
         {/* Características */}
@@ -176,11 +174,11 @@ export function CadastroImovelStep4() {
             </div>
             <div className="space-y-1.5">
               <Label>Número de Pavimentos</Label>
-              <Input type="number" min="0" step="1" value={pavimentos} onChange={e => setPavimentos(e.target.value)} placeholder="0" />
+              <Input type="number" min="0" step="1" {...campo("numeroPavimentos")} placeholder="0" />
             </div>
             <div className="space-y-1.5">
-              <Label>Estado de Conservação <span className="text-red-500">*</span></Label>
-              <Select value={estadoConservacao} onValueChange={setEstadoConservacao}>
+              <Label>Estado de Conservação</Label>
+              <Select value={etapa4.estadoConservacaoAtual} onValueChange={v => setEtapa4({ ...etapa4, estadoConservacaoAtual: v })}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="OTIMO">Ótimo</SelectItem>
@@ -198,32 +196,28 @@ export function CadastroImovelStep4() {
           </div>
         </section>
 
-        {/* Coordenadas dinâmicas */}
+        {/* Coordenadas do terreno */}
         <section className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Coordenadas do Terreno</h4>
-              <p className="text-xs text-gray-400 mt-0.5">Vértices do polígono — adicione quantos pontos o terreno tiver (mínimo 3)</p>
+              <p className="text-xs text-gray-400 mt-0.5">Vértices do polígono — mínimo 3 pontos</p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={adicionarPonto} className="shrink-0 border-[#1351B4] text-[#1351B4] hover:bg-blue-50">
               <Plus className="mr-1.5 h-3.5 w-3.5" />Adicionar ponto
             </Button>
           </div>
-
           <div className="space-y-3">
             {pontos.map((ponto, index) => {
               const label = `P${String(index + 1).padStart(3, "0")}`;
               const latOk = latValida(ponto.lat);
               const lngOk = lngValida(ponto.lng);
               const temErro = !latOk || !lngOk;
-
               return (
                 <div key={ponto.id} className={`rounded-lg border bg-gray-50 p-4 transition-colors ${temErro ? "border-red-200 bg-red-50/30" : "border-gray-200"}`}>
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="inline-flex h-6 w-14 items-center justify-center rounded bg-[#1351B4]/10 font-mono text-xs font-semibold text-[#1351B4]">
-                        {label}
-                      </span>
+                      <span className="inline-flex h-6 w-14 items-center justify-center rounded bg-[#1351B4]/10 font-mono text-xs font-semibold text-[#1351B4]">{label}</span>
                       {temErro && (
                         <span className="flex items-center gap-1 text-xs text-red-500">
                           <AlertTriangle className="h-3 w-3" />Coordenada inválida
@@ -231,7 +225,7 @@ export function CadastroImovelStep4() {
                       )}
                     </div>
                     {pontos.length > 3 && (
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removerPonto(ponto.id)} className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50" title="Remover ponto">
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removerPonto(ponto.id)} className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50">
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     )}
@@ -239,48 +233,31 @@ export function CadastroImovelStep4() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1.5">
                       <Label className="text-xs text-gray-600">Latitude <span className="text-gray-400">(ex: -2.5296)</span></Label>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        value={ponto.lat}
-                        onChange={e => atualizarPonto(ponto.id, "lat", e.target.value)}
-                        placeholder="-2.529600"
-                        className={!latOk ? "border-red-300 focus-visible:ring-red-300" : ""}
-                      />
+                      <Input type="text" inputMode="decimal" value={ponto.lat} onChange={e => atualizarPonto(ponto.id, "lat", e.target.value)} placeholder="-2.529600" className={!latOk ? "border-red-300" : ""} />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs text-gray-600">Longitude <span className="text-gray-400">(ex: -44.3028)</span></Label>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        value={ponto.lng}
-                        onChange={e => atualizarPonto(ponto.id, "lng", e.target.value)}
-                        placeholder="-44.302800"
-                        className={!lngOk ? "border-red-300 focus-visible:ring-red-300" : ""}
-                      />
+                      <Input type="text" inputMode="decimal" value={ponto.lng} onChange={e => atualizarPonto(ponto.id, "lng", e.target.value)} placeholder="-44.302800" className={!lngOk ? "border-red-300" : ""} />
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
-
           <p className="text-xs text-gray-400">
-            {pontos.length} {pontos.length === 1 ? "ponto" : "pontos"} cadastrados · {pontosValidos} com coordenadas válidas
-            {pontos.length < 3 && <span className="ml-2 text-amber-600 font-medium">— mínimo 3 pontos para um polígono</span>}
+            {pontos.length} pontos cadastrados · {pontosValidos} válidos
+            {pontos.length < 3 && <span className="ml-2 text-amber-600 font-medium">— mínimo 3 para exibir o polígono</span>}
           </p>
-
           {coordinates.length >= 3 && (
             <div>
               <p className="mb-2 text-xs font-medium text-gray-500">Pré-visualização do polígono</p>
               <PropertyMap points={coordinates} />
             </div>
           )}
-
           <AlertBox variant="info">
             <div className="flex items-start gap-2">
               <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-              <p className="text-sm">O mapa atualiza automaticamente conforme você preenche as coordenadas. Use datum WGS84. Mínimo de 3 pontos para exibir o polígono.</p>
+              <p className="text-sm">O mapa atualiza automaticamente conforme você preenche as coordenadas. Use datum WGS84.</p>
             </div>
           </AlertBox>
         </section>

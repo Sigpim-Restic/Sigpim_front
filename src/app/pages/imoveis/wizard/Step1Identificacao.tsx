@@ -3,305 +3,134 @@ import { WizardLayout } from "../../../components/layout/WizardLayout";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../../components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 import { AlertBox } from "../../../components/layout/States";
+import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
+import { useNavigate } from "react-router";
 
-// Órgãos Responsáveis
-const orgaosResponsaveis = [
-  { sigla: "SEMAD", nome: "Secretaria Municipal de Administração" },
-  { sigla: "SEMURH", nome: "Secretaria Municipal de Urbanismo e Habitação" },
-  { sigla: "SEMOSP", nome: "Secretaria Municipal de Obras e Serviços Públicos" },
-  { sigla: "SEPLAN", nome: "Secretaria Municipal de Planejamento" },
-  { sigla: "SEMFAZ", nome: "Secretaria Municipal da Fazenda" },
-  { sigla: "SEMMAM", nome: "Secretaria Municipal de Meio Ambiente" },
+const orgaos = [
+  { sigla: "SEMAD",   nome: "Secretaria Municipal de Administração" },
+  { sigla: "SEMURH",  nome: "Secretaria Municipal de Urbanismo e Habitação" },
+  { sigla: "SEMOSP",  nome: "Secretaria Municipal de Obras e Serviços Públicos" },
+  { sigla: "SEPLAN",  nome: "Secretaria Municipal de Planejamento" },
+  { sigla: "SEMFAZ",  nome: "Secretaria Municipal da Fazenda" },
+  { sigla: "SEMMAM",  nome: "Secretaria Municipal de Meio Ambiente" },
   { sigla: "SEMISPE", nome: "Secretaria Municipal de Projetos Especiais" },
-  { sigla: "INCID", nome: "Instituto da Cidade" },
-  { sigla: "IMPUR", nome: "Instituto Municipal de Paisagem Urbana" },
-  { sigla: "FUMPH", nome: "Fundação Municipal do Patrimônio Histórico" },
+  { sigla: "SEMED",   nome: "Secretaria Municipal de Educação" },
+  { sigla: "SEMUS",   nome: "Secretaria Municipal de Saúde" },
+  { sigla: "SEINFRA", nome: "Secretaria Municipal de Infraestrutura" },
+  { sigla: "INCID",   nome: "Instituto da Cidade" },
+  { sigla: "IMPUR",   nome: "Instituto Municipal de Paisagem Urbana" },
+  { sigla: "FUMPH",   nome: "Fundação Municipal do Patrimônio Histórico" },
+  { sigla: "SECULT",  nome: "Secretaria Municipal de Cultura" },
 ];
 
-// Unidades Gestoras por Órgão
-const unidadesGestorasPorOrgao: Record<string, string[]> = {
-  SEMAD: [
-    "Coordenação de Bens Patrimoniais",
-    "Departamento de Patrimônio Imobiliário",
-    "Gestão de Prédios Públicos",
-    "Serviços Gerais",
-    "Almoxarifado Central",
-    "Diretoria Administrativa",
-  ],
-  SEMURH: [
-    "Coordenação de Habitação Popular",
-    "Departamento de Urbanismo",
-    "Regularização Fundiária",
-    "Planejamento Urbano e Territorial",
-    "Fiscalização de Obras Particulares",
-  ],
-  SEMOSP: [
-    "Obras Públicas",
-    "Manutenção Urbana",
-    "Engenharia e Projetos",
-    "Infraestrutura Municipal",
-    "Conservação de Vias Públicas",
-  ],
-  SEPLAN: [
-    "Diretoria de Patrimônio Público",
-    "Coordenação de Cadastro Imobiliário",
-    "GIS e Georreferenciamento",
-    "Planejamento Territorial",
-    "Gestão de Projetos Estratégicos",
-    "Desenvolvimento Urbano",
-  ],
-  SEMFAZ: [
-    "Auditoria Patrimonial",
-    "Controle Interno",
-    "Gestão de Contratos",
-    "Tributação Imobiliária",
-    "Fiscalização de Receitas",
-  ],
-  SEMMAM: [
-    "Gestão Ambiental",
-    "Fiscalização Ambiental",
-    "Áreas Protegidas e Unidades de Conservação",
-    "Licenciamento Ambiental",
-    "Educação Ambiental",
-  ],
-  SEMISPE: [
-    "Coordenação de Projetos Especiais",
-    "Captação de Recursos",
-    "Gestão de Convênios",
-    "Desenvolvimento Institucional",
-  ],
-  INCID: [
-    "Pesquisa e Desenvolvimento Urbano",
-    "Observatório da Cidade",
-    "Cartografia e Geoprocessamento",
-    "Estudos Territoriais",
-    "Sistema de Informação Urbana",
-  ],
-  IMPUR: [
-    "Ordenamento Paisagístico",
-    "Fiscalização de Publicidade",
-    "Mobiliário Urbano",
-    "Gestão de Espaços Públicos",
-  ],
-  FUMPH: [
-    "Preservação Histórica",
-    "Tombamento e Inventário",
-    "Restauração e Conservação",
-    "Educação Patrimonial",
-    "Acervo Documental",
-  ],
+const unidadesPorOrgao: Record<string, string[]> = {
+  SEMAD:   ["Coordenação de Bens Patrimoniais", "Departamento de Patrimônio Imobiliário", "Diretoria Administrativa"],
+  SEMURH:  ["Coordenação de Habitação Popular", "Departamento de Urbanismo", "Regularização Fundiária"],
+  SEMOSP:  ["Obras Públicas", "Manutenção Urbana", "Engenharia e Projetos"],
+  SEPLAN:  ["Diretoria de Patrimônio Público", "Coordenação de Cadastro Imobiliário", "GIS e Georreferenciamento"],
+  SEMFAZ:  ["Auditoria Patrimonial", "Controle Interno", "Gestão de Contratos"],
+  SEMMAM:  ["Gestão Ambiental", "Fiscalização Ambiental", "Áreas Protegidas"],
+  SEMISPE: ["Coordenação de Projetos Especiais", "Captação de Recursos"],
+  SEMED:   ["Coordenação de Infraestrutura Escolar", "Gestão de Unidades Educacionais"],
+  SEMUS:   ["Coordenação de Infraestrutura de Saúde", "Gestão de Unidades de Saúde"],
+  SEINFRA: ["Infraestrutura Municipal", "Conservação de Vias Públicas"],
+  INCID:   ["Pesquisa e Desenvolvimento Urbano", "Cartografia e Geoprocessamento"],
+  IMPUR:   ["Ordenamento Paisagístico", "Mobiliário Urbano"],
+  FUMPH:   ["Preservação Histórica", "Restauração e Conservação"],
+  SECULT:  ["Equipamentos Culturais", "Patrimônio Cultural"],
 };
 
 export function CadastroImovelStep1() {
-  const [formData, setFormData] = useState({
-    codigoInterno: "",
-    denominacao: "",
-    orgaoResponsavel: "",
-    unidadeGestora: "",
-    responsavelTecnico: "",
-    emailResponsavel: "",
-    telefone: "",
-    observacoes: "",
-  });
+  const { etapa1, setEtapa1 } = useCadastroImovel();
+  const navigate = useNavigate();
+  const [erros, setErros] = useState<Record<string, string>>({});
 
-  // Handler para mudança de órgão (reseta unidade gestora)
-  const handleOrgaoChange = (value: string) => {
-    setFormData({
-      ...formData,
-      orgaoResponsavel: value,
-      unidadeGestora: "", // Reseta a unidade gestora
-    });
+  const validar = () => {
+    const e: Record<string, string> = {};
+    if (!etapa1.nomeReferencia.trim()) e.nomeReferencia = "Denominação é obrigatória.";
+    if (!etapa1.idOrgaoGestorPatrimonial) e.idOrgaoGestorPatrimonial = "Selecione o órgão responsável.";
+    if (!etapa1.idUnidadeGestora) e.idUnidadeGestora = "Selecione a unidade gestora.";
+    setErros(e);
+    return Object.keys(e).length === 0;
   };
 
-  // Obtém as unidades gestoras disponíveis para o órgão selecionado
-  const unidadesDisponiveis =
-    formData.orgaoResponsavel
-      ? unidadesGestorasPorOrgao[formData.orgaoResponsavel] || []
-      : [];
+  const handleNext = () => {
+    if (validar()) navigate("/imoveis/novo/etapa-2");
+  };
+
+  const unidades = etapa1.idOrgaoGestorPatrimonial
+    ? unidadesPorOrgao[etapa1.idOrgaoGestorPatrimonial] ?? []
+    : [];
 
   return (
-    <WizardLayout currentStep={1}>
+    <WizardLayout currentStep={1} onNext={handleNext}>
       <div className="p-6 space-y-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Identificação e Governança
-          </h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Informações básicas e responsáveis pela gestão do imóvel
-          </p>
+          <h3 className="text-lg font-semibold text-gray-900">Identificação e Governança</h3>
+          <p className="text-sm text-gray-600 mt-1">Informações básicas e responsáveis pela gestão do imóvel</p>
         </div>
 
         <AlertBox variant="info">
-          O código interno será gerado automaticamente pelo sistema se não for
-          informado. Campos com <span className="text-red-600">*</span> são
-          obrigatórios.
+          Campos com <span className="text-red-600">*</span> são obrigatórios.
         </AlertBox>
 
         <div className="grid gap-6">
-          {/* Código Interno */}
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="codigoInterno">Código Interno</Label>
-              <Input
-                id="codigoInterno"
-                value={formData.codigoInterno}
-                onChange={(e) =>
-                  setFormData({ ...formData, codigoInterno: e.target.value })
-                }
-                placeholder="Ex: IMO-2026-0048"
-              />
-              <p className="text-xs text-gray-500">
-                Deixe em branco para gerar automaticamente
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="denominacao">
-                Denominação do Imóvel <span className="text-red-600">*</span>
-              </Label>
-              <Input
-                id="denominacao"
-                value={formData.denominacao}
-                onChange={(e) =>
-                  setFormData({ ...formData, denominacao: e.target.value })
-                }
-                placeholder="Ex: Escola Municipal João Silva"
-                required
-              />
-            </div>
+          {/* Denominação */}
+          <div className="space-y-2">
+            <Label htmlFor="nomeReferencia">
+              Denominação do Imóvel <span className="text-red-600">*</span>
+            </Label>
+            <Input
+              id="nomeReferencia"
+              value={etapa1.nomeReferencia}
+              onChange={(e) => setEtapa1({ ...etapa1, nomeReferencia: e.target.value })}
+              placeholder="Ex: Escola Municipal João Silva"
+              className={erros.nomeReferencia ? "border-red-400" : ""}
+            />
+            {erros.nomeReferencia && <p className="text-xs text-red-500">{erros.nomeReferencia}</p>}
           </div>
 
           {/* Órgão e Unidade */}
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="orgaoResponsavel">
+              <Label htmlFor="orgao">
                 Órgão Responsável <span className="text-red-600">*</span>
               </Label>
               <Select
-                value={formData.orgaoResponsavel}
-                onValueChange={handleOrgaoChange}
+                value={etapa1.idOrgaoGestorPatrimonial}
+                onValueChange={(v) => setEtapa1({ ...etapa1, idOrgaoGestorPatrimonial: v, idUnidadeGestora: "" })}
               >
-                <SelectTrigger id="orgaoResponsavel">
+                <SelectTrigger className={erros.idOrgaoGestorPatrimonial ? "border-red-400" : ""}>
                   <SelectValue placeholder="Selecione o órgão" />
                 </SelectTrigger>
                 <SelectContent>
-                  {orgaosResponsaveis.map((orgao) => (
-                    <SelectItem key={orgao.sigla} value={orgao.sigla}>
-                      {orgao.sigla} – {orgao.nome}
-                    </SelectItem>
+                  {orgaos.map((o) => (
+                    <SelectItem key={o.sigla} value={o.sigla}>{o.sigla} – {o.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {erros.idOrgaoGestorPatrimonial && <p className="text-xs text-red-500">{erros.idOrgaoGestorPatrimonial}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="unidadeGestora">
+              <Label htmlFor="unidade">
                 Unidade Gestora <span className="text-red-600">*</span>
               </Label>
               <Select
-                value={formData.unidadeGestora}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, unidadeGestora: value })
-                }
-                disabled={!formData.orgaoResponsavel}
+                value={etapa1.idUnidadeGestora}
+                onValueChange={(v) => setEtapa1({ ...etapa1, idUnidadeGestora: v })}
+                disabled={!etapa1.idOrgaoGestorPatrimonial}
               >
-                <SelectTrigger id="unidadeGestora">
-                  <SelectValue
-                    placeholder={
-                      formData.orgaoResponsavel
-                        ? "Selecione uma unidade gestora"
-                        : "Selecione primeiro o órgão"
-                    }
-                  />
+                <SelectTrigger className={erros.idUnidadeGestora ? "border-red-400" : ""}>
+                  <SelectValue placeholder={etapa1.idOrgaoGestorPatrimonial ? "Selecione a unidade" : "Selecione primeiro o órgão"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {unidadesDisponiveis.length > 0 ? (
-                    unidadesDisponiveis.map((unidade) => (
-                      <SelectItem key={unidade} value={unidade}>
-                        {unidade}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none" disabled>
-                      Nenhuma unidade disponível
-                    </SelectItem>
-                  )}
+                  {unidades.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                 </SelectContent>
               </Select>
-              {!formData.orgaoResponsavel && (
-                <p className="text-xs text-gray-500">
-                  Selecione um órgão para visualizar as unidades gestoras
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Responsável Técnico */}
-          <div className="border-t border-gray-200 pt-6">
-            <h4 className="font-medium text-gray-900 mb-4">
-              Responsável Técnico
-            </h4>
-            <div className="grid gap-6 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="responsavelTecnico">
-                  Nome Completo <span className="text-red-600">*</span>
-                </Label>
-                <Input
-                  id="responsavelTecnico"
-                  value={formData.responsavelTecnico}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      responsavelTecnico: e.target.value,
-                    })
-                  }
-                  placeholder="Nome do responsável"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="emailResponsavel">
-                  E-mail <span className="text-red-600">*</span>
-                </Label>
-                <Input
-                  id="emailResponsavel"
-                  type="email"
-                  value={formData.emailResponsavel}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      emailResponsavel: e.target.value,
-                    })
-                  }
-                  placeholder="email@orgao.slz.ma.gov.br"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="telefone">
-                  Telefone <span className="text-red-600">*</span>
-                </Label>
-                <Input
-                  id="telefone"
-                  type="tel"
-                  value={formData.telefone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, telefone: e.target.value })
-                  }
-                  placeholder="(98) 98765-4321"
-                  required
-                />
-              </div>
+              {erros.idUnidadeGestora && <p className="text-xs text-red-500">{erros.idUnidadeGestora}</p>}
             </div>
           </div>
 
@@ -310,12 +139,10 @@ export function CadastroImovelStep1() {
             <Label htmlFor="observacoes">Observações Gerais</Label>
             <Textarea
               id="observacoes"
-              value={formData.observacoes}
-              onChange={(e) =>
-                setFormData({ ...formData, observacoes: e.target.value })
-              }
+              value={etapa1.observacoesGerais}
+              onChange={(e) => setEtapa1({ ...etapa1, observacoesGerais: e.target.value })}
               placeholder="Informações adicionais relevantes sobre o imóvel..."
-              rows={4}
+              rows={3}
             />
           </div>
         </div>
