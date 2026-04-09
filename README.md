@@ -3,6 +3,7 @@
 Sistema Integrado de Gestão do Patrimônio Imobiliário Municipal de São Luís — MA  
 Prefeitura Municipal de São Luís · SEMAD / SIN
 
+
 ## Escopo da Fase 1
 
 - Ficha do imóvel (wizard 5 etapas: Identificação → Localização → Classificação → Dados Físicos → Ocupação)
