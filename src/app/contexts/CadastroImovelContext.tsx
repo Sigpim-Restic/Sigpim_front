@@ -6,6 +6,7 @@ import type { DocumentoUploadParams } from "../api/documentos";
 
 export interface DadosEtapa1 {
   nomeReferencia: string;
+  // IDs numéricos armazenados como string (padrão do Select do shadcn/ui)
   idOrgaoGestorPatrimonial: string;
   idUnidadeGestora: string;
   observacoesGerais: string;
@@ -32,12 +33,6 @@ export interface DadosEtapa5 {
 export interface ArquivoAnexo {
   id: number; file: File; tipo: string; descricao: string; dataDocumento: string;
 }
-
-const ORGAO_ID_MAP: Record<string, number> = {
-  SEMAD: 1, SEMURH: 2, SEMOSP: 3, SEPLAN: 4, SEMFAZ: 5,
-  SEMMAM: 6, SEMISPE: 7, SEMED: 8, SEMUS: 9, SEINFRA: 10,
-  INCID: 11, IMPUR: 12, FUMPH: 13, SECULT: 14,
-};
 
 interface Ctx {
   etapa1: DadosEtapa1; etapa2: DadosEtapa2; etapa3: DadosEtapa3;
@@ -80,6 +75,18 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     setSalvando(true);
     setErro(null);
     try {
+      const idOrgao = etapa1.idOrgaoGestorPatrimonial
+        ? Number(etapa1.idOrgaoGestorPatrimonial)
+        : undefined;
+
+      const idUnidade = etapa1.idUnidadeGestora
+        ? Number(etapa1.idUnidadeGestora)
+        : undefined;
+
+      if (!idUnidade) {
+        throw new Error("Unidade gestora não selecionada. Volte à Etapa 1 e selecione uma unidade.");
+      }
+
       const req: ImovelRequest = {
         nomeReferencia:           etapa1.nomeReferencia || undefined,
         tipoImovel:               (etapa3.tipoImovel as any) || "INCERTO",
@@ -91,9 +98,10 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         numeroPavimentos:         etapa4.numeroPavimentos ? parseInt(etapa4.numeroPavimentos) : undefined,
         estadoConservacaoAtual:   etapa4.estadoConservacaoAtual || undefined,
         anoConstrucao:            etapa4.anoConstrucao ? parseInt(etapa4.anoConstrucao) : undefined,
-        idOrgaoGestorPatrimonial: etapa1.idOrgaoGestorPatrimonial ? ORGAO_ID_MAP[etapa1.idOrgaoGestorPatrimonial] : undefined,
-        idUnidadeGestora:         1,
+        idOrgaoGestorPatrimonial: idOrgao,
+        idUnidadeGestora:         idUnidade,
       };
+
       const imovel = await imoveisApi.criar(req);
 
       if (etapa5.statusOcupacao) {
