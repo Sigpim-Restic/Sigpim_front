@@ -14,11 +14,39 @@ const orgaos = [
 ];
 
 export function CadastroImovelStep5() {
-  const { etapa5, setEtapa5 } = useCadastroImovel();
+  const { etapa4, etapa5, setEtapa5 } = useCadastroImovel();
   const navigate = useNavigate();
 
   const set = (field: string, value: string) =>
     setEtapa5({ ...etapa5, [field]: value });
+
+  // Data minima: ano de construcao do imovel (etapa4), se preenchido
+  const anoConstucao = etapa4.anoConstrucao ? parseInt(etapa4.anoConstrucao) : null;
+  const dataMinima = anoConstucao && anoConstucao >= 1500
+    ? `${anoConstucao}-01-01`
+    : "1500-01-01";
+  // Datas de ocupacao podem ser futuras (contratos de longa duracao)
+  // Apenas bloqueamos anos absurdos (limite: ano atual + 100)
+  const anoMaximo = new Date().getFullYear() + 100;
+
+  const handleData = (field: "dataInicio" | "dataFimPrevista") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const valor = e.target.value;
+      const ano = parseInt((valor || "").split("-")[0], 10);
+      if (!valor || (ano >= 1500 && ano <= anoMaximo)) {
+        set(field, valor);
+      }
+    };
+
+  const validarData = (field: "dataInicio" | "dataFimPrevista") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const valor = e.target.value;
+      if (!valor) return;
+      const ano = parseInt(valor.split("-")[0], 10);
+      if (isNaN(ano) || ano < 1500 || ano > anoMaximo) {
+        set(field, "");
+      }
+    };
 
   return (
     <WizardLayout currentStep={5} onNext={() => navigate("/imoveis/novo/etapa-6")}>
@@ -87,12 +115,32 @@ export function CadastroImovelStep5() {
 
           <div className="space-y-1.5">
             <Label>Data de Início da Ocupação</Label>
-            <Input type="date" value={etapa5.dataInicio} onChange={(e) => set("dataInicio", e.target.value)} />
+            <Input
+              type="date"
+              value={etapa5.dataInicio}
+              min={dataMinima}
+              max={`${anoMaximo}-12-31`}
+              onChange={handleData("dataInicio")}
+              onBlur={validarData("dataInicio")}
+            />
+            {anoConstucao && etapa5.dataInicio && etapa5.dataInicio < dataMinima && (
+              <p className="text-xs text-red-500">A data de início não pode ser anterior ao ano de construção ({anoConstucao}).</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
             <Label>Data Fim Prevista</Label>
-            <Input type="date" value={etapa5.dataFimPrevista} onChange={(e) => set("dataFimPrevista", e.target.value)} />
+            <Input
+              type="date"
+              value={etapa5.dataFimPrevista}
+              min={etapa5.dataInicio || dataMinima}
+              max={`${anoMaximo}-12-31`}
+              onChange={handleData("dataFimPrevista")}
+              onBlur={validarData("dataFimPrevista")}
+            />
+            {etapa5.dataFimPrevista && etapa5.dataInicio && etapa5.dataFimPrevista < etapa5.dataInicio && (
+              <p className="text-xs text-red-500">A data fim não pode ser anterior à data de início.</p>
+            )}
           </div>
         </div>
 

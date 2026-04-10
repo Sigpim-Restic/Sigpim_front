@@ -120,7 +120,7 @@ export function CadastroImovelStep2() {
             </div>
             <div className="space-y-2">
               <Label>Cidade</Label>
-              <Input {...campo("cidade")} />
+              <Input value="São Luís" disabled />
             </div>
             <div className="space-y-2">
               <Label>Estado</Label>

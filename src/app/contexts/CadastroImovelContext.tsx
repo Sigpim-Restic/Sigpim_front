@@ -104,7 +104,8 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
 
       const imovel = await imoveisApi.criar(req);
 
-      if (etapa5.statusOcupacao) {
+      // Só envia ocupação se houver status que implique ocupante definido
+      if (etapa5.statusOcupacao && etapa5.statusOcupacao !== 'DESOCUPADO' && etapa5.statusOcupacao !== 'DESCONHECIDO') {
         const ocReq: OcupacaoRequest = {
           idImovel:             imovel.id,
           statusOcupacao:       etapa5.statusOcupacao as any,

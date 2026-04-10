@@ -174,7 +174,15 @@ export function CadastroImovelStep6() {
                       type="date"
                       className="h-8 text-xs"
                       value={arq.dataDocumento}
-                      onChange={(e) => atualizar(arq.id, "dataDocumento", e.target.value)}
+                      min="1500-01-01"
+                      max={new Date().toISOString().split("T")[0]}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        const ano = parseInt(valor.split("-")[0], 10);
+                        if (!valor || (ano >= 1500 && ano <= new Date().getFullYear())) {
+                          atualizar(arq.id, "dataDocumento", valor);
+                        }
+                      }}
                     />
                   </div>
                 </div>
