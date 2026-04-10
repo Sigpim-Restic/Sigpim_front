@@ -26,6 +26,7 @@ import { Catalogos } from "./pages/Catalogos";
 import { Configuracoes } from "./pages/Configuracoes";
 import { ProtectedRoute } from "./contexts/ProtectedRoute";
 import { CadastroImovelProvider } from "./contexts/CadastroImovelContext";
+import { RedefinirSenha } from "./pages/auth/RedefinirSenha";
 
 // Provider do wizard — usa Outlet para renderizar as etapas filhas
 function WizardLayout() {
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
   { path: "/login",                Component: Login },
   { path: "/auth/recuperar-senha", Component: RecuperarSenha },
   { path: "/auth/criar-conta",     Component: CriarConta },
+  { path: "/auth/redefinir-senha", Component: RedefinirSenha },
   {
     path: "/",
     element: (
