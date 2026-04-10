@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Building2, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
+import { Building2, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, UserPlus } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -148,6 +148,27 @@ export function Login() {
                 )}
               </Button>
             </form>
+
+            {/* Divisor */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-xs text-gray-400 bg-white px-2">
+                <span className="bg-white px-2">ou</span>
+              </div>
+            </div>
+
+            {/* Link Criar Conta */}
+            <Link to="/auth/criar-conta">
+              <Button
+                variant="outline"
+                className="w-full h-11 text-base font-medium border-[#1351B4] text-[#1351B4] hover:bg-[#1351B4] hover:text-white"
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Criar nova conta
+              </Button>
+            </Link>
           </div>
 
           {/* Footer */}

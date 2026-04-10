@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Building2,
@@ -11,6 +11,11 @@ import {
   CheckCircle2,
   CreditCard,
   Briefcase,
+  Phone,
+  Hash,
+  AtSign,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -22,281 +27,199 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
+import {
+  orgaosApi,
+  unidadesApi,
+  usuariosApi,
+  type OrgaoResponse,
+  type UnidadeOrganizacionalResponse,
+  type PerfilUsuario,
+} from "../../api/usuarios";
+import { ApiError } from "../../api/client";
 
-// Órgãos Responsáveis (mesmos do Step1Identificacao)
-const secretarias = [
-  { sigla: "SEMAD", nome: "Secretaria Municipal de Administração" },
-  { sigla: "SEMURH", nome: "Secretaria Municipal de Urbanismo e Habitação" },
-  { sigla: "SEMOSP", nome: "Secretaria Municipal de Obras e Serviços Públicos" },
-  { sigla: "SEPLAN", nome: "Secretaria Municipal de Planejamento" },
-  { sigla: "SEMFAZ", nome: "Secretaria Municipal da Fazenda" },
-  { sigla: "SEMMAM", nome: "Secretaria Municipal de Meio Ambiente" },
-  { sigla: "SEMISPE", nome: "Secretaria Municipal de Projetos Especiais" },
-  { sigla: "INCID", nome: "Instituto da Cidade" },
-  { sigla: "IMPUR", nome: "Instituto Municipal de Paisagem Urbana" },
-  { sigla: "FUMPH", nome: "Fundação Municipal do Patrimônio Histórico" },
+// Labels amigáveis para os perfis
+const PERFIS: { value: PerfilUsuario; label: string }[] = [
+  { value: "ADMINISTRADOR_SISTEMA", label: "Administrador do Sistema" },
+  { value: "ADMINISTRADOR_PATRIMONIAL", label: "Administrador Patrimonial" },
+  { value: "CADASTRADOR_SETORIAL", label: "Cadastrador Setorial" },
+  { value: "VALIDADOR_DOCUMENTAL", label: "Validador Documental" },
+  { value: "VISTORIADOR", label: "Vistoriador" },
+  { value: "PLANEJAMENTO", label: "Planejamento" },
+  { value: "AUDITOR", label: "Auditor" },
 ];
 
-// Unidades Gestoras por Órgão
-const unidadesPorSecretaria: Record<string, string[]> = {
-  SEMAD: [
-    "Coordenação de Bens Patrimoniais",
-    "Departamento de Patrimônio Imobiliário",
-    "Gestão de Prédios Públicos",
-    "Serviços Gerais",
-    "Almoxarifado Central",
-    "Diretoria Administrativa",
-  ],
-  SEMURH: [
-    "Coordenação de Habitação Popular",
-    "Departamento de Urbanismo",
-    "Regularização Fundiária",
-    "Planejamento Urbano e Territorial",
-    "Fiscalização de Obras Particulares",
-  ],
-  SEMOSP: [
-    "Obras Públicas",
-    "Manutenção Urbana",
-    "Engenharia e Projetos",
-    "Infraestrutura Municipal",
-    "Conservação de Vias Públicas",
-  ],
-  SEPLAN: [
-    "Diretoria de Patrimônio Público",
-    "Coordenação de Cadastro Imobiliário",
-    "GIS e Georreferenciamento",
-    "Planejamento Territorial",
-    "Gestão de Projetos Estratégicos",
-    "Desenvolvimento Urbano",
-  ],
-  SEMFAZ: [
-    "Auditoria Patrimonial",
-    "Controle Interno",
-    "Gestão de Contratos",
-    "Tributação Imobiliária",
-    "Fiscalização de Receitas",
-  ],
-  SEMMAM: [
-    "Gestão Ambiental",
-    "Fiscalização Ambiental",
-    "Áreas Protegidas e Unidades de Conservação",
-    "Licenciamento Ambiental",
-    "Educação Ambiental",
-  ],
-  SEMISPE: [
-    "Coordenação de Projetos Especiais",
-    "Captação de Recursos",
-    "Gestão de Convênios",
-    "Desenvolvimento Institucional",
-  ],
-  INCID: [
-    "Pesquisa e Desenvolvimento Urbano",
-    "Observatório da Cidade",
-    "Cartografia e Geoprocessamento",
-    "Estudos Territoriais",
-    "Sistema de Informação Urbana",
-  ],
-  IMPUR: [
-    "Ordenamento Paisagístico",
-    "Fiscalização de Publicidade",
-    "Mobiliário Urbano",
-    "Gestão de Espaços Públicos",
-  ],
-  FUMPH: [
-    "Preservação Histórica",
-    "Tombamento e Inventário",
-    "Restauração e Conservação",
-    "Educação Patrimonial",
-    "Acervo Documental",
-  ],
-};
+function validarSenha(senha: string) {
+  return {
+    tamanho: senha.length >= 8,
+    numero: /\d/.test(senha),
+    maiuscula: /[A-Z]/.test(senha),
+    especial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(senha),
+  };
+}
 
-// Funções/Cargos
-const funcoes = [
-  "Secretário(a) Municipal",
-  "Diretor(a)",
-  "Coordenador(a)",
-  "Gerente",
-  "Supervisor(a)",
-  "Analista",
-  "Técnico(a)",
-  "Assistente Administrativo",
-  "Auditor(a)",
-  "Fiscal",
-  "Engenheiro(a)",
-  "Arquiteto(a)",
-  "Advogado(a)",
-  "Contador(a)",
-  "Estagiário(a)",
-];
+function formatarCPF(valor: string) {
+  const n = valor.replace(/\D/g, "").slice(0, 11);
+  return n
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+
+function formatarCelular(valor: string) {
+  const n = valor.replace(/\D/g, "").slice(0, 11);
+  if (n.length <= 10) return n.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
+  return n.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
+}
 
 export function CriarConta() {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [enviado, setEnviado] = useState(false);
+
+  // Estado do formulário
   const [formData, setFormData] = useState({
-    nome: "",
+    nomeCompleto: "",
     email: "",
+    cpf: "",
+    celular: "",
+    nomeUsuario: "",
+    matricula: "",
+    cargo: "",
     senha: "",
     confirmarSenha: "",
-    cpf: "",
-    secretaria: "",
-    unidade: "",
-    funcao: "",
-  });
-  const [erros, setErros] = useState({
-    senhasDiferentes: false,
-    senhaFraca: false,
-    senhaDetalhes: {
-      tamanho: false,
-      numero: false,
-      maiuscula: false,
-      especial: false,
-    },
+    idOrgao: "" as string,
+    idUnidade: "" as string,
+    perfil: "" as PerfilUsuario | "",
   });
 
-  // Validação de CPF simples (apenas formato)
-  const formatarCPF = (valor: string) => {
-    const numeros = valor.replace(/\D/g, "");
-    if (numeros.length <= 11) {
-      return numeros
-        .replace(/(\d{3})(\d)/, "$1.$2")
-        .replace(/(\d{3})(\d)/, "$1.$2")
-        .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  // Dados da API
+  const [orgaos, setOrgaos] = useState<OrgaoResponse[]>([]);
+  const [unidades, setUnidades] = useState<UnidadeOrganizacionalResponse[]>([]);
+
+  // UI states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [senhaDetalhes, setSenhaDetalhes] = useState(validarSenha(""));
+  const [erro, setErro] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingOrgaos, setLoadingOrgaos] = useState(true);
+  const [loadingUnidades, setLoadingUnidades] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+
+  // Carrega órgãos ao montar
+  useEffect(() => {
+    orgaosApi
+      .listarAtivos()
+      .then(setOrgaos)
+      .catch(() => setErro("Não foi possível carregar os órgãos. Verifique se o back-end está rodando."))
+      .finally(() => setLoadingOrgaos(false));
+  }, []);
+
+  // Carrega unidades ao selecionar órgão
+  useEffect(() => {
+    if (!formData.idOrgao) {
+      setUnidades([]);
+      return;
     }
-    return valor;
-  };
+    setLoadingUnidades(true);
+    setFormData((prev) => ({ ...prev, idUnidade: "" }));
+    unidadesApi
+      .listarAtivasPorOrgao(Number(formData.idOrgao))
+      .then(setUnidades)
+      .catch(() => setErro("Não foi possível carregar as unidades."))
+      .finally(() => setLoadingUnidades(false));
+  }, [formData.idOrgao]);
 
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const cpfFormatado = formatarCPF(e.target.value);
-    setFormData({ ...formData, cpf: cpfFormatado });
-  };
-
-  const handleSecretariaChange = (sigla: string) => {
-    setFormData({ ...formData, secretaria: sigla, unidade: "" });
-  };
-
-  const validarSenha = (senha: string) => {
-    return {
-      tamanho: senha.length >= 10,
-      numero: /\d/.test(senha),
-      maiuscula: /[A-Z]/.test(senha),
-      especial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(senha),
-    };
-  };
-
-  const validarFormulario = () => {
-    let valido = true;
-    const validacaoSenha = validarSenha(formData.senha);
-    const senhaValida =
-      validacaoSenha.tamanho &&
-      validacaoSenha.numero &&
-      validacaoSenha.maiuscula &&
-      validacaoSenha.especial;
-
-    const novosErros = {
-      senhasDiferentes: false,
-      senhaFraca: false,
-      senhaDetalhes: validacaoSenha,
-    };
-
-    // Validar se as senhas coincidem
-    if (formData.senha !== formData.confirmarSenha) {
-      novosErros.senhasDiferentes = true;
-      valido = false;
-    }
-
-    // Validar força da senha
-    if (!senhaValida) {
-      novosErros.senhaFraca = true;
-      valido = false;
-    }
-
-    setErros(novosErros);
-    return valido;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErro(null);
 
-    if (!validarFormulario()) {
+    // Validações locais
+    if (formData.senha !== formData.confirmarSenha) {
+      setErro("As senhas não coincidem.");
+      return;
+    }
+    const sv = validarSenha(formData.senha);
+    if (!sv.tamanho || !sv.numero || !sv.maiuscula || !sv.especial) {
+      setErro("A senha não atende aos requisitos mínimos.");
+      return;
+    }
+    if (!formData.perfil) {
+      setErro("Selecione um perfil de acesso.");
       return;
     }
 
-    // Mock de criação de conta - em produção, isso seria uma chamada à API
-    console.log("Criar conta:", formData);
-    setEnviado(true);
+    setLoading(true);
+    try {
+      await usuariosApi.criar({
+        nomeCompleto: formData.nomeCompleto,
+        email: formData.email,
+        cpf: formData.cpf.replace(/\D/g, ""),
+        celular: formData.celular.replace(/\D/g, "") || undefined,
+        nomeUsuario: formData.nomeUsuario,
+        senha: formData.senha,
+        matricula: formData.matricula || undefined,
+        cargo: formData.cargo || undefined,
+        idOrgao: formData.idOrgao ? Number(formData.idOrgao) : null,
+        idUnidade: formData.idUnidade ? Number(formData.idUnidade) : null,
+        perfil: formData.perfil as PerfilUsuario,
+      });
+      setEnviado(true);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setErro(err.message);
+      } else {
+        setErro("Erro inesperado. Tente novamente.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // --- Tela de sucesso ---
   if (enviado) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            {/* Header */}
-            <div className="bg-[#1351B4] px-8 py-6 text-center">
-              <div className="flex justify-center mb-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                  <Building2 className="h-9 w-9 text-white" />
-                </div>
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-[#1351B4] px-8 py-6 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
+                <Building2 className="h-9 w-9 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
-              <p className="text-sm text-white/80 mt-1">
-                Sistema Integrado de Gestão do Patrimônio Imobiliário
-              </p>
             </div>
-
-            {/* Conteúdo de Sucesso */}
-            <div className="px-8 py-8 text-center">
-              <div className="flex justify-center mb-6">
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-                  <CheckCircle2 className="h-12 w-12 text-green-600" />
-                </div>
+            <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
+          </div>
+          <div className="px-8 py-8 text-center">
+            <div className="flex justify-center mb-6">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle2 className="h-12 w-12 text-green-600" />
               </div>
-
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">
-                Solicitação enviada!
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Sua solicitação de acesso foi enviada para análise do administrador
-                do sistema.
-              </p>
-              <p className="text-sm text-gray-500 mb-8">
-                Você receberá um e-mail em{" "}
-                <span className="font-medium text-gray-900">{formData.email}</span>{" "}
-                assim que seu acesso for aprovado. O processo pode levar até 48
-                horas úteis.
-              </p>
-
-              <Link to="/login">
-                <Button className="w-full bg-[#1351B4] hover:bg-[#0c3b8d] h-11 text-base font-medium">
-                  Voltar para o Login
-                </Button>
-              </Link>
             </div>
-
-            {/* Footer */}
-            <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
-              <p className="text-xs text-center text-gray-600">
-                Em caso de dúvidas, entre em contato com o administrador do sistema
-              </p>
-            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-3">Conta criada!</h2>
+            <p className="text-gray-600 mb-8">
+              O usuário <span className="font-medium text-gray-900">{formData.email}</span> foi
+              cadastrado com sucesso no sistema.
+            </p>
+            <Button
+              onClick={() => navigate("/login")}
+              className="w-full bg-[#1351B4] hover:bg-[#0c3b8d] h-11 text-base font-medium"
+            >
+              Ir para o Login
+            </Button>
           </div>
         </div>
       </div>
     );
   }
 
+  // --- Formulário ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center p-4 py-8">
       <div className="w-full max-w-2xl">
-        {/* Card Principal */}
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+
           {/* Header */}
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
                 <Building2 className="h-9 w-9 text-white" />
               </div>
             </div>
@@ -309,39 +232,42 @@ export function CriarConta() {
           {/* Form */}
           <div className="px-8 py-8">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                Criar Conta
-              </h2>
+              <h2 className="text-2xl font-semibold text-gray-900">Criar Conta</h2>
               <p className="text-sm text-gray-600 mt-2">
-                Preencha os dados abaixo para solicitar acesso ao sistema
+                Preencha os dados para cadastrar um novo usuário no sistema
               </p>
             </div>
 
+            {erro && (
+              <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>{erro}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-5">
+
               {/* Nome Completo */}
               <div className="space-y-2">
-                <Label htmlFor="nome">Nome Completo</Label>
+                <Label htmlFor="nomeCompleto">Nome Completo *</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
-                    id="nome"
+                    id="nomeCompleto"
                     type="text"
                     placeholder="Digite seu nome completo"
-                    value={formData.nome}
-                    onChange={(e) =>
-                      setFormData({ ...formData, nome: e.target.value })
-                    }
+                    value={formData.nomeCompleto}
+                    onChange={(e) => setFormData({ ...formData, nomeCompleto: e.target.value })}
                     className="pl-10"
                     required
                   />
                 </div>
               </div>
 
-              {/* Email e CPF em Grid */}
+              {/* Email + CPF */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">E-mail Institucional</Label>
+                  <Label htmlFor="email">E-mail Institucional *</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
@@ -349,18 +275,14 @@ export function CriarConta() {
                       type="email"
                       placeholder="seu.email@slz.ma.gov.br"
                       value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="pl-10"
                       required
                     />
                   </div>
                 </div>
-
-                {/* CPF */}
                 <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF</Label>
+                  <Label htmlFor="cpf">CPF *</Label>
                   <div className="relative">
                     <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
@@ -368,7 +290,7 @@ export function CriarConta() {
                       type="text"
                       placeholder="000.000.000-00"
                       value={formData.cpf}
-                      onChange={handleCPFChange}
+                      onChange={(e) => setFormData({ ...formData, cpf: formatarCPF(e.target.value) })}
                       className="pl-10"
                       maxLength={14}
                       required
@@ -377,25 +299,86 @@ export function CriarConta() {
                 </div>
               </div>
 
-              {/* Senha e Confirmar Senha em Grid */}
+              {/* Nome de Usuário + Celular */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Senha */}
                 <div className="space-y-2">
-                  <Label htmlFor="senha">Senha</Label>
+                  <Label htmlFor="nomeUsuario">Nome de Usuário *</Label>
+                  <div className="relative">
+                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      id="nomeUsuario"
+                      type="text"
+                      placeholder="letras, números, . _ -"
+                      value={formData.nomeUsuario}
+                      onChange={(e) => setFormData({ ...formData, nomeUsuario: e.target.value })}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="celular">Celular</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      id="celular"
+                      type="text"
+                      placeholder="(98) 99999-0000"
+                      value={formData.celular}
+                      onChange={(e) => setFormData({ ...formData, celular: formatarCelular(e.target.value) })}
+                      className="pl-10"
+                      maxLength={15}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Matrícula + Cargo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <Label htmlFor="matricula">Matrícula</Label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      id="matricula"
+                      type="text"
+                      placeholder="Número de matrícula"
+                      value={formData.matricula}
+                      onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cargo">Cargo</Label>
+                  <div className="relative">
+                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Input
+                      id="cargo"
+                      type="text"
+                      placeholder="Ex: Analista Patrimonial"
+                      value={formData.cargo}
+                      onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Senha + Confirmar Senha */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <Label htmlFor="senha">Senha *</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                       id="senha"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Mínimo 10 caracteres"
+                      placeholder="Mínimo 8 caracteres"
                       value={formData.senha}
                       onChange={(e) => {
-                        const novaSenha = e.target.value;
-                        setFormData({ ...formData, senha: novaSenha });
-                        setErros({
-                          ...erros,
-                          senhaDetalhes: validarSenha(novaSenha),
-                        });
+                        setFormData({ ...formData, senha: e.target.value });
+                        setSenhaDetalhes(validarSenha(e.target.value));
                       }}
                       className="pl-10 pr-10"
                       required
@@ -405,62 +388,26 @@ export function CriarConta() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
                   {formData.senha && (
                     <div className="space-y-1 text-xs">
-                      <p
-                        className={
-                          erros.senhaDetalhes.tamanho
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        {erros.senhaDetalhes.tamanho ? "✓" : "○"} Mínimo 10
-                        caracteres
-                      </p>
-                      <p
-                        className={
-                          erros.senhaDetalhes.numero
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        {erros.senhaDetalhes.numero ? "✓" : "○"} Pelo menos um
-                        número
-                      </p>
-                      <p
-                        className={
-                          erros.senhaDetalhes.maiuscula
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        {erros.senhaDetalhes.maiuscula ? "✓" : "○"} Pelo menos
-                        uma letra maiúscula
-                      </p>
-                      <p
-                        className={
-                          erros.senhaDetalhes.especial
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        {erros.senhaDetalhes.especial ? "✓" : "○"} Pelo menos um
-                        caractere especial (!@#$%&*)
-                      </p>
+                      {[
+                        { ok: senhaDetalhes.tamanho, label: "Mínimo 8 caracteres" },
+                        { ok: senhaDetalhes.numero, label: "Pelo menos um número" },
+                        { ok: senhaDetalhes.maiuscula, label: "Pelo menos uma maiúscula" },
+                        { ok: senhaDetalhes.especial, label: "Pelo menos um caractere especial" },
+                      ].map(({ ok, label }) => (
+                        <p key={label} className={ok ? "text-green-600" : "text-gray-400"}>
+                          {ok ? "✓" : "○"} {label}
+                        </p>
+                      ))}
                     </div>
                   )}
                 </div>
-
-                {/* Confirmar Senha */}
                 <div className="space-y-2">
-                  <Label htmlFor="confirmarSenha">Confirmar Senha</Label>
+                  <Label htmlFor="confirmarSenha">Confirmar Senha *</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
@@ -468,111 +415,67 @@ export function CriarConta() {
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder="Repita a senha"
                       value={formData.confirmarSenha}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmarSenha: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
                       className="pl-10 pr-10"
                       required
                     />
                     <button
                       type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
                   </div>
-                  {erros.senhasDiferentes && (
+                  {formData.confirmarSenha && formData.senha !== formData.confirmarSenha && (
                     <p className="text-xs text-red-600">As senhas não coincidem</p>
                   )}
                 </div>
               </div>
 
-              {/* Secretaria e Unidade em Grid */}
+              {/* Órgão + Unidade */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {/* Secretaria */}
                 <div className="space-y-2">
-                  <Label htmlFor="secretaria">Secretaria/Órgão</Label>
+                  <Label>Órgão</Label>
                   <Select
-                    value={formData.secretaria}
-                    onValueChange={handleSecretariaChange}
-                    required
+                    value={formData.idOrgao}
+                    onValueChange={(v) => setFormData({ ...formData, idOrgao: v })}
+                    disabled={loadingOrgaos}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a secretaria" />
+                      <SelectValue placeholder={loadingOrgaos ? "Carregando..." : "Selecione o órgão"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {secretarias.map((sec) => (
-                        <SelectItem key={sec.sigla} value={sec.sigla}>
-                          {sec.sigla} – {sec.nome}
+                      {orgaos.map((o) => (
+                        <SelectItem key={o.id} value={String(o.id)}>
+                          {o.sigla} – {o.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Unidade */}
                 <div className="space-y-2">
-                  <Label htmlFor="unidade">Unidade Gestora</Label>
+                  <Label>Unidade Organizacional</Label>
                   <Select
-                    value={formData.unidade}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, unidade: value })
-                    }
-                    disabled={!formData.secretaria}
-                    required
+                    value={formData.idUnidade}
+                    onValueChange={(v) => setFormData({ ...formData, idUnidade: v })}
+                    disabled={!formData.idOrgao || loadingUnidades}
                   >
                     <SelectTrigger>
                       <SelectValue
                         placeholder={
-                          formData.secretaria
-                            ? "Selecione a unidade"
-                            : "Selecione primeiro a secretaria"
+                          !formData.idOrgao
+                            ? "Selecione primeiro o órgão"
+                            : loadingUnidades
+                            ? "Carregando..."
+                            : "Selecione a unidade"
                         }
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      {formData.secretaria &&
-                        unidadesPorSecretaria[formData.secretaria]?.map(
-                          (unidade) => (
-                            <SelectItem key={unidade} value={unidade}>
-                              {unidade}
-                            </SelectItem>
-                          )
-                        )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Função */}
-              <div className="space-y-2">
-                <Label htmlFor="funcao">Função/Cargo</Label>
-                <div className="relative">
-                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none z-10" />
-                  <Select
-                    value={formData.funcao}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, funcao: value })
-                    }
-                    required
-                  >
-                    <SelectTrigger className="pl-10">
-                      <SelectValue placeholder="Selecione sua função" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {funcoes.map((funcao) => (
-                        <SelectItem key={funcao} value={funcao}>
-                          {funcao}
+                      {unidades.map((u) => (
+                        <SelectItem key={u.id} value={String(u.id)}>
+                          {u.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -580,16 +483,44 @@ export function CriarConta() {
                 </div>
               </div>
 
-              {/* Botão de Criar Conta */}
+              {/* Perfil */}
+              <div className="space-y-2">
+                <Label>Perfil de Acesso *</Label>
+                <Select
+                  value={formData.perfil}
+                  onValueChange={(v) => setFormData({ ...formData, perfil: v as PerfilUsuario })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o perfil" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PERFIS.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Submit */}
               <Button
                 type="submit"
-                className="w-full bg-[#1351B4] hover:bg-[#0c3b8d] h-11 text-base font-medium mt-6"
+                disabled={loading}
+                className="w-full bg-[#1351B4] hover:bg-[#0c3b8d] h-11 text-base font-medium mt-2"
               >
-                Criar Conta
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando conta...
+                  </>
+                ) : (
+                  "Criar Conta"
+                )}
               </Button>
             </form>
 
-            {/* Voltar para Login */}
             <div className="mt-6">
               <Link to="/login">
                 <Button
@@ -603,29 +534,13 @@ export function CriarConta() {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
             <p className="text-xs text-center text-gray-600">
-              Prefeitura Municipal de São Luís - SEPLAN
+              Prefeitura Municipal de São Luís — SEMAD
               <br />
               Sistema oficial do governo. Seus dados estão seguros.
             </p>
           </div>
-        </div>
-
-        {/* Informações Adicionais */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-white/90">Versão 1.0.0 - 2026</p>
-          <p className="text-xs text-white/70 mt-2">
-            Em caso de problemas técnicos, contate o suporte:
-            <br />
-            <a
-              href="mailto:suporte.sigpim@slz.ma.gov.br"
-              className="hover:underline font-medium"
-            >
-              suporte.sigpim@slz.ma.gov.br
-            </a>
-          </p>
         </div>
       </div>
     </div>
