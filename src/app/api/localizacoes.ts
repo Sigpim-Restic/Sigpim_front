@@ -17,9 +17,16 @@ export interface LocalizacaoResponse {
   fonteGeometria: string | null;
   precisaoLocalizacao: string | null;
   seloGis: string | null;
+  // BUG FIX: these two fields were missing from the response type — they exist
+  // in the backend record but were never being read back by the frontend.
+  dataValidacaoGis: string | null;
+  idTecnicoValidacao: number | null;
+  observacaoGis: string | null;
   revisaoIncid: string | null;
   criadoEm: string;
   atualizadoEm: string;
+  criadoPor: number | null;
+  atualizadoPor: number | null;
 }
 
 export interface LocalizacaoRequest {
