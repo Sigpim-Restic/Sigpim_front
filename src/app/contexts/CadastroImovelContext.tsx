@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { imoveisApi, ocupacoesApi, documentosApi } from "../api";
+import { imoveisApi, ocupacoesApi, documentosApi, localizacoesApi } from "../api";
 import type { ImovelRequest } from "../api/imoveis";
 import type { OcupacaoRequest } from "../api/ocupacoes";
 import type { DocumentoUploadParams } from "../api/documentos";
+import type { LocalizacaoRequest } from "../api/localizacoes";
 
 export interface DadosEtapa1 {
   nomeReferencia: string;
@@ -75,6 +76,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     setSalvando(true);
     setErro(null);
     try {
+      // ── Step 1: resolve IDs ──────────────────────────────────────────────
       const idOrgao = etapa1.idOrgaoGestorPatrimonial
         ? Number(etapa1.idOrgaoGestorPatrimonial)
         : undefined;
@@ -87,6 +89,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         throw new Error("Unidade gestora não selecionada. Volte à Etapa 1 e selecione uma unidade.");
       }
 
+      // ── Step 2: create imovel ────────────────────────────────────────────
       const req: ImovelRequest = {
         nomeReferencia:           etapa1.nomeReferencia || undefined,
         tipoImovel:               (etapa3.tipoImovel as any) || "INCERTO",
@@ -104,8 +107,32 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
 
       const imovel = await imoveisApi.criar(req);
 
-      // Só envia ocupação se houver status que implique ocupante definido
-      if (etapa5.statusOcupacao && etapa5.statusOcupacao !== 'DESOCUPADO' && etapa5.statusOcupacao !== 'DESCONHECIDO') {
+      // ── Step 3: create localizacao (address + coordinates from step 2) ───
+      // This was missing before — causing "Sem coordenadas" on the GIS map
+      // and a 500 error when the backend tried to finalise without location.
+      const temEndereco = etapa2.logradouro.trim() || etapa2.bairro.trim() || etapa2.cep.trim();
+      const temCoordenadas = etapa2.latitude.trim() && etapa2.longitude.trim();
+
+      if (temEndereco || temCoordenadas) {
+        const locReq: LocalizacaoRequest = {
+          idImovel:    imovel.id,
+          logradouro:  etapa2.logradouro.trim()  || undefined,
+          numero:      etapa2.numero.trim()      || undefined,
+          complemento: etapa2.complemento.trim() || undefined,
+          bairro:      etapa2.bairro.trim()      || undefined,
+          cep:         etapa2.cep.replace(/\D/g, "") || undefined,
+          latitude:    temCoordenadas ? parseFloat(etapa2.latitude)  : undefined,
+          longitude:   temCoordenadas ? parseFloat(etapa2.longitude) : undefined,
+        };
+        await localizacoesApi.criar(locReq);
+      }
+
+      // ── Step 4: create ocupacao (only when there is a real occupant) ─────
+      if (
+        etapa5.statusOcupacao &&
+        etapa5.statusOcupacao !== "DESOCUPADO" &&
+        etapa5.statusOcupacao !== "DESCONHECIDO"
+      ) {
         const ocReq: OcupacaoRequest = {
           idImovel:             imovel.id,
           statusOcupacao:       etapa5.statusOcupacao as any,
@@ -122,7 +149,10 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         await ocupacoesApi.criar(ocReq);
       }
 
-      for (const arq of arquivos.filter(a => a.file.size <= 10 * 1024 * 1024)) {
+      // ── Step 5: upload documents ─────────────────────────────────────────
+      // Each file is uploaded independently; a failure in one file does NOT
+      // roll back the property — the user can attach documents later.
+      for (const arq of arquivos.filter((a) => a.file.size <= 10 * 1024 * 1024)) {
         const params: DocumentoUploadParams = {
           idImovel:        imovel.id,
           tipoDocumento:   arq.tipo || "OUTRO",
@@ -130,7 +160,16 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
           dataDocumento:   arq.dataDocumento || undefined,
           imagemPrincipal: arq.tipo === "FOTO",
         };
-        await documentosApi.upload(arq.file, params);
+        try {
+          await documentosApi.upload(arq.file, params);
+        } catch (uploadErr) {
+          // Document upload failures are non-fatal: the property was already
+          // created successfully. Log the error and continue.
+          console.error(
+            `[CadastroImovel] Failed to upload file "${arq.file.name}":`,
+            uploadErr
+          );
+        }
       }
 
       resetar();
@@ -140,7 +179,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     } finally {
       setSalvando(false);
     }
-  }, [etapa1, etapa3, etapa4, etapa5, arquivos, resetar]);
+  }, [etapa1, etapa2, etapa3, etapa4, etapa5, arquivos, resetar]);
 
   return (
     <Ctx.Provider value={{
