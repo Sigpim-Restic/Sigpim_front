@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Plus, Search, Filter, MoreVertical, Edit, Eye,
   MapPin, Download, RefreshCw, AlertCircle,
@@ -18,6 +18,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "../../components/ui/table";
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
+import { usePermissoes } from "../../hooks/usePermissoes";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   VALIDADO:     { label: "Validado",     cls: "bg-green-100 text-green-800" },
@@ -31,6 +32,9 @@ const TIPO_LABEL: Record<string, string> = {
 };
 
 export function ListaImoveis() {
+  const navigate = useNavigate();
+  const perm = usePermissoes();
+
   const [imoveis, setImoveis]     = useState<ImovelResponse[]>([]);
   const [loading, setLoading]     = useState(true);
   const [erro, setErro]           = useState<string | null>(null);
@@ -56,6 +60,17 @@ export function ListaImoveis() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // Exportar ficha individual como JSON (PDF virá na Fase 2)
+  const handleExportarFicha = (im: ImovelResponse) => {
+    const blob = new Blob([JSON.stringify(im, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `ficha-${im.codigoSigpim}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const filtrados = imoveis.filter((im) => {
     const txt = search.toLowerCase();
     const matchSearch = !search ||
@@ -80,11 +95,13 @@ export function ListaImoveis() {
           <Button variant="outline" size="icon" onClick={carregar} disabled={loading} title="Atualizar">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
-          <Link to="/imoveis/novo/etapa-1">
-            <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
-              <Plus className="mr-2 h-4 w-4" />Novo Imóvel
-            </Button>
-          </Link>
+          {perm.canCreateImovel && (
+            <Link to="/imoveis/novo/etapa-1">
+              <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
+                <Plus className="mr-2 h-4 w-4" />Novo Imóvel
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -154,7 +171,6 @@ export function ListaImoveis() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* Loading */}
               {loading && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-sm text-gray-400">
@@ -163,8 +179,6 @@ export function ListaImoveis() {
                   </TableCell>
                 </TableRow>
               )}
-
-              {/* Vazio */}
               {!loading && !erro && filtrados.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-12 text-center text-sm text-gray-400">
@@ -174,8 +188,6 @@ export function ListaImoveis() {
                   </TableCell>
                 </TableRow>
               )}
-
-              {/* Dados */}
               {!loading && filtrados.map((im) => {
                 const st = STATUS_CONFIG[im.statusCadastro] ?? STATUS_CONFIG.PRE_CADASTRO;
                 return (
@@ -219,17 +231,27 @@ export function ListaImoveis() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          {/* Visualizar — todos os perfis que podem ler */}
+                          <DropdownMenuItem onClick={() => navigate(`/imoveis/${im.id}`)}>
                             <Eye className="mr-2 h-4 w-4" />Visualizar
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Edit className="mr-2 h-4 w-4" />Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
+
+                          {/* Editar — apenas quem pode atualizar */}
+                          {perm.canUpdateImovel && (
+                            <DropdownMenuItem onClick={() => navigate(`/imoveis/${im.id}/editar`)}>
+                              <Edit className="mr-2 h-4 w-4" />Editar
+                            </DropdownMenuItem>
+                          )}
+
+                          {/* Ver no Mapa — navega para /mapa passando o id */}
+                          <DropdownMenuItem onClick={() => navigate(`/mapa?imovel=${im.id}`)}>
                             <MapPin className="mr-2 h-4 w-4" />Ver no Mapa
                           </DropdownMenuItem>
+
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
+
+                          {/* Exportar Ficha — todos os perfis com leitura */}
+                          <DropdownMenuItem onClick={() => handleExportarFicha(im)}>
                             <Download className="mr-2 h-4 w-4" />Exportar Ficha
                           </DropdownMenuItem>
                         </DropdownMenuContent>

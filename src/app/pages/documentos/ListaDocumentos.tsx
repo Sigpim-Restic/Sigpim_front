@@ -6,6 +6,9 @@ import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { documentosApi, type DocumentoResponse } from "../../api/documentos";
+import { usePermissoes } from "../../hooks/usePermissoes";
+
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
 const tipoIcon: Record<string, React.ReactNode> = {
   FOTO:      <Image    className="h-4 w-4 text-blue-500" />,
@@ -30,6 +33,8 @@ function formatBytes(bytes: number) {
 }
 
 export function ListaDocumentos() {
+  const perm = usePermissoes();
+
   const [documentos, setDocumentos] = useState<DocumentoResponse[]>([]);
   const [loading, setLoading]       = useState(true);
   const [erro, setErro]             = useState<string | null>(null);
@@ -50,12 +55,27 @@ export function ListaDocumentos() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // CORRIGIDO: abre o arquivo em nova aba via endpoint de download autenticado.
+  // Antes o botão não tinha onClick — nunca funcionou.
+  // Usamos fetch para enviar o token JWT e criar uma URL temporária do blob.
+  const handleVisualizar = async (doc: DocumentoResponse) => {
+    try {
+      const blob = await documentosApi.download(doc.id);
+      const url  = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      // Revoga após 60s para não vazar memória
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      alert("Não foi possível abrir o documento.");
+    }
+  };
+
   const handleDownload = async (doc: DocumentoResponse) => {
     try {
       const blob = await documentosApi.download(doc.id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
       a.download = doc.descricao || `documento-${doc.id}`;
       a.click();
       URL.revokeObjectURL(url);
@@ -78,9 +98,11 @@ export function ListaDocumentos() {
           <Button variant="outline" size="icon" onClick={carregar} disabled={loading} title="Atualizar">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
-          <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
-            <Upload className="mr-2 h-4 w-4" />Anexar Documento
-          </Button>
+          {perm.canUploadDocumento && (
+            <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
+              <Upload className="mr-2 h-4 w-4" />Anexar Documento
+            </Button>
+          )}
         </div>
       </div>
 
@@ -129,7 +151,7 @@ export function ListaDocumentos() {
                 </TableRow>
               )}
               {!loading && filtrados.map((d) => {
-                const vc = valCfg[d.statusValidacao] || valCfg.PENDENTE;
+                const vc  = valCfg[d.statusValidacao] || valCfg.PENDENTE;
                 const tipo = (d.tipoDocumento || "OUTRO").toUpperCase();
                 return (
                   <TableRow key={d.id} className="hover:bg-gray-50/80">
@@ -157,11 +179,17 @@ export function ListaDocumentos() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Visualizar">
+                        {/* CORRIGIDO: onClick implementado — abre o arquivo em nova aba */}
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8" title="Visualizar"
+                          onClick={() => handleVisualizar(d)}
+                        >
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Baixar"
-                          onClick={() => handleDownload(d)}>
+                        <Button
+                          variant="ghost" size="icon" className="h-8 w-8" title="Baixar"
+                          onClick={() => handleDownload(d)}
+                        >
                           <Download className="h-3.5 w-3.5" />
                         </Button>
                       </div>
