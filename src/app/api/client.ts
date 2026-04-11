@@ -41,6 +41,13 @@ function buildHeaders(isMultipart = false): HeadersInit {
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 401) {
+    // Na tela de login, o 401 é credencial inválida — não redireciona
+    if (res.url && res.url.includes("/auth/login")) {
+      const text2 = await res.text();
+      let msg = "Email ou senha inválidos.";
+      try { msg = JSON.parse(text2)?.message ?? msg; } catch { /* ignore */ }
+      throw new ApiError(401, msg);
+    }
     localStorage.removeItem("sigpim_token");
     localStorage.removeItem("sigpim_usuario");
     window.location.href = "/login";
