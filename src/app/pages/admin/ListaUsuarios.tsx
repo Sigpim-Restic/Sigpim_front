@@ -1,61 +1,61 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
-  Plus,
-  Search,
-  Filter,
-  MoreVertical,
-  Edit,
-  Shield,
-  UserCheck,
-  UserX,
-  Loader2,
+  Plus, Search, MoreVertical, Edit, Shield,
+  UserCheck, UserX, Loader2, AlertCircle, RefreshCw,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "../../components/ui/select";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "../../components/ui/dialog";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "../../components/ui/table";
-import { EmptyState, ErrorState } from "../../components/layout/States";
 import { usuariosApi, type UsuarioResponse, type PerfilUsuario } from "../../api/usuarios";
-import { api } from "../../api/client";
+import { usePermissoes } from "../../hooks/usePermissoes";
 
 const PERFIL_LABELS: Record<PerfilUsuario, string> = {
-  ADMINISTRADOR_SISTEMA: "Admin. Sistema",
+  ADMINISTRADOR_SISTEMA:     "Admin. Sistema",
   ADMINISTRADOR_PATRIMONIAL: "Admin. Patrimonial",
-  CADASTRADOR_SETORIAL: "Cadastrador",
-  VALIDADOR_DOCUMENTAL: "Validador",
-  VISTORIADOR: "Vistoriador",
-  PLANEJAMENTO: "Planejamento",
-  AUDITOR: "Auditor",
+  CADASTRADOR_SETORIAL:      "Cadastrador",
+  VALIDADOR_DOCUMENTAL:      "Validador",
+  VISTORIADOR:               "Vistoriador",
+  PLANEJAMENTO:              "Planejamento",
+  AUDITOR:                   "Auditor",
 };
 
+interface ConfirmacaoState {
+  aberto: boolean;
+  titulo: string;
+  mensagem: string;
+  variante: "default" | "destrutivo";
+  onConfirmar: () => Promise<void>;
+}
+
 export function ListaUsuarios() {
-  const [usuarios, setUsuarios] = useState<UsuarioResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterPerfil, setFilterPerfil] = useState("todos");
+  const navigate = useNavigate();
+  const perm     = usePermissoes();
+
+  const [usuarios,      setUsuarios]      = useState<UsuarioResponse[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [erro,          setErro]          = useState<string | null>(null);
+  const [searchTerm,    setSearchTerm]    = useState("");
+  const [filterPerfil,  setFilterPerfil]  = useState("todos");
+  const [acaoLoading,   setAcaoLoading]   = useState<number | null>(null); // id do usuário em ação
+
+  const [confirmacao, setConfirmacao] = useState<ConfirmacaoState>({
+    aberto: false, titulo: "", mensagem: "",
+    variante: "default", onConfirmar: async () => {},
+  });
 
   const carregar = () => {
     setLoading(true);
@@ -67,39 +67,57 @@ export function ListaUsuarios() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    carregar();
-  }, []);
+  useEffect(() => { carregar(); }, []);
 
-  const handleAtivar = async (id: number) => {
+  // ── executa ação com loading no botão ──────────────────────────────────────
+  const executarAcao = async (idUsuario: number, acao: () => Promise<void>) => {
+    setAcaoLoading(idUsuario);
     try {
-      await api.patch(`/usuarios/${id}/ativar`);
+      await acao();
       carregar();
     } catch (e: any) {
-      alert(e.message ?? "Erro ao ativar usuário.");
+      setErro(e.message ?? "Erro ao executar ação.");
+    } finally {
+      setAcaoLoading(null);
     }
   };
 
-  const handleDesativar = async (id: number) => {
-    try {
-      await api.patch(`/usuarios/${id}/desativar`);
-      carregar();
-    } catch (e: any) {
-      alert(e.message ?? "Erro ao desativar usuário.");
-    }
+  // ── confirmação genérica ───────────────────────────────────────────────────
+  const confirmar = (cfg: Omit<ConfirmacaoState, "aberto">) =>
+    setConfirmacao({ ...cfg, aberto: true });
+
+  const fecharConfirmacao = () =>
+    setConfirmacao((c) => ({ ...c, aberto: false }));
+
+  // ── handlers ──────────────────────────────────────────────────────────────
+  const handleAtivar = (u: UsuarioResponse) => {
+    confirmar({
+      titulo:    "Ativar usuário",
+      mensagem:  `Deseja ativar o usuário "${u.nomeCompleto}"? Ele voltará a ter acesso ao sistema.`,
+      variante:  "default",
+      onConfirmar: () => executarAcao(u.id, () => usuariosApi.ativar(u.id)),
+    });
   };
 
-  const handleExcluir = async (id: number) => {
-    if (!confirm("Tem certeza que deseja excluir este usuário?")) return;
-    try {
-      await api.delete(`/usuarios/${id}`);
-      carregar();
-    } catch (e: any) {
-      alert(e.message ?? "Erro ao excluir usuário.");
-    }
+  const handleDesativar = (u: UsuarioResponse) => {
+    confirmar({
+      titulo:    "Desativar usuário",
+      mensagem:  `Deseja desativar "${u.nomeCompleto}"? O acesso ao sistema será bloqueado.`,
+      variante:  "destrutivo",
+      onConfirmar: () => executarAcao(u.id, () => usuariosApi.desativar(u.id)),
+    });
   };
 
-  const usuariosFiltrados = usuarios.filter((u) => {
+  const handleExcluir = (u: UsuarioResponse) => {
+    confirmar({
+      titulo:    "Excluir usuário",
+      mensagem:  `Tem certeza que deseja excluir "${u.nomeCompleto}"? Esta ação não pode ser desfeita.`,
+      variante:  "destrutivo",
+      onConfirmar: () => executarAcao(u.id, () => usuariosApi.excluir(u.id)),
+    });
+  };
+
+  const filtrados = usuarios.filter((u) => {
     const matchSearch =
       u.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -109,31 +127,72 @@ export function ListaUsuarios() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+
+      {/* Modal de confirmação */}
+      <Dialog open={confirmacao.aberto} onOpenChange={(v) => !v && fecharConfirmacao()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{confirmacao.titulo}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600 py-2">{confirmacao.mensagem}</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={fecharConfirmacao}>
+              Cancelar
+            </Button>
+            <Button
+              variant={confirmacao.variante === "destrutivo" ? "destructive" : "default"}
+              className={confirmacao.variante === "default" ? "bg-[#1351B4] hover:bg-[#0c3b8d]" : ""}
+              onClick={async () => {
+                fecharConfirmacao();
+                await confirmacao.onConfirmar();
+              }}
+            >
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cabeçalho */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-gray-600">
           Gerencie usuários e suas permissões de acesso ao sistema
         </p>
-        <Link to="/usuarios/novo">
-          <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Usuário
+        <div className="flex gap-2">
+          <Button variant="outline" size="icon" onClick={carregar} disabled={loading} title="Atualizar">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
-        </Link>
+          {perm.canManageUsuario && (
+            <Link to="/usuarios/novo">
+              <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
+                <Plus className="mr-2 h-4 w-4" />Novo Usuário
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* Filters */}
+      {/* Erro global */}
+      {erro && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="flex-1">{erro}</div>
+          <Button variant="ghost" size="sm" className="text-red-600" onClick={carregar}>
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+
+      {/* Filtros */}
       <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:flex-row">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Buscar por nome ou e-mail..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="Buscar por nome ou e-mail..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
         </div>
         <Select value={filterPerfil} onValueChange={setFilterPerfil}>
           <SelectTrigger className="w-full sm:w-56">
@@ -149,38 +208,28 @@ export function ListaUsuarios() {
         </Select>
       </div>
 
-      {/* Content */}
+      {/* Tabela */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-[#1351B4]" />
         </div>
-      ) : erro ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center text-sm text-red-700">
-          {erro}
-          <Button variant="outline" size="sm" className="ml-4" onClick={carregar}>
-            Tentar novamente
-          </Button>
+      ) : filtrados.length === 0 ? (
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-400 shadow-sm">
+          <UserX className="mx-auto mb-3 h-8 w-8 text-gray-300" />
+          <p className="font-medium">
+            {searchTerm || filterPerfil !== "todos"
+              ? "Nenhum usuário corresponde aos filtros."
+              : "Nenhum usuário cadastrado ainda."}
+          </p>
+          {(searchTerm || filterPerfil !== "todos") && (
+            <Button
+              variant="outline" size="sm" className="mt-3"
+              onClick={() => { setSearchTerm(""); setFilterPerfil("todos"); }}
+            >
+              Limpar filtros
+            </Button>
+          )}
         </div>
-      ) : usuariosFiltrados.length === 0 ? (
-        <EmptyState
-          icon={<UserX className="h-8 w-8 text-gray-400" />}
-          title="Nenhum usuário encontrado"
-          description={
-            searchTerm || filterPerfil !== "todos"
-              ? "Nenhum usuário corresponde aos filtros aplicados."
-              : "Nenhum usuário cadastrado ainda."
-          }
-          action={
-            (searchTerm || filterPerfil !== "todos") ? (
-              <Button
-                variant="outline"
-                onClick={() => { setSearchTerm(""); setFilterPerfil("todos"); }}
-              >
-                Limpar filtros
-              </Button>
-            ) : undefined
-          }
-        />
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -196,66 +245,69 @@ export function ListaUsuarios() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {usuariosFiltrados.map((usuario) => (
-                  <TableRow key={usuario.id}>
-                    <TableCell className="font-medium">{usuario.nomeCompleto}</TableCell>
-                    <TableCell className="text-gray-600">{usuario.email}</TableCell>
-                    <TableCell className="text-gray-500 font-mono text-sm">{usuario.nomeUsuario}</TableCell>
+                {filtrados.map((u) => (
+                  <TableRow key={u.id} className="hover:bg-gray-50/80">
+                    <TableCell className="font-medium">{u.nomeCompleto}</TableCell>
+                    <TableCell className="text-gray-600">{u.email}</TableCell>
+                    <TableCell className="font-mono text-sm text-gray-500">{u.nomeUsuario}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={usuario.perfil.startsWith("ADMINISTRADOR") ? "default" : "secondary"}
-                        className={usuario.perfil.startsWith("ADMINISTRADOR") ? "bg-[#1351B4]" : ""}
+                        variant={u.perfil.startsWith("ADMINISTRADOR") ? "default" : "secondary"}
+                        className={u.perfil.startsWith("ADMINISTRADOR") ? "bg-[#1351B4]" : ""}
                       >
-                        {PERFIL_LABELS[usuario.perfil] ?? usuario.perfil}
+                        {PERFIL_LABELS[u.perfil] ?? u.perfil}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className={`h-2 w-2 rounded-full ${usuario.ativo ? "bg-green-500" : "bg-gray-300"}`} />
-                        <span className="text-sm">{usuario.ativo ? "Ativo" : "Inativo"}</span>
+                        {acaoLoading === u.id
+                          ? <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+                          : <div className={`h-2 w-2 rounded-full ${u.ativo ? "bg-green-500" : "bg-gray-300"}`} />
+                        }
+                        <span className="text-sm">{u.ativo ? "Ativo" : "Inativo"}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <Link to={`/usuarios/${usuario.id}/permissoes`}>
-                            <DropdownMenuItem>
-                              <Shield className="mr-2 h-4 w-4" />
-                              Permissões
+                      {perm.canManageUsuario ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" disabled={acaoLoading === u.id}>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => navigate(`/usuarios/${u.id}/permissoes`)}>
+                              <Shield className="mr-2 h-4 w-4" />Permissões
                             </DropdownMenuItem>
-                          </Link>
-                          <DropdownMenuItem
-                            onClick={() => usuario.ativo ? handleDesativar(usuario.id) : handleAtivar(usuario.id)}
-                          >
-                            {usuario.ativo ? (
-                              <><UserX className="mr-2 h-4 w-4" />Desativar</>
-                            ) : (
-                              <><UserCheck className="mr-2 h-4 w-4" />Ativar</>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleExcluir(usuario.id)}
-                          >
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            <DropdownMenuItem
+                              onClick={() => u.ativo ? handleDesativar(u) : handleAtivar(u)}
+                            >
+                              {u.ativo
+                                ? <><UserX     className="mr-2 h-4 w-4" />Desativar</>
+                                : <><UserCheck className="mr-2 h-4 w-4" />Ativar</>
+                              }
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => handleExcluir(u)}
+                            >
+                              Excluir usuário
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </div>
-          <div className="border-t border-gray-200 px-6 py-4">
-            <p className="text-sm text-gray-600">
-              Exibindo {usuariosFiltrados.length} de {usuarios.length} usuários
+          <div className="border-t border-gray-200 px-6 py-3">
+            <p className="text-xs text-gray-500">
+              Exibindo {filtrados.length} de {usuarios.length} usuários
             </p>
           </div>
         </div>

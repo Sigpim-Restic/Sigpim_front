@@ -61,6 +61,18 @@ export const usuariosApi = {
   listar(): Promise<UsuarioResponse[]> {
     return api.get<UsuarioResponse[]>("/usuarios");
   },
+
+  ativar(id: number): Promise<UsuarioResponse> {
+    return api.patch<UsuarioResponse>(`/usuarios/${id}/ativar`);
+  },
+
+  desativar(id: number): Promise<UsuarioResponse> {
+    return api.patch<UsuarioResponse>(`/usuarios/${id}/desativar`);
+  },
+
+  excluir(id: number): Promise<void> {
+    return api.delete<void>(`/usuarios/${id}`);
+  },
 };
 
 export const orgaosApi = {

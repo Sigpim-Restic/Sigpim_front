@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router";
-import { Layers, MapPin, Search, Loader2 } from "lucide-react";
+import { Layers, MapPin, Search, Loader2, X } from "lucide-react";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
@@ -85,7 +85,8 @@ export function MapaGIS() {
   const [imoveis, setImoveis] = useState<ImovelPin[]>([]);
   const [total,   setTotal]   = useState(0);
   const [loading, setLoading] = useState(true);
-  const [flyTo,   setFlyTo]   = useState<{ lat: number; lng: number } | null>(null);
+  const [flyTo,        setFlyTo]        = useState<{ lat: number; lng: number } | null>(null);
+  const [avisoFechado, setAvisoFechado] = useState(false);
 
   // Carrega imóveis
   useEffect(() => {
@@ -259,7 +260,7 @@ export function MapaGIS() {
 
         {/* Mapa Leaflet */}
         <div
-          className="relative flex-1 overflow-hidden rounded-xl border border-gray-200 shadow-sm"
+          className="relative flex-1 overflow-hidden rounded-xl border border-gray-200 shadow-sm isolate"
           style={{ minHeight: "520px" }}
         >
           <MapContainer
@@ -314,18 +315,20 @@ export function MapaGIS() {
             </Badge>
           </div>
 
-          {/* Aviso quando nenhum imóvel tem coordenadas */}
-          {!loading && filtradosComCoordenadas.length === 0 && (
-            <div className="absolute inset-0 z-[999] flex items-center justify-center pointer-events-none">
-              <div className="bg-white/90 rounded-xl px-6 py-4 shadow-md text-center">
-                <MapPin className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-600">
-                  {search ? "Nenhum imóvel encontrado com coordenadas." : "Nenhum imóvel possui coordenadas cadastradas."}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  Preencha latitude e longitude na etapa de Localização do cadastro.
-                </p>
-              </div>
+          {/* Aviso quando nenhum imóvel tem coordenadas — dismissível */}
+          {!loading && filtradosComCoordenadas.length === 0 && !avisoFechado && (
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[999] flex items-center gap-3 rounded-lg border border-orange-200 bg-white/95 px-4 py-2.5 shadow-md text-xs text-gray-600 whitespace-nowrap">
+              <MapPin className="h-3.5 w-3.5 text-orange-400 shrink-0" />
+              <span>
+                {search ? "Nenhum imóvel encontrado com coordenadas." : "Nenhum imóvel possui coordenadas cadastradas."}
+              </span>
+              <button
+                onClick={() => setAvisoFechado(true)}
+                className="ml-1 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Fechar"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
           )}
         </div>
