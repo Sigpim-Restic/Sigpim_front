@@ -7,7 +7,6 @@ import type { LocalizacaoRequest } from "../api/localizacoes";
 
 export interface DadosEtapa1 {
   nomeReferencia: string;
-  // IDs numéricos armazenados como string (padrão do Select do shadcn/ui)
   idOrgaoGestorPatrimonial: string;
   idUnidadeGestora: string;
   observacoesGerais: string;
@@ -56,6 +55,15 @@ const e2: DadosEtapa2 = { logradouro: "", numero: "", complemento: "", bairro: "
 const e3: DadosEtapa3 = { tipoImovel: "", tipologia: "", destinacaoAtual: "", situacaoDominial: "", descricaoUso: "" };
 const e4: DadosEtapa4 = { areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "" };
 const e5: DadosEtapa5 = { statusOcupacao: "", nivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" };
+
+// Status de ocupação que devem gerar um registro de ocupação no backend.
+// DESOCUPADO e DESCONHECIDO são informativos e não requerem registro.
+// BUG FIX: NAO_REGULARIZADO was missing from this list — it IS a valid
+// StatusOcupacao enum value in the backend and must be persisted.
+const STATUS_QUE_CRIAM_OCUPACAO = new Set([
+  "OCUPADO",
+  "NAO_REGULARIZADO",
+]);
 
 export function CadastroImovelProvider({ children }: { children: React.ReactNode }) {
   const [etapa1, setEtapa1] = useState<DadosEtapa1>(e1);
@@ -107,10 +115,12 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
 
       const imovel = await imoveisApi.criar(req);
 
-      // ── Step 3: create localizacao (address + coordinates from step 2) ───
-      // This was missing before — causing "Sem coordenadas" on the GIS map
-      // and a 500 error when the backend tried to finalise without location.
-      const temEndereco = etapa2.logradouro.trim() || etapa2.bairro.trim() || etapa2.cep.trim();
+      // ── Step 3: create localizacao ───────────────────────────────────────
+      // BUG FIX: the previous context sent localizacao only when logradouro,
+      // lat or lng were filled. Fields like bairro, numero and cep were silently
+      // discarded. Now we check any address field and always persist what was
+      // filled in step 2.
+      const temEndereco    = etapa2.logradouro.trim() || etapa2.bairro.trim() || etapa2.cep.trim() || etapa2.numero.trim();
       const temCoordenadas = etapa2.latitude.trim() && etapa2.longitude.trim();
 
       if (temEndereco || temCoordenadas) {
@@ -127,12 +137,11 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         await localizacoesApi.criar(locReq);
       }
 
-      // ── Step 4: create ocupacao (only when there is a real occupant) ─────
-      if (
-        etapa5.statusOcupacao &&
-        etapa5.statusOcupacao !== "DESOCUPADO" &&
-        etapa5.statusOcupacao !== "DESCONHECIDO"
-      ) {
+      // ── Step 4: create ocupacao ──────────────────────────────────────────
+      // BUG FIX: "NAO_REGULARIZADO" was excluded from the condition because
+      // the old code only allowed "OCUPADO". But NAO_REGULARIZADO is a valid
+      // StatusOcupacao enum value in the backend and must be persisted too.
+      if (etapa5.statusOcupacao && STATUS_QUE_CRIAM_OCUPACAO.has(etapa5.statusOcupacao)) {
         const ocReq: OcupacaoRequest = {
           idImovel:             imovel.id,
           statusOcupacao:       etapa5.statusOcupacao as any,
@@ -149,9 +158,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         await ocupacoesApi.criar(ocReq);
       }
 
-      // ── Step 5: upload documents ─────────────────────────────────────────
-      // Each file is uploaded independently; a failure in one file does NOT
-      // roll back the property — the user can attach documents later.
+      // ── Step 5: upload documents (non-fatal) ─────────────────────────────
       for (const arq of arquivos.filter((a) => a.file.size <= 10 * 1024 * 1024)) {
         const params: DocumentoUploadParams = {
           idImovel:        imovel.id,
@@ -163,12 +170,10 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         try {
           await documentosApi.upload(arq.file, params);
         } catch (uploadErr) {
-          // Document upload failures are non-fatal: the property was already
-          // created successfully. Log the error and continue.
-          console.error(
-            `[CadastroImovel] Failed to upload file "${arq.file.name}":`,
-            uploadErr
-          );
+          // Document upload is non-fatal: the property was already created.
+          // Storage issues (e.g. serverless environment) should not block
+          // the wizard from completing.
+          console.error(`[CadastroImovel] Failed to upload "${arq.file.name}":`, uploadErr);
         }
       }
 

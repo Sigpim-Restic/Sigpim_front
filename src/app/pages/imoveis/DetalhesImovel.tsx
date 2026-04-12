@@ -9,6 +9,7 @@ import { Badge } from "../../components/ui/badge";
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
 import { documentosApi, type DocumentoResponse } from "../../api/documentos";
 import { ocupacoesApi, type OcupacaoResponse } from "../../api/ocupacoes";
+import { localizacoesApi, type LocalizacaoResponse } from "../../api/localizacoes";
 import { usePermissoes } from "../../hooks/usePermissoes";
 
 // ─── helpers visuais ────────────────────────────────────────────────────────
@@ -54,11 +55,12 @@ export function DetalhesImovel() {
   const navigate = useNavigate();
   const perm     = usePermissoes();
 
-  const [imovel,    setImovel]    = useState<ImovelResponse | null>(null);
-  const [documentos, setDocumentos] = useState<DocumentoResponse[]>([]);
-  const [ocupacoes,  setOcupacoes]  = useState<OcupacaoResponse[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [erro,      setErro]      = useState<string | null>(null);
+  const [imovel,      setImovel]      = useState<ImovelResponse | null>(null);
+  const [localizacao, setLocalizacao] = useState<LocalizacaoResponse | null>(null);
+  const [documentos,  setDocumentos]  = useState<DocumentoResponse[]>([]);
+  const [ocupacoes,   setOcupacoes]   = useState<OcupacaoResponse[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [erro,        setErro]        = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -69,11 +71,15 @@ export function DetalhesImovel() {
 
     Promise.all([
       imoveisApi.buscarPorId(numId),
+      // BUG FIX: localizacao was never fetched in DetalhesImovel — the section
+      // simply did not exist. Added here alongside the other parallel requests.
+      localizacoesApi.buscarPorImovel(numId).catch(() => null),
       documentosApi.listarPorImovel(numId, 0, 5),
       ocupacoesApi.listarPorImovel(numId, 0, 5),
     ])
-      .then(([im, docs, ocup]) => {
+      .then(([im, loc, docs, ocup]) => {
         setImovel(im);
+        setLocalizacao(loc);
         setDocumentos(docs.content);
         setOcupacoes(ocup.content);
       })
@@ -153,14 +159,14 @@ export function DetalhesImovel() {
       {/* Identificação */}
       <Secao icone={<Building2 className="h-4 w-4" />} titulo="Identificação">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          <Campo label="Código SIGPIM"       valor={imovel.codigoSigpim} />
-          <Campo label="Tipo de imóvel"      valor={TIPO_LABEL[imovel.tipoImovel] ?? imovel.tipoImovel} />
-          <Campo label="Situação dominial"   valor={imovel.situacaoDominial} />
-          <Campo label="Origem do cadastro"  valor={imovel.origemCadastro} />
+          <Campo label="Código SIGPIM"        valor={imovel.codigoSigpim} />
+          <Campo label="Tipo de imóvel"       valor={TIPO_LABEL[imovel.tipoImovel] ?? imovel.tipoImovel} />
+          <Campo label="Situação dominial"    valor={imovel.situacaoDominial} />
+          <Campo label="Origem do cadastro"   valor={imovel.origemCadastro} />
           <Campo label="Inscrição imobiliária" valor={imovel.inscricaoImobiliaria} />
-          <Campo label="Matrícula"           valor={imovel.matriculaRegistro} />
-          <Campo label="Cartório"            valor={imovel.cartorio} />
-          <Campo label="Versão"              valor={imovel.versao} />
+          <Campo label="Matrícula"            valor={imovel.matriculaRegistro} />
+          <Campo label="Cartório"             valor={imovel.cartorio} />
+          <Campo label="Versão"               valor={imovel.versao} />
         </div>
         {imovel.descricao && (
           <div className="mt-4">
@@ -170,16 +176,45 @@ export function DetalhesImovel() {
         )}
       </Secao>
 
+      {/* Localização — BUG FIX: section was completely missing */}
+      <Secao icone={<MapPin className="h-4 w-4" />} titulo="Localização">
+        {!localizacao ? (
+          <p className="text-sm text-gray-400">Nenhuma localização cadastrada.</p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              <Campo label="CEP"         valor={localizacao.cep} />
+              <Campo label="Logradouro"  valor={localizacao.logradouro} />
+              <Campo label="Número"      valor={localizacao.numero} />
+              <Campo label="Complemento" valor={localizacao.complemento} />
+              <Campo label="Bairro"      valor={localizacao.bairro} />
+              <Campo label="Cidade"      valor="São Luís" />
+              <Campo label="Estado"      valor="MA" />
+              {localizacao.distritoRegional && (
+                <Campo label="Distrito regional" valor={localizacao.distritoRegional} />
+              )}
+            </div>
+            {(localizacao.latitude != null || localizacao.longitude != null) && (
+              <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 border-t border-gray-100 pt-4">
+                <Campo label="Latitude"             valor={localizacao.latitude} />
+                <Campo label="Longitude"            valor={localizacao.longitude} />
+                <Campo label="Sistema de coordenadas" valor={localizacao.sistemaCoordenadas} />
+              </div>
+            )}
+          </>
+        )}
+      </Secao>
+
       {/* Dados físicos */}
       <Secao icone={<Building2 className="h-4 w-4" />} titulo="Dados Físicos">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          <Campo label="Área do terreno (m²)"   valor={imovel.areaTerrenoM2} />
-          <Campo label="Área construída (m²)"   valor={imovel.areaConstruidaM2} />
-          <Campo label="Nº de pavimentos"       valor={imovel.numeroPavimentos} />
-          <Campo label="Ano de construção"      valor={imovel.anoConstrucao} />
-          <Campo label="Categoria macro"        valor={imovel.categoriaMacro} />
-          <Campo label="Tipologia"              valor={imovel.tipologia} />
-          <Campo label="Estado de conservação"  valor={imovel.estadoConservacaoAtual} />
+          <Campo label="Área do terreno (m²)"  valor={imovel.areaTerrenoM2} />
+          <Campo label="Área construída (m²)"  valor={imovel.areaConstruidaM2} />
+          <Campo label="Nº de pavimentos"      valor={imovel.numeroPavimentos} />
+          <Campo label="Ano de construção"     valor={imovel.anoConstrucao} />
+          <Campo label="Categoria macro"       valor={imovel.categoriaMacro} />
+          <Campo label="Tipologia"             valor={imovel.tipologia} />
+          <Campo label="Estado de conservação" valor={imovel.estadoConservacaoAtual} />
         </div>
       </Secao>
 
@@ -222,13 +257,19 @@ export function DetalhesImovel() {
                   <span className="text-xs text-gray-500">{oc.statusOcupacao}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  <Campo label="Ocupante externo"   valor={oc.nomeOcupanteExterno} />
-                  <Campo label="Responsável local"  valor={oc.nomeResponsavelLocal} />
-                  <Campo label="Contato"            valor={oc.contatoResponsavel} />
-                  <Campo label="Finalidade"         valor={oc.destinacaoFinalidade} />
-                  <Campo label="Início"             valor={oc.dataInicio} />
-                  <Campo label="Fim previsto"       valor={oc.dataFimPrevista} />
+                  <Campo label="Ocupante externo"  valor={oc.nomeOcupanteExterno} />
+                  <Campo label="Responsável local" valor={oc.nomeResponsavelLocal} />
+                  <Campo label="Contato"           valor={oc.contatoResponsavel} />
+                  <Campo label="Finalidade"        valor={oc.destinacaoFinalidade} />
+                  <Campo label="Início"            valor={oc.dataInicio} />
+                  <Campo label="Fim previsto"      valor={oc.dataFimPrevista} />
                 </div>
+                {oc.observacoes && (
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-500 mb-0.5">Observações</p>
+                    <p className="text-sm text-gray-700">{oc.observacoes}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
