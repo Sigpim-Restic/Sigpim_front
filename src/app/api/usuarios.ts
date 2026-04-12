@@ -45,10 +45,18 @@ export interface UsuarioRequest {
 export interface UsuarioResponse {
   id: number;
   nomeCompleto: string;
+  cpf: string | null;
   email: string;
+  celular: string | null;
   nomeUsuario: string;
+  matricula: string | null;
+  cargo: string | null;
+  idOrgao: number | null;
+  idUnidade: number | null;
   perfil: PerfilUsuario;
   ativo: boolean;
+  criadoEm: string | null;
+  atualizadoEm: string | null;
 }
 
 // --- API ---
@@ -60,6 +68,14 @@ export const usuariosApi = {
 
   listar(): Promise<UsuarioResponse[]> {
     return api.get<UsuarioResponse[]>("/usuarios");
+  },
+
+  buscarPorId(id: number): Promise<UsuarioResponse> {
+    return api.get<UsuarioResponse>(`/usuarios/${id}`);
+  },
+
+  alterarMinhaSenha(novaSenha: string): Promise<void> {
+    return api.patch<void>("/usuarios/minha-senha", { novaSenha });
   },
 
   ativar(id: number): Promise<UsuarioResponse> {

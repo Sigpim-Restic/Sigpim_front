@@ -300,7 +300,7 @@ export function MainLayout() {
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel className="text-xs text-gray-500">Minha Conta</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/perfil")}>
                     <User className="mr-2 h-4 w-4" />Meu Perfil
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/configuracoes")}>
