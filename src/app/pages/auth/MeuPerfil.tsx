@@ -63,14 +63,14 @@ export function MeuPerfil() {
   const senhaValida = Object.values(validacao).every(Boolean);
 
   useEffect(() => {
-    if (!usuario?.id) return;
+    
     setCarregando(true);
     usuariosApi
-      .buscarPorId(usuario.id)
+      .buscarMe()
       .then(setDados)
       .catch(() => setErroLoad("Não foi possível carregar os dados do perfil."))
       .finally(() => setCarregando(false));
-  }, [usuario?.id]);
+  }, []);
 
   const handleAlterarSenha = async (e: React.FormEvent) => {
     e.preventDefault();

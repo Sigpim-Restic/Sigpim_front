@@ -70,6 +70,10 @@ export const usuariosApi = {
     return api.get<UsuarioResponse[]>("/usuarios");
   },
 
+  buscarMe(): Promise<UsuarioResponse> {
+    return api.get<UsuarioResponse>("/usuarios/me");
+  },
+
   buscarPorId(id: number): Promise<UsuarioResponse> {
     return api.get<UsuarioResponse>(`/usuarios/${id}`);
   },
