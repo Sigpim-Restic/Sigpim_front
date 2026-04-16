@@ -32,6 +32,7 @@ import { MapaGIS } from "./pages/MapaGIS";
 import { Catalogos } from "./pages/Catalogos";
 import { Configuracoes } from "./pages/Configuracoes";
 import { GerenciarTiposImovel } from "./pages/admin/GerenciarTiposImovel";
+import { GerenciarSituacoesDominiais } from "./pages/admin/GerenciarSituacoesDominiais";
 import { ProtectedRoute } from "./contexts/ProtectedRoute";
 import { CadastroImovelProvider } from "./contexts/CadastroImovelContext";
 import { RedefinirSenha } from "./pages/auth/RedefinirSenha";
@@ -108,6 +109,7 @@ export const router = createBrowserRouter([
       { path: "usuarios/sucesso",       Component: SucessoUsuario },
       { path: "configuracoes",          Component: Configuracoes },
       { path: "configuracoes/tipos-imovel", Component: GerenciarTiposImovel },
+      { path: "configuracoes/situacoes-dominiais", Component: GerenciarSituacoesDominiais },
     ],
   },
 ]);

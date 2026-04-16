@@ -1,7 +1,6 @@
 import { api } from "./client";
 
 export type StatusCadastro = "PRE_CADASTRO" | "VALIDADO";
-export type SituacaoDominial = "REGULAR" | "IRREGULAR" | "EM_APURACAO" | "EM_LITIGIO";
 
 export interface ImovelResponse {
   id: number;
@@ -13,7 +12,8 @@ export interface ImovelResponse {
   idTipoImovel: number | null;
   nomeTipoImovel: string | null;
   statusCadastro: StatusCadastro;
-  situacaoDominial: SituacaoDominial | null;
+  idSituacaoDominial: number | null;
+  nomeSituacaoDominial: string | null;
   origemCadastro: string | null;
   inscricaoImobiliaria: string | null;
   matriculaRegistro: string | null;
@@ -49,7 +49,7 @@ export interface ImovelRequest {
   descricao?: string;
   // All fields optional — no field is mandatory for pre-registration
   idTipoImovel?: number;
-  situacaoDominial?: SituacaoDominial;
+  idSituacaoDominial?: number;
   origemCadastro?: string;
   inscricaoImobiliaria?: string;
   matriculaRegistro?: string;

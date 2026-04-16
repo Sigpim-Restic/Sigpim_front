@@ -8,23 +8,29 @@ import { Textarea } from "../../../components/ui/textarea";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
 import { tiposImovelApi, type TipoImovelResponse } from "../../../api/tipos-imovel-alertas";
+import { situacoesDominiaisApi, type SituacaoDominialResponse } from "../../../api/situacoes-dominiais";
 
 export function CadastroImovelStep3() {
   const { etapa3, setEtapa3 } = useCadastroImovel();
   const navigate = useNavigate();
 
-  const [tiposImovel,        setTiposImovel]        = useState<TipoImovelResponse[]>([]);
-  const [carregandoTipos,    setCarregandoTipos]    = useState(true);
+  const [tiposImovel,       setTiposImovel]       = useState<TipoImovelResponse[]>([]);
+  const [situacoes,         setSituacoes]         = useState<SituacaoDominialResponse[]>([]);
+  const [carregandoTipos,   setCarregandoTipos]   = useState(true);
+  const [carregandoSit,     setCarregandoSit]     = useState(true);
 
-  // Load dynamic property types from API
   useEffect(() => {
     tiposImovelApi.listarAtivos()
       .then(setTiposImovel)
-      .catch(() => {/* fail silently — field stays optional */})
+      .catch(() => {})
       .finally(() => setCarregandoTipos(false));
+
+    situacoesDominiaisApi.listarAtivas()
+      .then(setSituacoes)
+      .catch(() => {})
+      .finally(() => setCarregandoSit(false));
   }, []);
 
-  // No mandatory validation — pre-registration has no required fields
   const handleNext = () => navigate("/imoveis/novo/etapa-4");
   const handleBack = () => navigate("/imoveis/novo/etapa-2");
 
@@ -38,17 +44,19 @@ export function CadastroImovelStep3() {
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Classificação e Uso</h3>
-          <p className="text-sm text-gray-600 mt-1">Tipo, tipologia e situação dominial do imóvel — todos opcionais no pré-cadastro</p>
+          <p className="text-sm text-gray-600 mt-1">
+            Tipo, tipologia e situação dominial — todos opcionais no pré-cadastro
+          </p>
         </div>
 
         <div className="grid gap-6">
 
-          {/* Tipo de Imóvel — dynamic list from tipos_imovel table */}
+          {/* Tipo de Imóvel — dinâmico */}
           <div className="space-y-2">
             <Label>Tipo de Imóvel</Label>
             <Select {...sel("idTipoImovel")} disabled={carregandoTipos}>
               <SelectTrigger>
-                <SelectValue placeholder={carregandoTipos ? "Carregando tipos..." : "Selecione o tipo (opcional)"} />
+                <SelectValue placeholder={carregandoTipos ? "Carregando..." : "Selecione o tipo (opcional)"} />
               </SelectTrigger>
               <SelectContent>
                 {tiposImovel.map((t) => (
@@ -57,7 +65,7 @@ export function CadastroImovelStep3() {
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500">
-              Os tipos disponíveis são gerenciados pelo administrador do sistema.
+              Os tipos são gerenciados pelo administrador em Configurações.
             </p>
           </div>
 
@@ -67,36 +75,34 @@ export function CadastroImovelStep3() {
             <Select {...sel("tipologia")}>
               <SelectTrigger><SelectValue placeholder="Selecione a tipologia (opcional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Administrativo">Administrativo</SelectItem>
-                <SelectItem value="Educação">Educação</SelectItem>
-                <SelectItem value="Saúde">Saúde</SelectItem>
-                <SelectItem value="Cultura">Cultura</SelectItem>
-                <SelectItem value="Esporte e Lazer">Esporte e Lazer</SelectItem>
-                <SelectItem value="Segurança Pública">Segurança Pública</SelectItem>
-                <SelectItem value="Assistência Social">Assistência Social</SelectItem>
-                <SelectItem value="Infraestrutura">Infraestrutura</SelectItem>
-                <SelectItem value="Terreno">Terreno</SelectItem>
-                <SelectItem value="Residencial">Residencial</SelectItem>
-                <SelectItem value="Outro">Outro</SelectItem>
+                {["Administrativo","Educação","Saúde","Cultura","Esporte e Lazer",
+                  "Segurança Pública","Assistência Social","Infraestrutura","Terreno",
+                  "Residencial","Outro"].map((t) => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Situação Dominial */}
+          {/* Situação Dominial — dinâmica */}
           <div className="space-y-2">
             <Label>Situação Dominial</Label>
-            <Select {...sel("situacaoDominial")}>
-              <SelectTrigger><SelectValue placeholder="Selecione a situação (opcional)" /></SelectTrigger>
+            <Select {...sel("idSituacaoDominial")} disabled={carregandoSit}>
+              <SelectTrigger>
+                <SelectValue placeholder={carregandoSit ? "Carregando..." : "Selecione a situação (opcional)"} />
+              </SelectTrigger>
               <SelectContent>
-                <SelectItem value="REGULAR">Regular</SelectItem>
-                <SelectItem value="IRREGULAR">Irregular</SelectItem>
-                <SelectItem value="EM_APURACAO">Em Apuração</SelectItem>
-                <SelectItem value="EM_LITIGIO">Em Litígio</SelectItem>
+                {situacoes.map((s) => (
+                  <SelectItem key={s.id} value={String(s.id)}>{s.nome}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-gray-500">
+              As situações são gerenciadas pelo administrador em Configurações.
+            </p>
           </div>
 
-          {/* Descrição */}
+          {/* Descrição do Uso Atual */}
           <div className="space-y-2">
             <Label>Descrição do Uso Atual</Label>
             <Textarea

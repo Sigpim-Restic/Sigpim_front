@@ -20,8 +20,8 @@ export interface DadosEtapa2 {
 export interface DadosEtapa3 {
   // idTipoImovel replaces the old tipoImovel string enum
   idTipoImovel: string;
-  tipologia: string; destinacaoAtual: string;
-  situacaoDominial: string; descricaoUso: string;
+  idSituacaoDominial: string;
+  tipologia: string; destinacaoAtual: string; descricaoUso: string;
 }
 export interface DadosEtapa4 {
   areaTerrenoM2: string; areaConstruidaM2: string;
@@ -55,7 +55,7 @@ const Ctx = createContext<Ctx | null>(null);
 
 const e1: DadosEtapa1 = { nomeReferencia: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" };
 const e2: DadosEtapa2 = { logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "", latitude: "", longitude: "" };
-const e3: DadosEtapa3 = { idTipoImovel: "", tipologia: "", destinacaoAtual: "", situacaoDominial: "", descricaoUso: "" };
+const e3: DadosEtapa3 = { idTipoImovel: "", idSituacaoDominial: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" };
 const e4: DadosEtapa4 = { areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "" };
 const e5: DadosEtapa5 = { statusOcupacao: "", nivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" };
 
@@ -83,6 +83,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
       const req: ImovelRequest = {
         nomeReferencia:           etapa1.nomeReferencia    || undefined,
         idTipoImovel:             etapa3.idTipoImovel      ? Number(etapa3.idTipoImovel)      : undefined,
+        idSituacaoDominial:       etapa3.idSituacaoDominial ? Number(etapa3.idSituacaoDominial) : undefined,
         tipologia:                etapa3.tipologia         || undefined,
         situacaoDominial:         (etapa3.situacaoDominial as any) || undefined,
         observacoesGerais:        etapa1.observacoesGerais || undefined,

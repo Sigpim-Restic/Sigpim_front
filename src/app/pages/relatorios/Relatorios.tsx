@@ -131,9 +131,9 @@ export function Relatorios() {
         const linhas = imoveis.map((im) => [
           im.codigoSigpim,
           im.nomeReferencia ?? "",
-          im.tipoImovel,
+          im.nomeTipoImovel ?? "",
           im.statusCadastro,
-          im.situacaoDominial ?? "",
+          im.nomeSituacaoDominial ?? "",
           im.areaTerrenoM2 ?? "",
           im.areaConstruidaM2 ?? "",
           im.tipologia ?? "",

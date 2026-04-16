@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { Shield, Bell, Database, Users, Key, Info, Tag } from "lucide-react";
+import { Shield, Bell, Database, Users, Key, Info, Tag, Scale } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -33,6 +33,16 @@ export function Configuracoes() {
             <div>
               <p className="text-sm font-medium text-gray-900">Tipos de Imóvel</p>
               <p className="text-xs text-gray-500">Próprio, Locado, Incerto e outros</p>
+            </div>
+          </button>
+          <button
+            onClick={() => navigate("/configuracoes/situacoes-dominiais")}
+            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:bg-blue-50 hover:border-blue-300 transition-colors"
+          >
+            <Scale className="h-5 w-5 text-[#1351B4] shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Situações Dominiais</p>
+              <p className="text-xs text-gray-500">Regular, Irregular, Em Apuração e outras</p>
             </div>
           </button>
         </div>
