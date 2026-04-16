@@ -125,12 +125,28 @@ export const api = {
     }).then((r) => handleResponse<T>(r));
   },
 
-  /** Download — retorna Blob para salvar ou abrir no browser */
+  /**
+   * Download — returns a Blob for saving or opening in the browser.
+   *
+   * Handles 302 redirects from the backend (e.g. Supabase signed URLs):
+   * fetches the redirect target URL directly without the Authorization header,
+   * since Supabase signed URLs are self-authenticating.
+   */
   download(path: string): Promise<Blob> {
     return fetch(`${BASE_URL}${path}`, {
       method: "GET",
       headers: buildHeaders(),
-    }).then((r) => {
+      redirect: "manual",  // intercept redirect instead of following it
+    }).then(async (r) => {
+      // 302/301 redirect → follow to the signed URL without auth header
+      if (r.type === "opaqueredirect" || r.status === 302 || r.status === 301) {
+        const location = r.headers.get("Location");
+        if (location) {
+          const redirectRes = await fetch(location, { method: "GET" });
+          if (!redirectRes.ok) throw new ApiError(redirectRes.status, `Download falhou: ${redirectRes.status}`);
+          return redirectRes.blob();
+        }
+      }
       if (!r.ok) throw new ApiError(r.status, `Download falhou: ${r.status}`);
       return r.blob();
     });

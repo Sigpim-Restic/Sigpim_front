@@ -265,6 +265,7 @@ export function ListaDocumentos() {
 
   const handleVisualizar = async (doc: DocumentoResponse) => {
     try {
+      // Fetch with auth header, follow redirect to Supabase signed URL
       const blob = await documentosApi.download(doc.id);
       const url  = URL.createObjectURL(blob);
       window.open(url, "_blank");
@@ -277,7 +278,10 @@ export function ListaDocumentos() {
       const blob = await documentosApi.download(doc.id);
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a");
-      a.href = url; a.download = doc.descricao || `documento-${doc.id}`; a.click();
+      const ext  = doc.tipoMime ? "." + doc.tipoMime.split("/").pop() : "";
+      a.href = url;
+      a.download = (doc.descricao || `documento-${doc.id}`) + ext;
+      a.click();
       URL.revokeObjectURL(url);
     } catch { alert("Erro ao baixar documento."); }
   };

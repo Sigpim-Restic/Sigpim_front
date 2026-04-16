@@ -53,6 +53,18 @@ export const documentosApi = {
     fd.append("imagemPrincipal", String(params.imagemPrincipal ?? false));
     return api.upload("/documentos/upload", fd);
   },
+  // Returns a pre-signed download URL from the backend (302 redirect target).
+  // Used instead of blob download to support Supabase Storage redirect.
+  getDownloadUrl(id: number): string {
+    const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+    const token = localStorage.getItem("sigpim_token");
+    // We open the backend URL directly — the browser follows the 302 redirect
+    // to Supabase. The JWT cannot be sent via URL param for security, so we
+    // rely on the fact that the download endpoint uses a signed URL that does
+    // not require the JWT on the Supabase side.
+    return `${BASE_URL}/documentos/${id}/download`;
+  },
+
   download(id: number): Promise<Blob> {
     return api.download(`/documentos/${id}/download`);
   },
