@@ -31,10 +31,10 @@ import { Auditoria } from "./pages/auditoria/Auditoria";
 import { MapaGIS } from "./pages/MapaGIS";
 import { Catalogos } from "./pages/Catalogos";
 import { Configuracoes } from "./pages/Configuracoes";
+import { GerenciarTiposImovel } from "./pages/admin/GerenciarTiposImovel";
 import { ProtectedRoute } from "./contexts/ProtectedRoute";
 import { CadastroImovelProvider } from "./contexts/CadastroImovelContext";
 import { RedefinirSenha } from "./pages/auth/RedefinirSenha";
-import { MeuPerfil } from "./pages/auth/MeuPerfil";
 
 function WizardCriarLayout() {
   return (
@@ -107,7 +107,7 @@ export const router = createBrowserRouter([
       { path: "usuarios/:id/permissoes",Component: Permissoes },
       { path: "usuarios/sucesso",       Component: SucessoUsuario },
       { path: "configuracoes",          Component: Configuracoes },
-      { path: "perfil",                 Component: MeuPerfil },
+      { path: "configuracoes/tipos-imovel", Component: GerenciarTiposImovel },
     ],
   },
 ]);
