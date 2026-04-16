@@ -1,6 +1,5 @@
 import { api } from "./client";
 
-export type TipoImovel = "PROPRIO" | "LOCADO" | "INCERTO";
 export type StatusCadastro = "PRE_CADASTRO" | "VALIDADO";
 export type SituacaoDominial = "REGULAR" | "IRREGULAR" | "EM_APURACAO" | "EM_LITIGIO";
 
@@ -10,7 +9,9 @@ export interface ImovelResponse {
   codigoSigpim: string;
   nomeReferencia: string | null;
   descricao: string | null;
-  tipoImovel: TipoImovel;
+  // Dynamic property type — replaces the fixed TipoImovel enum
+  idTipoImovel: number | null;
+  nomeTipoImovel: string | null;
   statusCadastro: StatusCadastro;
   situacaoDominial: SituacaoDominial | null;
   origemCadastro: string | null;
@@ -26,7 +27,7 @@ export interface ImovelResponse {
   estadoConservacaoAtual: string | null;
   idOrgaoGestorPatrimonial: number | null;
   idOrgaoGestorOperacional: number | null;
-  idUnidadeGestora: number;
+  idUnidadeGestora: number | null;
   observacoesGerais: string | null;
   ativo: boolean;
   deletado: boolean;
@@ -38,12 +39,16 @@ export interface ImovelResponse {
   motivoEncerramento: string | null;
   encerradoEm: string | null;
   encerradoPor: number | null;
+  // GIS coordinates resolved from localizacoes
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface ImovelRequest {
   nomeReferencia?: string;
   descricao?: string;
-  tipoImovel: TipoImovel;
+  // All fields optional — no field is mandatory for pre-registration
+  idTipoImovel?: number;
   situacaoDominial?: SituacaoDominial;
   origemCadastro?: string;
   inscricaoImobiliaria?: string;
@@ -58,7 +63,7 @@ export interface ImovelRequest {
   estadoConservacaoAtual?: string;
   idOrgaoGestorPatrimonial?: number;
   idOrgaoGestorOperacional?: number;
-  idUnidadeGestora: number;
+  idUnidadeGestora?: number;
   observacoesGerais?: string;
 }
 

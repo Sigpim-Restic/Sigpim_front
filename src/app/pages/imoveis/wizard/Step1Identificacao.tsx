@@ -4,11 +4,7 @@ import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "../../../components/ui/select";
 import { AlertBox } from "../../../components/layout/States";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
@@ -20,167 +16,123 @@ export function CadastroImovelStep1() {
   const { etapa1, setEtapa1 } = useCadastroImovel();
   const navigate = useNavigate();
 
-  const [erros, setErros] = useState<Record<string, string>>({});
-  const [orgaos, setOrgaos] = useState<OrgaoResponse[]>([]);
-  const [unidades, setUnidades] = useState<UnidadeOrganizacionalResponse[]>([]);
-  const [carregandoOrgaos, setCarregandoOrgaos] = useState(true);
-  const [carregandoUnidades, setCarregandoUnidades] = useState(false);
-  const [erroCarregamento, setErroCarregamento] = useState<string | null>(null);
+  const [orgaos,              setOrgaos]              = useState<OrgaoResponse[]>([]);
+  const [unidades,            setUnidades]            = useState<UnidadeOrganizacionalResponse[]>([]);
+  const [carregandoOrgaos,    setCarregandoOrgaos]    = useState(true);
+  const [carregandoUnidades,  setCarregandoUnidades]  = useState(false);
+  const [erroCarregamento,    setErroCarregamento]    = useState<string | null>(null);
 
-  // Carrega órgãos ativos ao montar o componente
   useEffect(() => {
-    orgaosApi
-      .listarAtivos()
+    orgaosApi.listarAtivos()
       .then(setOrgaos)
-      .catch(() => setErroCarregamento("Não foi possível carregar os órgãos. Tente recarregar a página."))
+      .catch(() => setErroCarregamento("Não foi possível carregar os órgãos."))
       .finally(() => setCarregandoOrgaos(false));
   }, []);
 
-  // Carrega unidades sempre que o órgão selecionado mudar
   useEffect(() => {
-    if (!etapa1.idOrgaoGestorPatrimonial) {
-      setUnidades([]);
-      return;
-    }
-
+    if (!etapa1.idOrgaoGestorPatrimonial) { setUnidades([]); return; }
     setCarregandoUnidades(true);
-    unidadesApi
-      .listarAtivasPorOrgao(Number(etapa1.idOrgaoGestorPatrimonial))
+    unidadesApi.listarAtivasPorOrgao(Number(etapa1.idOrgaoGestorPatrimonial))
       .then(setUnidades)
-      .catch(() => setErroCarregamento("Não foi possível carregar as unidades. Tente recarregar a página."))
+      .catch(() => setErroCarregamento("Não foi possível carregar as unidades."))
       .finally(() => setCarregandoUnidades(false));
   }, [etapa1.idOrgaoGestorPatrimonial]);
 
-  const validar = () => {
-    const e: Record<string, string> = {};
-    if (!etapa1.nomeReferencia.trim()) e.nomeReferencia = "Denominação é obrigatória.";
-    if (!etapa1.idOrgaoGestorPatrimonial) e.idOrgaoGestorPatrimonial = "Selecione o órgão responsável.";
-    if (!etapa1.idUnidadeGestora) e.idUnidadeGestora = "Selecione a unidade gestora.";
-    setErros(e);
-    return Object.keys(e).length === 0;
-  };
+  // No mandatory validation for pre-registration.
+  // The user can advance without filling any field.
+  const handleNext = () => navigate("/imoveis/novo/etapa-2");
 
-  const handleNext = () => {
-    if (validar()) navigate("/imoveis/novo/etapa-2");
-  };
-
-  const handleOrgaoChange = (idOrgao: string) => {
-    // Ao trocar o órgão, limpa a unidade selecionada
-    setEtapa1({ ...etapa1, idOrgaoGestorPatrimonial: idOrgao, idUnidadeGestora: "" });
-  };
+  const handleBack = () => navigate(-1);
 
   return (
-    <WizardLayout currentStep={1} onNext={handleNext}>
+    <WizardLayout currentStep={1} onNext={handleNext} onBack={handleBack}>
       <div className="p-6 space-y-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Identificação e Governança</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Informações básicas e responsáveis pela gestão do imóvel
-          </p>
+          <h3 className="text-lg font-semibold text-gray-900">Identificação</h3>
+          <p className="text-sm text-gray-600 mt-1">Dados básicos do imóvel — todos os campos são opcionais no pré-cadastro</p>
         </div>
 
-        {erroCarregamento ? (
-          <AlertBox variant="error">{erroCarregamento}</AlertBox>
-        ) : (
-          <AlertBox variant="info">
-            Campos com <span className="text-red-600">*</span> são obrigatórios.
+        {/* Info box explaining pre-registration */}
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <span className="font-medium">Pré-cadastro:</span> nenhum campo é obrigatório aqui. Preencha o que souber agora e complemente depois. Os campos obrigatórios só são exigidos na transição para <strong>Validado</strong>.
+        </div>
+
+        {erroCarregamento && (
+          <AlertBox variant="error" title="Erro ao carregar dados">
+            {erroCarregamento}
           </AlertBox>
         )}
 
-        <div className="grid gap-6">
-          {/* Denominação */}
+        <div className="grid gap-5">
+
+          {/* Nome de Referência */}
           <div className="space-y-2">
-            <Label htmlFor="nomeReferencia">
-              Denominação do Imóvel <span className="text-red-600">*</span>
-            </Label>
+            <Label>Denominação / Nome de Referência</Label>
             <Input
-              id="nomeReferencia"
+              placeholder="Ex: Escola Municipal Padre Anchieta, Terreno Lote 42..."
               value={etapa1.nomeReferencia}
               onChange={(e) => setEtapa1({ ...etapa1, nomeReferencia: e.target.value })}
-              placeholder="Ex: Escola Municipal João Silva"
-              className={erros.nomeReferencia ? "border-red-400" : ""}
             />
-            {erros.nomeReferencia && (
-              <p className="text-xs text-red-500">{erros.nomeReferencia}</p>
-            )}
+            <p className="text-xs text-gray-500">Nome popular, apelido ou referência informal. Opcional.</p>
           </div>
 
-          {/* Órgão e Unidade */}
-          <div className="grid gap-6 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="orgao">
-                Órgão Responsável <span className="text-red-600">*</span>
-              </Label>
-              <Select
-                value={etapa1.idOrgaoGestorPatrimonial}
-                onValueChange={handleOrgaoChange}
-                disabled={carregandoOrgaos}
-              >
-                <SelectTrigger className={erros.idOrgaoGestorPatrimonial ? "border-red-400" : ""}>
-                  <SelectValue
-                    placeholder={carregandoOrgaos ? "Carregando órgãos..." : "Selecione o órgão"}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {orgaos.map((o) => (
-                    // value é o ID numérico como string — o padrão do Select do shadcn/ui
-                    <SelectItem key={o.id} value={String(o.id)}>
-                      {o.sigla} – {o.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {erros.idOrgaoGestorPatrimonial && (
-                <p className="text-xs text-red-500">{erros.idOrgaoGestorPatrimonial}</p>
-              )}
-            </div>
+          {/* Órgão responsável */}
+          <div className="space-y-2">
+            <Label>Órgão Responsável (Gestor Patrimonial)</Label>
+            <Select
+              value={etapa1.idOrgaoGestorPatrimonial}
+              onValueChange={(v) => setEtapa1({ ...etapa1, idOrgaoGestorPatrimonial: v, idUnidadeGestora: "" })}
+              disabled={carregandoOrgaos}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={carregandoOrgaos ? "Carregando..." : "Selecione o órgão (opcional)"} />
+              </SelectTrigger>
+              <SelectContent>
+                {orgaos.map((o) => (
+                  <SelectItem key={o.id} value={String(o.id)}>{o.sigla} – {o.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="unidade">
-                Unidade Gestora <span className="text-red-600">*</span>
-              </Label>
-              <Select
-                value={etapa1.idUnidadeGestora}
-                onValueChange={(v) => setEtapa1({ ...etapa1, idUnidadeGestora: v })}
-                disabled={!etapa1.idOrgaoGestorPatrimonial || carregandoUnidades}
-              >
-                <SelectTrigger className={erros.idUnidadeGestora ? "border-red-400" : ""}>
-                  <SelectValue
-                    placeholder={
-                      carregandoUnidades
-                        ? "Carregando unidades..."
-                        : etapa1.idOrgaoGestorPatrimonial
-                        ? "Selecione a unidade"
-                        : "Selecione primeiro o órgão"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {unidades.map((u) => (
-                    // value é o ID numérico como string
-                    <SelectItem key={u.id} value={String(u.id)}>
-                      {u.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {erros.idUnidadeGestora && (
-                <p className="text-xs text-red-500">{erros.idUnidadeGestora}</p>
-              )}
-            </div>
+          {/* Unidade Gestora */}
+          <div className="space-y-2">
+            <Label>Unidade Gestora</Label>
+            <Select
+              value={etapa1.idUnidadeGestora}
+              onValueChange={(v) => setEtapa1({ ...etapa1, idUnidadeGestora: v })}
+              disabled={!etapa1.idOrgaoGestorPatrimonial || carregandoUnidades}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    !etapa1.idOrgaoGestorPatrimonial
+                      ? "Selecione primeiro o órgão"
+                      : carregandoUnidades
+                      ? "Carregando..."
+                      : "Selecione a unidade (opcional)"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {unidades.map((u) => (
+                  <SelectItem key={u.id} value={String(u.id)}>{u.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Observações */}
           <div className="space-y-2">
-            <Label htmlFor="observacoes">Observações Gerais</Label>
+            <Label>Observações Gerais</Label>
             <Textarea
-              id="observacoes"
+              placeholder="Contexto, informações complementares, situação de levantamento..."
               value={etapa1.observacoesGerais}
               onChange={(e) => setEtapa1({ ...etapa1, observacoesGerais: e.target.value })}
-              placeholder="Informações adicionais relevantes sobre o imóvel..."
               rows={3}
             />
           </div>
+
         </div>
       </div>
     </WizardLayout>

@@ -1,26 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { WizardLayout } from "../../../components/layout/WizardLayout";
 import { Label } from "../../../components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "../../../components/ui/select";
 import { Textarea } from "../../../components/ui/textarea";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
+import { tiposImovelApi, type TipoImovelResponse } from "../../../api/tipos-imovel-alertas";
 
 export function CadastroImovelStep3() {
   const { etapa3, setEtapa3 } = useCadastroImovel();
   const navigate = useNavigate();
-  const [erros, setErros] = useState<Record<string, string>>({});
 
-  const validar = () => {
-    const e: Record<string, string> = {};
-    if (!etapa3.tipoImovel) e.tipoImovel = "Selecione o tipo do imóvel.";
-    setErros(e);
-    return Object.keys(e).length === 0;
-  };
+  const [tiposImovel,        setTiposImovel]        = useState<TipoImovelResponse[]>([]);
+  const [carregandoTipos,    setCarregandoTipos]    = useState(true);
 
-  const handleNext = () => {
-    if (validar()) navigate("/imoveis/novo/etapa-4");
-  };
+  // Load dynamic property types from API
+  useEffect(() => {
+    tiposImovelApi.listarAtivos()
+      .then(setTiposImovel)
+      .catch(() => {/* fail silently — field stays optional */})
+      .finally(() => setCarregandoTipos(false));
+  }, []);
+
+  // No mandatory validation — pre-registration has no required fields
+  const handleNext = () => navigate("/imoveis/novo/etapa-4");
+  const handleBack = () => navigate("/imoveis/novo/etapa-2");
 
   const sel = (field: keyof typeof etapa3) => ({
     value: etapa3[field],
@@ -28,35 +34,38 @@ export function CadastroImovelStep3() {
   });
 
   return (
-    <WizardLayout currentStep={3} onNext={handleNext}>
+    <WizardLayout currentStep={3} onNext={handleNext} onBack={handleBack}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Classificação e Uso</h3>
-          <p className="text-sm text-gray-600 mt-1">Tipo, tipologia e situação dominial do imóvel</p>
+          <p className="text-sm text-gray-600 mt-1">Tipo, tipologia e situação dominial do imóvel — todos opcionais no pré-cadastro</p>
         </div>
 
         <div className="grid gap-6">
-          {/* Tipo de Imóvel */}
+
+          {/* Tipo de Imóvel — dynamic list from tipos_imovel table */}
           <div className="space-y-2">
-            <Label>Tipo de Imóvel <span className="text-red-600">*</span></Label>
-            <Select {...sel("tipoImovel")}>
-              <SelectTrigger className={erros.tipoImovel ? "border-red-400" : ""}>
-                <SelectValue placeholder="Selecione o tipo" />
+            <Label>Tipo de Imóvel</Label>
+            <Select {...sel("idTipoImovel")} disabled={carregandoTipos}>
+              <SelectTrigger>
+                <SelectValue placeholder={carregandoTipos ? "Carregando tipos..." : "Selecione o tipo (opcional)"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PROPRIO">Próprio</SelectItem>
-                <SelectItem value="LOCADO">Locado</SelectItem>
-                <SelectItem value="INCERTO">Incerto</SelectItem>
+                {tiposImovel.map((t) => (
+                  <SelectItem key={t.id} value={String(t.id)}>{t.nome}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            {erros.tipoImovel && <p className="text-xs text-red-500">{erros.tipoImovel}</p>}
+            <p className="text-xs text-gray-500">
+              Os tipos disponíveis são gerenciados pelo administrador do sistema.
+            </p>
           </div>
 
           {/* Tipologia */}
           <div className="space-y-2">
             <Label>Tipologia</Label>
             <Select {...sel("tipologia")}>
-              <SelectTrigger><SelectValue placeholder="Selecione a tipologia" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Selecione a tipologia (opcional)" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Administrativo">Administrativo</SelectItem>
                 <SelectItem value="Educação">Educação</SelectItem>
@@ -77,7 +86,7 @@ export function CadastroImovelStep3() {
           <div className="space-y-2">
             <Label>Situação Dominial</Label>
             <Select {...sel("situacaoDominial")}>
-              <SelectTrigger><SelectValue placeholder="Selecione a situação" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Selecione a situação (opcional)" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="REGULAR">Regular</SelectItem>
                 <SelectItem value="IRREGULAR">Irregular</SelectItem>
@@ -97,6 +106,7 @@ export function CadastroImovelStep3() {
               rows={4}
             />
           </div>
+
         </div>
       </div>
     </WizardLayout>

@@ -1,7 +1,5 @@
 import { api } from "./client";
 
-// --- Tipos ---
-
 export interface OrgaoResponse {
   id: number;
   nome: string;
@@ -39,7 +37,8 @@ export interface UsuarioRequest {
   cargo?: string;
   idOrgao?: number | null;
   idUnidade?: number | null;
-  perfil: PerfilUsuario;
+  // Optional — admin assigns later via PATCH /usuarios/{id}/perfil
+  perfil?: PerfilUsuario;
 }
 
 export interface UsuarioResponse {
@@ -53,45 +52,43 @@ export interface UsuarioResponse {
   cargo: string | null;
   idOrgao: number | null;
   idUnidade: number | null;
-  perfil: PerfilUsuario;
+  // Null until admin assigns a role
+  perfil: PerfilUsuario | null;
   ativo: boolean;
   criadoEm: string | null;
   atualizadoEm: string | null;
 }
 
-// --- API ---
-
 export const usuariosApi = {
   criar(data: UsuarioRequest): Promise<UsuarioResponse> {
     return api.post<UsuarioResponse>("/usuarios", data);
   },
-
   listar(): Promise<UsuarioResponse[]> {
     return api.get<UsuarioResponse[]>("/usuarios");
   },
-
-  buscarMe(): Promise<UsuarioResponse> {
-    return api.get<UsuarioResponse>("/usuarios/me");
+  listarInativos(): Promise<UsuarioResponse[]> {
+    return api.get<UsuarioResponse[]>("/usuarios/inativos");
   },
-
   buscarPorId(id: number): Promise<UsuarioResponse> {
     return api.get<UsuarioResponse>(`/usuarios/${id}`);
   },
-
-  alterarMinhaSenha(novaSenha: string): Promise<void> {
-    return api.patch<void>("/usuarios/minha-senha", { novaSenha });
+  buscarMe(): Promise<UsuarioResponse> {
+    return api.get<UsuarioResponse>("/usuarios/me");
   },
-
+  definirPerfil(id: number, perfil: PerfilUsuario): Promise<UsuarioResponse> {
+    return api.patch<UsuarioResponse>(`/usuarios/${id}/perfil`, { perfil });
+  },
   ativar(id: number): Promise<UsuarioResponse> {
     return api.patch<UsuarioResponse>(`/usuarios/${id}/ativar`);
   },
-
   desativar(id: number): Promise<UsuarioResponse> {
     return api.patch<UsuarioResponse>(`/usuarios/${id}/desativar`);
   },
-
   excluir(id: number): Promise<void> {
     return api.delete<void>(`/usuarios/${id}`);
+  },
+  alterarMinhaSenha(novaSenha: string): Promise<void> {
+    return api.patch<void>("/usuarios/minha-senha", { novaSenha });
   },
 };
 
