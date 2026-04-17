@@ -1,18 +1,11 @@
 import React, { useState } from "react";
-import { ArrowLeft,
- Link, useNavigate } from "react-router";
-import { ArrowLeft,
- Building2, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, ArrowLeft, UserPlus } from "lucide-react";
-import { ArrowLeft,
- Button } from "../../components/ui/button";
-import { ArrowLeft,
- Input } from "../../components/ui/input";
-import { ArrowLeft,
- Label } from "../../components/ui/label";
-import { ArrowLeft,
- Checkbox } from "../../components/ui/checkbox";
-import { ArrowLeft,
- useAuth } from "../../contexts/AuthContext";
+import { Link, useNavigate } from "react-router";
+import { ArrowLeft, Building2, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, UserPlus } from "lucide-react";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Checkbox } from "../../components/ui/checkbox";
+import { useAuth } from "../../contexts/AuthContext";
 
 export function Login() {
   const navigate = useNavigate();
