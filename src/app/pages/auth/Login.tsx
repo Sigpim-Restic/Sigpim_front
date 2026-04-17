@@ -1,11 +1,18 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { Building2, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, UserPlus } from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Checkbox } from "../../components/ui/checkbox";
-import { useAuth } from "../../contexts/AuthContext";
+import { ArrowLeft,
+ Link, useNavigate } from "react-router";
+import { ArrowLeft,
+ Building2, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, ArrowLeft, UserPlus } from "lucide-react";
+import { ArrowLeft,
+ Button } from "../../components/ui/button";
+import { ArrowLeft,
+ Input } from "../../components/ui/input";
+import { ArrowLeft,
+ Label } from "../../components/ui/label";
+import { ArrowLeft,
+ Checkbox } from "../../components/ui/checkbox";
+import { ArrowLeft,
+ useAuth } from "../../contexts/AuthContext";
 
 export function Login() {
   const navigate = useNavigate();
@@ -169,9 +176,20 @@ export function Login() {
                 Criar nova conta
               </Button>
             </Link>
+
+            {/* Voltar à home pública */}
+            <Link to="/">
+              <Button
+                variant="ghost"
+                className="w-full h-10 text-sm text-gray-500 hover:text-[#1351B4]"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar ao início
+              </Button>
+            </Link>
           </div>
 
-          {/* Footer */}
+          {/* Footer */
           <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
             <p className="text-xs text-center text-gray-600">
               Prefeitura Municipal de São Luís — SEMAD

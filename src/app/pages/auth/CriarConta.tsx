@@ -357,6 +357,11 @@ export function CriarConta() {
                   <ArrowLeft className="mr-2 h-4 w-4" />Voltar para o login
                 </Button>
               </Link>
+              <Link to="/">
+                <Button variant="ghost" className="w-full h-10 text-sm text-gray-400 hover:text-[#1351B4]">
+                  <ArrowLeft className="mr-2 h-3.5 w-3.5" />Voltar ao início
+                </Button>
+              </Link>
             </div>
           </div>
 
