@@ -1,6 +1,7 @@
 import React from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { MainLayout } from "./components/layout/MainLayout";
+import { Home } from "./pages/Home";
 import { Login } from "./pages/auth/Login";
 import { RecuperarSenha } from "./pages/auth/RecuperarSenha";
 import { CriarConta } from "./pages/auth/CriarConta";
@@ -31,8 +32,6 @@ import { Auditoria } from "./pages/auditoria/Auditoria";
 import { MapaGIS } from "./pages/MapaGIS";
 import { Catalogos } from "./pages/Catalogos";
 import { Configuracoes } from "./pages/Configuracoes";
-import { GerenciarTiposImovel } from "./pages/admin/GerenciarTiposImovel";
-import { GerenciarSituacoesDominiais } from "./pages/admin/GerenciarSituacoesDominiais";
 import { ProtectedRoute } from "./contexts/ProtectedRoute";
 import { CadastroImovelProvider } from "./contexts/CadastroImovelContext";
 import { RedefinirSenha } from "./pages/auth/RedefinirSenha";
@@ -46,6 +45,7 @@ function WizardCriarLayout() {
 }
 
 export const router = createBrowserRouter([
+  { path: "/home",                 Component: Home },
   { path: "/login",                Component: Login },
   { path: "/auth/recuperar-senha", Component: RecuperarSenha },
   { path: "/auth/criar-conta",     Component: CriarConta },
@@ -108,8 +108,6 @@ export const router = createBrowserRouter([
       { path: "usuarios/:id/permissoes",Component: Permissoes },
       { path: "usuarios/sucesso",       Component: SucessoUsuario },
       { path: "configuracoes",          Component: Configuracoes },
-      { path: "configuracoes/tipos-imovel", Component: GerenciarTiposImovel },
-      { path: "configuracoes/situacoes-dominiais", Component: GerenciarSituacoesDominiais },
     ],
   },
 ]);
