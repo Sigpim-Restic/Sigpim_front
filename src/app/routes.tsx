@@ -45,13 +45,13 @@ function WizardCriarLayout() {
 }
 
 export const router = createBrowserRouter([
-  { path: "/home",                 Component: Home },
+  { path: "/",                     Component: Home },
   { path: "/login",                Component: Login },
   { path: "/auth/recuperar-senha", Component: RecuperarSenha },
   { path: "/auth/criar-conta",     Component: CriarConta },
   { path: "/auth/redefinir-senha", Component: RedefinirSenha },
   {
-    path: "/",
+    path: "/dashboard",
     element: (
       <ProtectedRoute>
         <MainLayout />

@@ -113,7 +113,7 @@ export function CadastroUsuario() {
     if (validateForm()) {
       // Simulate API call
       setTimeout(() => {
-        navigate("/usuarios/sucesso");
+        navigate("/dashboard/usuarios/sucesso");
       }, 500);
     }
   };
@@ -124,7 +124,7 @@ export function CadastroUsuario() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate("/usuarios")}
+          onClick={() => navigate("/dashboard/usuarios")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -353,7 +353,7 @@ export function CadastroUsuario() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate("/usuarios")}
+            onClick={() => navigate("/dashboard/usuarios")}
           >
             Cancelar
           </Button>

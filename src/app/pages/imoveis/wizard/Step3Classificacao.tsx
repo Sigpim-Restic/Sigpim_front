@@ -1,38 +1,26 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { WizardLayout } from "../../../components/layout/WizardLayout";
 import { Label } from "../../../components/ui/label";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "../../../components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 import { Textarea } from "../../../components/ui/textarea";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
-import { tiposImovelApi, type TipoImovelResponse } from "../../../api/tipos-imovel-alertas";
-import { situacoesDominiaisApi, type SituacaoDominialResponse } from "../../../api/situacoes-dominiais";
 
 export function CadastroImovelStep3() {
   const { etapa3, setEtapa3 } = useCadastroImovel();
   const navigate = useNavigate();
+  const [erros, setErros] = useState<Record<string, string>>({});
 
-  const [tiposImovel,       setTiposImovel]       = useState<TipoImovelResponse[]>([]);
-  const [situacoes,         setSituacoes]         = useState<SituacaoDominialResponse[]>([]);
-  const [carregandoTipos,   setCarregandoTipos]   = useState(true);
-  const [carregandoSit,     setCarregandoSit]     = useState(true);
+  const validar = () => {
+    const e: Record<string, string> = {};
+    if (!etapa3.tipoImovel) e.tipoImovel = "Selecione o tipo do imóvel.";
+    setErros(e);
+    return Object.keys(e).length === 0;
+  };
 
-  useEffect(() => {
-    tiposImovelApi.listarAtivos()
-      .then(setTiposImovel)
-      .catch(() => {})
-      .finally(() => setCarregandoTipos(false));
-
-    situacoesDominiaisApi.listarAtivas()
-      .then(setSituacoes)
-      .catch(() => {})
-      .finally(() => setCarregandoSit(false));
-  }, []);
-
-  const handleNext = () => navigate("/imoveis/novo/etapa-4");
-  const handleBack = () => navigate("/imoveis/novo/etapa-2");
+  const handleNext = () => {
+    if (validar()) navigate("/dashboard/imoveis/novo/etapa-4");
+  };
 
   const sel = (field: keyof typeof etapa3) => ({
     value: etapa3[field],
@@ -40,69 +28,66 @@ export function CadastroImovelStep3() {
   });
 
   return (
-    <WizardLayout currentStep={3} onNext={handleNext} onBack={handleBack}>
+    <WizardLayout currentStep={3} onNext={handleNext}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Classificação e Uso</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            Tipo, tipologia e situação dominial — todos opcionais no pré-cadastro
-          </p>
+          <p className="text-sm text-gray-600 mt-1">Tipo, tipologia e situação dominial do imóvel</p>
         </div>
 
         <div className="grid gap-6">
-
-          {/* Tipo de Imóvel — dinâmico */}
+          {/* Tipo de Imóvel */}
           <div className="space-y-2">
-            <Label>Tipo de Imóvel</Label>
-            <Select {...sel("idTipoImovel")} disabled={carregandoTipos}>
-              <SelectTrigger>
-                <SelectValue placeholder={carregandoTipos ? "Carregando..." : "Selecione o tipo (opcional)"} />
+            <Label>Tipo de Imóvel <span className="text-red-600">*</span></Label>
+            <Select {...sel("tipoImovel")}>
+              <SelectTrigger className={erros.tipoImovel ? "border-red-400" : ""}>
+                <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
-                {tiposImovel.map((t) => (
-                  <SelectItem key={t.id} value={String(t.id)}>{t.nome}</SelectItem>
-                ))}
+                <SelectItem value="PROPRIO">Próprio</SelectItem>
+                <SelectItem value="LOCADO">Locado</SelectItem>
+                <SelectItem value="INCERTO">Incerto</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500">
-              Os tipos são gerenciados pelo administrador em Configurações.
-            </p>
+            {erros.tipoImovel && <p className="text-xs text-red-500">{erros.tipoImovel}</p>}
           </div>
 
           {/* Tipologia */}
           <div className="space-y-2">
             <Label>Tipologia</Label>
             <Select {...sel("tipologia")}>
-              <SelectTrigger><SelectValue placeholder="Selecione a tipologia (opcional)" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Selecione a tipologia" /></SelectTrigger>
               <SelectContent>
-                {["Administrativo","Educação","Saúde","Cultura","Esporte e Lazer",
-                  "Segurança Pública","Assistência Social","Infraestrutura","Terreno",
-                  "Residencial","Outro"].map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
+                <SelectItem value="Administrativo">Administrativo</SelectItem>
+                <SelectItem value="Educação">Educação</SelectItem>
+                <SelectItem value="Saúde">Saúde</SelectItem>
+                <SelectItem value="Cultura">Cultura</SelectItem>
+                <SelectItem value="Esporte e Lazer">Esporte e Lazer</SelectItem>
+                <SelectItem value="Segurança Pública">Segurança Pública</SelectItem>
+                <SelectItem value="Assistência Social">Assistência Social</SelectItem>
+                <SelectItem value="Infraestrutura">Infraestrutura</SelectItem>
+                <SelectItem value="Terreno">Terreno</SelectItem>
+                <SelectItem value="Residencial">Residencial</SelectItem>
+                <SelectItem value="Outro">Outro</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Situação Dominial — dinâmica */}
+          {/* Situação Dominial */}
           <div className="space-y-2">
             <Label>Situação Dominial</Label>
-            <Select {...sel("idSituacaoDominial")} disabled={carregandoSit}>
-              <SelectTrigger>
-                <SelectValue placeholder={carregandoSit ? "Carregando..." : "Selecione a situação (opcional)"} />
-              </SelectTrigger>
+            <Select {...sel("situacaoDominial")}>
+              <SelectTrigger><SelectValue placeholder="Selecione a situação" /></SelectTrigger>
               <SelectContent>
-                {situacoes.map((s) => (
-                  <SelectItem key={s.id} value={String(s.id)}>{s.nome}</SelectItem>
-                ))}
+                <SelectItem value="REGULAR">Regular</SelectItem>
+                <SelectItem value="IRREGULAR">Irregular</SelectItem>
+                <SelectItem value="EM_APURACAO">Em Apuração</SelectItem>
+                <SelectItem value="EM_LITIGIO">Em Litígio</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500">
-              As situações são gerenciadas pelo administrador em Configurações.
-            </p>
           </div>
 
-          {/* Descrição do Uso Atual */}
+          {/* Descrição */}
           <div className="space-y-2">
             <Label>Descrição do Uso Atual</Label>
             <Textarea
@@ -112,7 +97,6 @@ export function CadastroImovelStep3() {
               rows={4}
             />
           </div>
-
         </div>
       </div>
     </WizardLayout>

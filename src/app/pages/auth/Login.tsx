@@ -24,7 +24,7 @@ export function Login() {
     setErro(null);
     try {
       await login({ email: formData.email, senha: formData.senha });
-      navigate("/");
+      navigate("/dashboard");
     } catch (err: unknown) {
       setErro(
         err instanceof Error

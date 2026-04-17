@@ -85,7 +85,7 @@ export function Permissoes() {
   const handleSave = () => {
     // Simulate API call
     setTimeout(() => {
-      navigate("/usuarios");
+      navigate("/dashboard/usuarios");
     }, 500);
   };
 
@@ -97,7 +97,7 @@ export function Permissoes() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate("/usuarios")}
+          onClick={() => navigate("/dashboard/usuarios")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -221,7 +221,7 @@ export function Permissoes() {
       </div>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <Button variant="outline" onClick={() => navigate("/usuarios")}>
+        <Button variant="outline" onClick={() => navigate("/dashboard/usuarios")}>
           Cancelar
         </Button>
         <Button

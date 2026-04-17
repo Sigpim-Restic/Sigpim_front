@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard, Building2, Users, Map, FileText,
@@ -12,26 +12,25 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { useAuth } from "../../contexts/AuthContext";
-import { alertasApi } from "../../api/tipos-imovel-alertas";
 
 const menuItems = [
-  { path: "/",              label: "Painel Geral",     icon: LayoutDashboard },
+  { path: "/dashboard",              label: "Painel Geral",     icon: LayoutDashboard },
   {
-    path: "/imoveis",
+    path: "/dashboard/imoveis",
     label: "Imóveis",
     icon: Building2,
     submenu: [
-      { path: "/imoveis",           label: "Listagem",  icon: List },
+      { path: "/dashboard/imoveis",           label: "Listagem",  icon: List },
       { path: "/imoveis/catalogos", label: "Catálogos", icon: BookOpen },
     ],
   },
-  { path: "/ocupacoes",     label: "Ocupações",        icon: ClipboardList },
-  { path: "/documentos",   label: "Documentos",        icon: FolderOpen },
-  { path: "/relatorios",   label: "Relatórios",        icon: FileText },
-  { path: "/auditoria",    label: "Auditoria",         icon: History },
-  { path: "/mapa",         label: "Mapa GIS",          icon: Map },
-  { path: "/usuarios",     label: "Usuários e Perfis", icon: Users },
-  { path: "/configuracoes",label: "Configurações",     icon: Settings },
+  { path: "/dashboard/ocupacoes",     label: "Ocupações",        icon: ClipboardList },
+  { path: "/dashboard/documentos",   label: "Documentos",        icon: FolderOpen },
+  { path: "/dashboard/relatorios",   label: "Relatórios",        icon: FileText },
+  { path: "/dashboard/auditoria",    label: "Auditoria",         icon: History },
+  { path: "/dashboard/mapa",         label: "Mapa GIS",          icon: Map },
+  { path: "/dashboard/usuarios",     label: "Usuários e Perfis", icon: Users },
+  { path: "/dashboard/configuracoes",label: "Configurações",     icon: Settings },
 ];
 
 const PERFIL_LABEL: Record<string, string> = {
@@ -47,22 +46,10 @@ const PERFIL_LABEL: Record<string, string> = {
 export function MainLayout() {
   const [sidebarOpen,      setSidebarOpen]      = useState(false);  // mobile
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);  // desktop toggle
-  const [alertCount,       setAlertCount]       = useState(0);
 
   const location = useLocation();
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
-
-  // Poll unread alert count every 60 seconds for the notification badge
-  useEffect(() => {
-    const fetchCount = () =>
-      alertasApi.contarNaoLidos()
-        .then((r) => setAlertCount(r.total))
-        .catch(() => {/* non-critical — badge just stays at 0 */});
-    fetchCount();
-    const interval = setInterval(fetchCount, 60_000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleLogout = () => { logout(); navigate("/login"); };
 
@@ -289,13 +276,9 @@ export function MainLayout() {
 
             {/* Notificações + usuário */}
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/alertas")}>
+              <Button variant="ghost" size="icon" className="relative">
                 <Bell className="h-4.5 w-4.5" />
-                {alertCount > 0 && (
-                  <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-0.5 text-[10px] font-bold text-white">
-                    {alertCount > 99 ? "99+" : alertCount}
-                  </span>
-                )}
+                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
               </Button>
 
               <DropdownMenu>
@@ -317,10 +300,10 @@ export function MainLayout() {
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel className="text-xs text-gray-500">Minha Conta</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/perfil")}>
+                  <DropdownMenuItem>
                     <User className="mr-2 h-4 w-4" />Meu Perfil
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/configuracoes")}>
+                  <DropdownMenuItem onClick={() => navigate("/dashboard/configuracoes")}>
                     <Settings className="mr-2 h-4 w-4" />Configurações
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -343,7 +326,7 @@ export function MainLayout() {
 
 function getBreadcrumbs(pathname: string) {
   const segments = pathname.split("/").filter(Boolean);
-  const crumbs   = [{ path: "/", label: "Início" }];
+  const crumbs   = [{ path: "/dashboard", label: "Início" }];
   const labels: Record<string, string> = {
     imoveis: "Imóveis", novo: "Novo", ocupacoes: "Ocupações",
     documentos: "Documentos", relatorios: "Relatórios",

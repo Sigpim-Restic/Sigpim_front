@@ -80,7 +80,7 @@ export function CadastroImovelStep4() {
   });
 
   return (
-    <WizardLayout currentStep={4} onNext={() => navigate("/imoveis/novo/etapa-5")}>
+    <WizardLayout currentStep={4} onNext={() => navigate("/dashboard/imoveis/novo/etapa-5")}>
       <div className="p-6 space-y-8">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Dados Físicos</h3>

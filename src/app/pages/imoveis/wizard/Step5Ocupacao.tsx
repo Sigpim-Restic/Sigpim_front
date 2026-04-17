@@ -49,7 +49,7 @@ export function CadastroImovelStep5() {
     };
 
   return (
-    <WizardLayout currentStep={5} onNext={() => navigate("/imoveis/novo/etapa-6")}>
+    <WizardLayout currentStep={5} onNext={() => navigate("/dashboard/imoveis/novo/etapa-6")}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Ocupação e Destinação</h3>
