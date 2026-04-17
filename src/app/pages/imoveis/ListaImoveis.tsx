@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Plus, Search, Filter, MoreVertical, Edit, Eye,
-  MapPin, Download, RefreshCw, AlertCircle,
+  MapPin, Download, RefreshCw, AlertCircle, Trash2,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "../../components/ui/dialog";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
 import {
@@ -44,6 +47,11 @@ export function ListaImoveis() {
   const [filterStatus, setStatus] = useState("todos");
   const [filterTipo, setTipo]     = useState("todos");
 
+  // Exclusão com confirmação
+  const [confirmando,   setConfirmando]   = useState<ImovelResponse | null>(null);
+  const [excluindo,     setExcluindo]     = useState(false);
+  const [erroExclusao, setErroExclusao]  = useState<string | null>(null);
+
   const carregar = useCallback(async () => {
     setLoading(true);
     setErro(null);
@@ -61,6 +69,21 @@ export function ListaImoveis() {
   useEffect(() => { carregar(); }, [carregar]);
 
   // Exportar ficha individual como JSON (PDF virá na Fase 2)
+  const handleExcluir = async () => {
+    if (!confirmando) return;
+    setExcluindo(true);
+    setErroExclusao(null);
+    try {
+      await imoveisApi.deletar(confirmando.id);
+      setConfirmando(null);
+      carregar();
+    } catch (e: unknown) {
+      setErroExclusao(e instanceof Error ? e.message : "Erro ao excluir imóvel.");
+    } finally {
+      setExcluindo(false);
+    }
+  };
+
   const handleExportarFicha = (im: ImovelResponse) => {
     const blob = new Blob([JSON.stringify(im, null, 2)], { type: "application/json" });
     const url  = URL.createObjectURL(blob);
@@ -83,6 +106,41 @@ export function ListaImoveis() {
 
   return (
     <div className="space-y-5">
+
+      {/* Dialog de confirmação de exclusão */}
+      <Dialog open={!!confirmando} onOpenChange={(v) => !v && setConfirmando(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Excluir imóvel</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-3">
+            <p className="text-sm text-gray-600">
+              Tem certeza que deseja excluir o imóvel{" "}
+              <span className="font-semibold text-gray-900">
+                {confirmando?.codigoSigpim}
+                {confirmando?.nomeReferencia ? ` — ${confirmando.nomeReferencia}` : ""}
+              </span>?
+            </p>
+            <p className="text-sm text-red-600">
+              Esta ação não pode ser desfeita. Todos os documentos e ocupações vinculados serão mantidos no histórico.
+            </p>
+            {erroExclusao && (
+              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{erroExclusao}</span>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmando(null)} disabled={excluindo}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleExcluir} disabled={excluindo}>
+              {excluindo ? "Excluindo..." : "Excluir imóvel"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Topo */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-gray-500">
@@ -254,6 +312,19 @@ export function ListaImoveis() {
                           <DropdownMenuItem onClick={() => handleExportarFicha(im)}>
                             <Download className="mr-2 h-4 w-4" />Exportar Ficha
                           </DropdownMenuItem>
+
+                          {/* Excluir — apenas Admin Sistema e Admin Patrimonial */}
+                          {perm.canDeleteImovel && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600 focus:text-red-700"
+                                onClick={() => { setErroExclusao(null); setConfirmando(im); }}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />Excluir imóvel
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
