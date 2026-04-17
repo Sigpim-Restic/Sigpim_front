@@ -189,7 +189,7 @@ export function Login() {
             </Link>
           </div>
 
-          {/* Footer */
+          {/* Footer */}
           <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
             <p className="text-xs text-center text-gray-600">
               Prefeitura Municipal de São Luís — SEMAD
