@@ -41,9 +41,10 @@ function inferirTipo(file: File): string {
 let _id = 1;
 
 export function CadastroImovelStep6() {
-  const { arquivos, setArquivos, finalizar, salvando, erro } = useCadastroImovel();
+  const { arquivos, setArquivos, finalizar, salvando, erro, etapa1, etapa2, etapa3 } = useCadastroImovel();
   const navigate = useNavigate();
   const [dragging, setDragging] = useState(false);
+  const [erroValidacao, setErroValidacao] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const adicionar = (files: FileList | File[]) => {
@@ -65,6 +66,29 @@ export function CadastroImovelStep6() {
     setArquivos(arquivos.map((a) => (a.id === id ? { ...a, [campo]: valor } : a)));
 
   const handleFinalizar = () => {
+    setErroValidacao(null);
+
+    // At least one of these 7 key fields must be filled — otherwise the
+    // record contains nothing identifiable and should not be saved.
+    const temDadosMinimos =
+      etapa1.nomeReferencia.trim()            ||
+      etapa1.idOrgaoGestorPatrimonial         ||
+      etapa1.observacoesGerais.trim()         ||
+      etapa2.logradouro.trim()                ||
+      etapa2.bairro.trim()                    ||
+      etapa2.cep.trim()                       ||
+      etapa2.latitude.trim()                  ||
+      etapa2.longitude.trim();
+
+    if (!temDadosMinimos) {
+      setErroValidacao(
+        "Não é possível salvar um imóvel sem nenhuma informação. " +
+        "Preencha pelo menos um dos seguintes campos: nome de referência, órgão responsável, " +
+        "logradouro, bairro, CEP ou coordenadas."
+      );
+      return;
+    }
+
     finalizar(() => navigate("/imoveis/sucesso"));
   };
 
@@ -77,6 +101,13 @@ export function CadastroImovelStep6() {
             Upload de fotos, plantas, contratos e demais evidências do imóvel
           </p>
         </div>
+
+        {erroValidacao && (
+          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{erroValidacao}</span>
+          </div>
+        )}
 
         {erro && (
           <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
