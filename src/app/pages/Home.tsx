@@ -9,6 +9,27 @@ import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "../components/ui/card";
 
+// ── Leaflet ──────────────────────────────────────────────────────────────────
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
+import iconUrl       from "leaflet/dist/images/marker-icon.png";
+import shadowUrl     from "leaflet/dist/images/marker-shadow.png";
+
+// Fix Leaflet default icon bug with bundlers
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl });
+
+const markerIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:18px;height:18px;border-radius:50%;background:#1351B4;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
+const SLZ: [number, number] = [-2.5297, -44.3028];
+
 // ── Public API — no auth required ────────────────────────────────────────────
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
@@ -33,37 +54,16 @@ async function fetchImoveisPublicos(): Promise<ImovelPublico[]> {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/**
- * Maps real lat/lng to a percentage position within the map container.
- * São Luís bounding box approx: lat -2.45 to -2.65, lng -44.15 to -44.45
- */
-function coordToPercent(lat: number, lng: number) {
-  const latMin = -2.65, latMax = -2.45;
-  const lngMin = -44.45, lngMax = -44.15;
-  const x = ((lng - lngMin) / (lngMax - lngMin)) * 100;
-  const y = ((lat - latMax) / (latMin - latMax)) * 100;
-  return {
-    left: `${Math.max(5, Math.min(90, x))}%`,
-    top:  `${Math.max(5, Math.min(85, y))}%`,
-  };
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function Home() {
   const navigate = useNavigate();
   const [menuMobileAberto,  setMenuMobileAberto]  = useState(false);
-  const [imovelSelecionado, setImovelSelecionado] = useState<number | null>(null);
   const [imoveis,           setImoveis]           = useState<ImovelPublico[]>([]);
 
   useEffect(() => {
     fetchImoveisPublicos().then(setImoveis);
   }, []);
-
-  const handleImovelClick = (id: number) =>
-    setImovelSelecionado(imovelSelecionado === id ? null : id);
-
-  const imovelAtual = imoveis.find((i) => i.id === imovelSelecionado);
 
   return (
     <div className="min-h-screen bg-white">
@@ -256,71 +256,39 @@ export function Home() {
           <div className="mt-12">
             <Card className="overflow-hidden">
               <CardContent className="p-0">
-                <div className="relative aspect-video bg-gradient-to-br from-blue-50 to-green-50">
-                  <div className="absolute inset-0">
-                    {/* Grid de fundo simulando mapa */}
-                    <div className="absolute inset-0 bg-[linear-gradient(rgba(19,81,180,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(19,81,180,0.05)_1px,transparent_1px)] bg-[size:50px_50px]" />
+                <div className="relative rounded-lg overflow-hidden" style={{ height: "450px" }}>
+                  <MapContainer
+                    center={SLZ}
+                    zoom={12}
+                    style={{ height: "100%", width: "100%" }}
+                    scrollWheelZoom={false}
+                    zoomControl
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
 
-                    {imoveis.length === 0 && (
-                      <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400">
-                        <MapPin className="mr-2 h-4 w-4" />
-                        Nenhum imóvel validado com coordenadas cadastrado ainda.
-                      </div>
-                    )}
-
-                    {/* Marcadores — somente nome ao clicar, sem dados sensíveis */}
-                    {imoveis.map((imovel) => {
-                      const pos = coordToPercent(imovel.latitude, imovel.longitude);
-                      const selecionado = imovelSelecionado === imovel.id;
-                      return (
-                        <button
-                          key={imovel.id}
-                          onClick={() => handleImovelClick(imovel.id)}
-                          className="group absolute -translate-x-1/2 -translate-y-1/2"
-                          style={pos}
-                          title={imovel.nomeReferencia ?? "Imóvel público validado"}
-                        >
-                          <div className={`relative transition-all ${selecionado ? "scale-125" : "group-hover:scale-110"}`}>
-                            <div className={`flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition-colors ${selecionado ? "bg-[#168821]" : "bg-[#1351B4] group-hover:bg-[#155bcb]"}`}>
-                              <Building2 className="h-5 w-5 text-white" />
-                            </div>
-                            <span className="absolute inset-0 h-10 w-10 animate-ping rounded-full bg-[#1351B4] opacity-20" />
+                    {/* Markers — only name shown on click, no sensitive data */}
+                    {imoveis.map((imovel) => (
+                      <Marker
+                        key={imovel.id}
+                        position={[imovel.latitude, imovel.longitude]}
+                        icon={markerIcon}
+                      >
+                        <Popup>
+                          <div className="text-sm space-y-1 min-w-[160px]">
+                            <p className="font-semibold text-gray-900">
+                              {imovel.nomeReferencia ?? "Imóvel Público"}
+                            </p>
+                            {imovel.nomeTipoImovel && (
+                              <p className="text-xs text-gray-500">{imovel.nomeTipoImovel} · Validado</p>
+                            )}
                           </div>
-                        </button>
-                      );
-                    })}
-
-                    {/* Tooltip — SOMENTE nome, sem dados sensíveis */}
-                    {imovelAtual && (
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-                        <Card className="animate-in fade-in zoom-in-95 min-w-[220px] shadow-xl">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#168821]/10">
-                                <MapPin className="h-5 w-5 text-[#168821]" />
-                              </div>
-                              <div className="flex-1">
-                                <CardTitle className="text-base">
-                                  {imovelAtual.nomeReferencia ?? "Imóvel Público"}
-                                </CardTitle>
-                                <CardDescription className="text-xs">
-                                  {imovelAtual.nomeTipoImovel
-                                    ? `${imovelAtual.nomeTipoImovel} · Validado`
-                                    : "Imóvel Público Validado"}
-                                </CardDescription>
-                              </div>
-                              <button
-                                onClick={() => setImovelSelecionado(null)}
-                                className="text-gray-400 hover:text-gray-600"
-                              >
-                                <X className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </CardHeader>
-                        </Card>
-                      </div>
-                    )}
-                  </div>
+                        </Popup>
+                      </Marker>
+                    ))}
+                  </MapContainer>
                 </div>
               </CardContent>
             </Card>
