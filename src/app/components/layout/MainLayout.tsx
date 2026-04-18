@@ -21,7 +21,7 @@ const menuItems = [
     icon: Building2,
     submenu: [
       { path: "/dashboard/imoveis",           label: "Listagem",  icon: List },
-      { path: "/imoveis/catalogos", label: "Catálogos", icon: BookOpen },
+      { path: "/dashboard/imoveis/catalogos", label: "Catálogos", icon: BookOpen },
     ],
   },
   { path: "/dashboard/ocupacoes",     label: "Ocupações",        icon: ClipboardList },
@@ -71,7 +71,7 @@ export function MainLayout() {
         {!sidebarCollapsed && (
           <div className="overflow-hidden">
             <h1 className="text-lg font-semibold text-white whitespace-nowrap">SIGPIM-SLZ</h1>
-            <p className="text-xs text-white/60 whitespace-nowrap">Fase 1 — MVP</p>
+            <p className="text-xs text-white/60 whitespace-nowrap">Fase 2</p>
           </div>
         )}
       </div>
@@ -135,7 +135,7 @@ export function MainLayout() {
           <p className="text-center text-xs text-white/40">
             Prefeitura Municipal de São Luís
             <br />
-            SIGPIM-SLZ • v1.0 • 2026
+            SIGPIM-SLZ • v2.0 • 2026
           </p>
         </div>
       )}
@@ -151,7 +151,7 @@ export function MainLayout() {
         </div>
         <div>
           <h1 className="text-lg font-semibold text-white">SIGPIM-SLZ</h1>
-          <p className="text-xs text-white/60">Fase 1 — MVP</p>
+          <p className="text-xs text-white/60">Fase 2</p>
         </div>
       </div>
       <nav className="flex-1 space-y-0.5 px-3 py-4 overflow-y-auto">
@@ -198,7 +198,7 @@ export function MainLayout() {
       </nav>
       <div className="border-t border-white/10 p-4">
         <p className="text-center text-xs text-white/40">
-          Prefeitura Municipal de São Luís<br />SIGPIM-SLZ • v1.0 • 2026
+          Prefeitura Municipal de São Luís<br />SIGPIM-SLZ • v2.0 • 2026
         </p>
       </div>
     </div>
@@ -333,7 +333,7 @@ function getBreadcrumbs(pathname: string) {
     auditoria: "Auditoria", mapa: "Mapa GIS",
     usuarios: "Usuários", configuracoes: "Configurações",
     catalogos: "Catálogos", sucesso: "Cadastro Concluído",
-    editar: "Editar",
+    editar: "Editar", vistorias: "Vistorias", intervencoes: "Intervenções",
   };
   let cur = "";
   for (const seg of segments) {
