@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import {
   ArrowLeft, RefreshCw, AlertCircle, MapPin, FileText,
-  Building2, Users, Edit, Map,
+  Building2, Users, Edit, Map, Download, Loader2,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
+import { relatoriosApi } from "../../api/relatorios";
 import { documentosApi, type DocumentoResponse } from "../../api/documentos";
 import { ocupacoesApi, type OcupacaoResponse } from "../../api/ocupacoes";
 import { usePermissoes } from "../../hooks/usePermissoes";
@@ -59,6 +60,27 @@ export function DetalhesImovel() {
   const [ocupacoes,  setOcupacoes]  = useState<OcupacaoResponse[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [erro,      setErro]      = useState<string | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [erroPdf,    setErroPdf]    = useState<string | null>(null);
+
+  const handleGerarFicha = async () => {
+    if (!id) return;
+    setLoadingPdf(true);
+    setErroPdf(null);
+    try {
+      const { blob, nomeArquivo } = await relatoriosApi.gerarFichaPdf(Number(id));
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement("a");
+      a.href     = url;
+      a.download = nomeArquivo;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: unknown) {
+      setErroPdf(e instanceof Error ? e.message : "Erro ao gerar PDF.");
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -131,12 +153,23 @@ export function DetalhesImovel() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline" size="sm"
             onClick={() => navigate(`/dashboard/mapa?imovel=${imovel.id}`)}
           >
             <Map className="mr-2 h-4 w-4" />Ver no Mapa
+          </Button>
+          <Button
+            variant="outline" size="sm"
+            onClick={handleGerarFicha}
+            disabled={loadingPdf}
+            title="Gerar Ficha Cadastral em PDF com QR Code de verificação"
+          >
+            {loadingPdf
+              ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Gerando PDF...</>
+              : <><Download className="mr-2 h-4 w-4" />Ficha PDF + QR</>
+            }
           </Button>
           {perm.canUpdateImovel && (
             <Button
@@ -149,6 +182,15 @@ export function DetalhesImovel() {
           )}
         </div>
       </div>
+
+      {/* Erro ao gerar PDF */}
+      {erroPdf && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="flex-1">{erroPdf}</div>
+          <button onClick={() => setErroPdf(null)} className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
 
       {/* Identificação */}
       <Secao icone={<Building2 className="h-4 w-4" />} titulo="Identificação">

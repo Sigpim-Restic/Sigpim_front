@@ -33,6 +33,7 @@ import { MapaGIS } from "./pages/MapaGIS";
 import { Catalogos } from "./pages/Catalogos";
 import { Configuracoes } from "./pages/Configuracoes";
 import { MeuPerfil } from "./pages/auth/MeuPerfil";
+import { VerificarDocumento } from "./pages/relatorios/VerificarDocumento";
 import { GerenciarTiposImovel } from "./pages/admin/GerenciarTiposImovel";
 import { GerenciarSituacoesDominiais } from "./pages/admin/GerenciarSituacoesDominiais";
 import { ProtectedRoute } from "./contexts/ProtectedRoute";
@@ -53,6 +54,8 @@ export const router = createBrowserRouter([
   { path: "/auth/recuperar-senha", Component: RecuperarSenha },
   { path: "/auth/criar-conta",     Component: CriarConta },
   { path: "/auth/redefinir-senha", Component: RedefinirSenha },
+  // Rota pública — verificação de documento via QR Code (sem autenticação)
+  { path: "/relatorios/verificar/:token", Component: VerificarDocumento },
   {
     path: "/dashboard",
     element: (
