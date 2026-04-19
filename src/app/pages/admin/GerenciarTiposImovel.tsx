@@ -62,7 +62,6 @@ export function GerenciarTiposImovel() {
 
   const fecharForm = () => { setForm(formVazio); setFormErro(null); };
 
-  // Auto-generate codigo from nome while user types (only on create)
   const handleNomeChange = (nome: string) => {
     const codigoAuto = nome.toUpperCase().replace(/\s+/g, "_").replace(/[^A-Z0-9_]/g, "");
     setForm((f) => ({
@@ -117,7 +116,6 @@ export function GerenciarTiposImovel() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
 
-      {/* Modal criar/editar */}
       <Dialog open={form.aberto} onOpenChange={(v) => !v && fecharForm()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -125,7 +123,6 @@ export function GerenciarTiposImovel() {
               {form.modo === "criar" ? "Novo Tipo de Imóvel" : "Editar Tipo de Imóvel"}
             </DialogTitle>
           </DialogHeader>
-
           <div className="space-y-4 py-2">
             {formErro && (
               <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -133,7 +130,6 @@ export function GerenciarTiposImovel() {
                 <span>{formErro}</span>
               </div>
             )}
-
             <div className="space-y-2">
               <Label>Nome <span className="text-red-500">*</span></Label>
               <Input
@@ -142,7 +138,6 @@ export function GerenciarTiposImovel() {
                 onChange={(e) => handleNomeChange(e.target.value)}
               />
             </div>
-
             <div className="space-y-2">
               <Label>Código <span className="text-red-500">*</span></Label>
               <Input
@@ -155,16 +150,9 @@ export function GerenciarTiposImovel() {
               </p>
             </div>
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={fecharForm} disabled={salvando}>
-              Cancelar
-            </Button>
-            <Button
-              className="bg-[#1351B4] hover:bg-[#0c3b8d]"
-              onClick={handleSalvar}
-              disabled={salvando}
-            >
+            <Button variant="outline" onClick={fecharForm} disabled={salvando}>Cancelar</Button>
+            <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={handleSalvar} disabled={salvando}>
               {salvando
                 ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
                 : form.modo === "criar" ? "Criar Tipo" : "Salvar Alterações"
@@ -174,16 +162,13 @@ export function GerenciarTiposImovel() {
         </DialogContent>
       </Dialog>
 
-      {/* Cabeçalho */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/configuracoes")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/configuracoes")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
           <h1 className="text-xl font-semibold text-gray-900">Tipos de Imóvel</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Gerencie os tipos disponíveis no cadastro de imóveis
-          </p>
+          <p className="text-sm text-gray-500 mt-0.5">Gerencie os tipos disponíveis no cadastro de imóveis</p>
         </div>
         <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={abrirCriar}>
           <Plus className="mr-2 h-4 w-4" />Novo Tipo
@@ -194,18 +179,14 @@ export function GerenciarTiposImovel() {
         <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="flex-1">{erro}</div>
-          <Button variant="ghost" size="sm" className="text-red-600" onClick={carregar}>
-            Tentar novamente
-          </Button>
+          <Button variant="ghost" size="sm" className="text-red-600" onClick={carregar}>Tentar novamente</Button>
         </div>
       )}
 
-      {/* Info */}
       <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
         Os tipos <strong>Próprio</strong>, <strong>Locado</strong> e <strong>Incerto</strong> são os tipos padrão do sistema. Você pode criar novos tipos e desativar os que não forem utilizados.
       </div>
 
-      {/* Tabela */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <RefreshCw className="h-7 w-7 animate-spin text-[#1351B4]" />
@@ -231,9 +212,7 @@ export function GerenciarTiposImovel() {
                 <TableRow key={t.id} className="hover:bg-gray-50/80">
                   <TableCell className="font-medium">{t.nome}</TableCell>
                   <TableCell>
-                    <code className="rounded bg-gray-100 px-2 py-0.5 text-xs font-mono text-gray-700">
-                      {t.codigo}
-                    </code>
+                    <code className="rounded bg-gray-100 px-2 py-0.5 text-xs font-mono text-gray-700">{t.codigo}</code>
                   </TableCell>
                   <TableCell>
                     {t.ativo ? (
@@ -248,16 +227,11 @@ export function GerenciarTiposImovel() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => abrirEditar(t)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => abrirEditar(t)}>
                         <Pencil className="mr-1.5 h-3.5 w-3.5" />Editar
                       </Button>
                       <Button
-                        variant="ghost"
-                        size="sm"
+                        variant="ghost" size="sm"
                         className={t.ativo ? "text-red-600 hover:text-red-700" : "text-green-700 hover:text-green-800"}
                         disabled={acaoLoading === t.id}
                         onClick={() => handleToggleAtivo(t)}

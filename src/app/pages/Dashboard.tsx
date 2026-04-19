@@ -8,7 +8,6 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { imoveisApi } from "../api/imoveis";
 import { ocupacoesApi } from "../api/ocupacoes";
-import { api } from "../api/client";
 
 interface StatsImoveis {
   total:       number;
@@ -17,19 +16,17 @@ interface StatsImoveis {
 }
 
 export function Dashboard() {
-  const [stats,         setStats]         = useState<StatsImoveis | null>(null);
+  const [stats,          setStats]          = useState<StatsImoveis | null>(null);
   const [totalOcupacoes, setTotalOcupacoes] = useState<number | null>(null);
-  const [loading,       setLoading]       = useState(true);
+  const [loading,        setLoading]        = useState(true);
 
   useEffect(() => {
     Promise.allSettled([
-      // Busca página 0 tamanho 1 só para pegar totalElements e depois busca tudo
-      // para contar status — usa size=1 primeiro para ser rápido
       imoveisApi.listar(0, 200),
       ocupacoesApi.listar(0, 1),
     ]).then(([imRes, ocRes]) => {
       if (imRes.status === "fulfilled") {
-        const imoveis = imRes.value.content;
+        const imoveis     = imRes.value.content;
         const total       = imRes.value.totalElements;
         const preCadastro = imoveis.filter((im) => im.statusCadastro === "PRE_CADASTRO").length;
         const validados   = imoveis.filter((im) => im.statusCadastro === "VALIDADO").length;
@@ -114,27 +111,27 @@ export function Dashboard() {
         <Card className="p-5 lg:col-span-1">
           <h3 className="mb-4 text-sm font-semibold text-gray-900">Ações Rápidas</h3>
           <div className="space-y-2">
-            <Link to="/imoveis/novo/etapa-1">
+            <Link to="/dashboard/imoveis/novo/etapa-1">
               <Button className="w-full justify-start bg-[#1351B4] hover:bg-[#0c3b8d]">
                 <Building2 className="mr-2 h-4 w-4" /> Novo Imóvel
               </Button>
             </Link>
-            <Link to="/ocupacoes">
+            <Link to="/dashboard/ocupacoes">
               <Button variant="outline" className="w-full justify-start border-[#1351B4] text-[#1351B4] hover:bg-blue-50">
                 <ClipboardList className="mr-2 h-4 w-4" /> Ver Ocupações
               </Button>
             </Link>
-            <Link to="/documentos">
+            <Link to="/dashboard/documentos">
               <Button variant="outline" className="w-full justify-start">
                 <FolderOpen className="mr-2 h-4 w-4" /> Ver Documentos
               </Button>
             </Link>
-            <Link to="/relatorios">
+            <Link to="/dashboard/relatorios">
               <Button variant="outline" className="w-full justify-start">
                 <FileText className="mr-2 h-4 w-4" /> Relatórios
               </Button>
             </Link>
-            <Link to="/mapa">
+            <Link to="/dashboard/mapa">
               <Button variant="outline" className="w-full justify-start">
                 <Map className="mr-2 h-4 w-4" /> Abrir Mapa GIS
               </Button>
@@ -155,7 +152,7 @@ export function Dashboard() {
               <Building2 className="mb-2 h-8 w-8" />
               <p className="text-sm font-medium">Nenhum imóvel cadastrado ainda</p>
               <p className="mt-1 text-xs">Comece o cadastro do acervo patrimonial.</p>
-              <Link to="/imoveis/novo/etapa-1" className="mt-3">
+              <Link to="/dashboard/imoveis/novo/etapa-1" className="mt-3">
                 <Button size="sm" className="bg-[#1351B4] hover:bg-[#0c3b8d]">
                   Cadastrar primeiro imóvel
                 </Button>
@@ -190,10 +187,10 @@ export function Dashboard() {
                 </div>
               </div>
               <div className="flex gap-3">
-                <Link to="/imoveis">
+                <Link to="/dashboard/imoveis">
                   <Button size="sm" variant="outline" className="text-xs">Ver todos os imóveis</Button>
                 </Link>
-                <Link to="/ocupacoes">
+                <Link to="/dashboard/ocupacoes">
                   <Button size="sm" variant="outline" className="text-xs">Ver todas as ocupações</Button>
                 </Link>
               </div>

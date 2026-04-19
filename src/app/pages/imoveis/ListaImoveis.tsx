@@ -154,7 +154,7 @@ export function ListaImoveis() {
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
           {perm.canCreateImovel && (
-            <Link to="/imoveis/novo/etapa-1">
+            <Link to="/dashboard/imoveis/novo/etapa-1">
               <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">
                 <Plus className="mr-2 h-4 w-4" />Novo Imóvel
               </Button>
@@ -290,19 +290,19 @@ export function ListaImoveis() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           {/* Visualizar — todos os perfis que podem ler */}
-                          <DropdownMenuItem onClick={() => navigate(`/imoveis/${im.id}`)}>
+                          <DropdownMenuItem onClick={() => navigate(`/dashboard/imoveis/${im.id}`)}>
                             <Eye className="mr-2 h-4 w-4" />Visualizar
                           </DropdownMenuItem>
 
                           {/* Editar — apenas quem pode atualizar */}
                           {perm.canUpdateImovel && (
-                            <DropdownMenuItem onClick={() => navigate(`/imoveis/${im.id}/editar`)}>
+                            <DropdownMenuItem onClick={() => navigate(`/dashboard/imoveis/${im.id}/editar`)}>
                               <Edit className="mr-2 h-4 w-4" />Editar
                             </DropdownMenuItem>
                           )}
 
                           {/* Ver no Mapa — navega para /mapa passando o id */}
-                          <DropdownMenuItem onClick={() => navigate(`/mapa?imovel=${im.id}`)}>
+                          <DropdownMenuItem onClick={() => navigate(`/dashboard/mapa?imovel=${im.id}`)}>
                             <MapPin className="mr-2 h-4 w-4" />Ver no Mapa
                           </DropdownMenuItem>
 

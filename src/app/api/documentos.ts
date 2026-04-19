@@ -18,6 +18,8 @@ export interface DocumentoResponse {
   tamanhoBytes: number;
   statusValidacao: StatusValidacao;
   imagemPrincipal: boolean;
+  ativo: boolean;
+  deletado: boolean;
   criadoEm: string;
   atualizadoEm: string;
 }
@@ -40,6 +42,9 @@ export const documentosApi = {
   listarPorImovel(idImovel: number, page = 0, size = 20): Promise<PageResponse<DocumentoResponse>> {
     return api.get(`/documentos/imovel/${idImovel}?page=${page}&size=${size}`);
   },
+  listarDeletados(page = 0, size = 20): Promise<PageResponse<DocumentoResponse>> {
+    return api.get(`/documentos/deletados?page=${page}&size=${size}`);
+  },
   upload(arquivo: File, params: DocumentoUploadParams): Promise<DocumentoResponse> {
     const fd = new FormData();
     fd.append("arquivo", arquivo);
@@ -53,22 +58,20 @@ export const documentosApi = {
     fd.append("imagemPrincipal", String(params.imagemPrincipal ?? false));
     return api.upload("/documentos/upload", fd);
   },
-  // Returns a pre-signed download URL from the backend (302 redirect target).
-  // Used instead of blob download to support Supabase Storage redirect.
   getDownloadUrl(id: number): string {
     const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
-    const token = localStorage.getItem("sigpim_token");
-    // We open the backend URL directly — the browser follows the 302 redirect
-    // to Supabase. The JWT cannot be sent via URL param for security, so we
-    // rely on the fact that the download endpoint uses a signed URL that does
-    // not require the JWT on the Supabase side.
     return `${BASE_URL}/documentos/${id}/download`;
   },
-
   download(id: number): Promise<Blob> {
     return api.download(`/documentos/${id}/download`);
   },
   deletar(id: number): Promise<void> {
     return api.delete(`/documentos/${id}`);
+  },
+  reativar(id: number): Promise<DocumentoResponse> {
+    return api.patch(`/documentos/${id}/reativar`);
+  },
+  excluirPermanentemente(id: number): Promise<void> {
+    return api.delete(`/documentos/${id}/permanente`);
   },
 };

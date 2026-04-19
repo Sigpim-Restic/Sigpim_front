@@ -35,13 +35,13 @@ const formVazio: FormState = {
 export function GerenciarSituacoesDominiais() {
   const navigate = useNavigate();
 
-  const [situacoes,    setSituacoes]    = useState<SituacaoDominialResponse[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [erro,         setErro]         = useState<string | null>(null);
-  const [acaoLoading,  setAcaoLoading]  = useState<number | null>(null);
-  const [form,         setForm]         = useState<FormState>(formVazio);
-  const [formErro,     setFormErro]     = useState<string | null>(null);
-  const [salvando,     setSalvando]     = useState(false);
+  const [situacoes,   setSituacoes]   = useState<SituacaoDominialResponse[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [erro,        setErro]        = useState<string | null>(null);
+  const [acaoLoading, setAcaoLoading] = useState<number | null>(null);
+  const [form,        setForm]        = useState<FormState>(formVazio);
+  const [formErro,    setFormErro]    = useState<string | null>(null);
+  const [salvando,    setSalvando]    = useState(false);
 
   const carregar = useCallback(() => {
     setLoading(true);
@@ -116,7 +116,6 @@ export function GerenciarSituacoesDominiais() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
 
-      {/* Modal criar/editar */}
       <Dialog open={form.aberto} onOpenChange={(v) => !v && fecharForm()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -124,7 +123,6 @@ export function GerenciarSituacoesDominiais() {
               {form.modo === "criar" ? "Nova Situação Dominial" : "Editar Situação Dominial"}
             </DialogTitle>
           </DialogHeader>
-
           <div className="space-y-4 py-2">
             {formErro && (
               <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -152,14 +150,9 @@ export function GerenciarSituacoesDominiais() {
               </p>
             </div>
           </div>
-
           <DialogFooter>
             <Button variant="outline" onClick={fecharForm} disabled={salvando}>Cancelar</Button>
-            <Button
-              className="bg-[#1351B4] hover:bg-[#0c3b8d]"
-              onClick={handleSalvar}
-              disabled={salvando}
-            >
+            <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={handleSalvar} disabled={salvando}>
               {salvando
                 ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
                 : form.modo === "criar" ? "Criar Situação" : "Salvar Alterações"
@@ -169,16 +162,13 @@ export function GerenciarSituacoesDominiais() {
         </DialogContent>
       </Dialog>
 
-      {/* Cabeçalho */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/configuracoes")}>
+        <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/configuracoes")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
           <h1 className="text-xl font-semibold text-gray-900">Situações Dominiais</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Gerencie as situações disponíveis no cadastro de imóveis
-          </p>
+          <p className="text-sm text-gray-500 mt-0.5">Gerencie as situações disponíveis no cadastro de imóveis</p>
         </div>
         <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={abrirCriar}>
           <Plus className="mr-2 h-4 w-4" />Nova Situação
@@ -189,9 +179,7 @@ export function GerenciarSituacoesDominiais() {
         <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="flex-1">{erro}</div>
-          <Button variant="ghost" size="sm" className="text-red-600" onClick={carregar}>
-            Tentar novamente
-          </Button>
+          <Button variant="ghost" size="sm" className="text-red-600" onClick={carregar}>Tentar novamente</Button>
         </div>
       )}
 
@@ -224,9 +212,7 @@ export function GerenciarSituacoesDominiais() {
                 <TableRow key={s.id} className="hover:bg-gray-50/80">
                   <TableCell className="font-medium">{s.nome}</TableCell>
                   <TableCell>
-                    <code className="rounded bg-gray-100 px-2 py-0.5 text-xs font-mono text-gray-700">
-                      {s.codigo}
-                    </code>
+                    <code className="rounded bg-gray-100 px-2 py-0.5 text-xs font-mono text-gray-700">{s.codigo}</code>
                   </TableCell>
                   <TableCell>
                     {s.ativo ? (
@@ -245,8 +231,7 @@ export function GerenciarSituacoesDominiais() {
                         <Pencil className="mr-1.5 h-3.5 w-3.5" />Editar
                       </Button>
                       <Button
-                        variant="ghost"
-                        size="sm"
+                        variant="ghost" size="sm"
                         className={s.ativo ? "text-red-600 hover:text-red-700" : "text-green-700 hover:text-green-800"}
                         disabled={acaoLoading === s.id}
                         onClick={() => handleToggleAtivo(s)}

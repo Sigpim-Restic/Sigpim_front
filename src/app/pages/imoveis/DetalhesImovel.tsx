@@ -134,7 +134,7 @@ export function DetalhesImovel() {
         <div className="flex gap-2">
           <Button
             variant="outline" size="sm"
-            onClick={() => navigate(`/mapa?imovel=${imovel.id}`)}
+            onClick={() => navigate(`/dashboard/mapa?imovel=${imovel.id}`)}
           >
             <Map className="mr-2 h-4 w-4" />Ver no Mapa
           </Button>
@@ -142,7 +142,7 @@ export function DetalhesImovel() {
             <Button
               size="sm"
               className="bg-[#1351B4] hover:bg-[#0c3b8d]"
-              onClick={() => navigate(`/imoveis/${imovel.id}/editar`)}
+              onClick={() => navigate(`/dashboard/imoveis/${imovel.id}/editar`)}
             >
               <Edit className="mr-2 h-4 w-4" />Editar
             </Button>
@@ -257,7 +257,7 @@ export function DetalhesImovel() {
               </div>
             ))}
             <Link
-              to="/documentos"
+              to="/dashboard/documentos"
               className="block text-center text-xs text-[#1351B4] hover:underline mt-2"
             >
               Ver todos os documentos
