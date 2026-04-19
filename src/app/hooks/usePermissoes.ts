@@ -21,9 +21,9 @@ export function usePermissoes() {
 
   return {
     // Imóveis
-    canCreateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
-    canUpdateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
-    canDeleteImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
+    canCreateImovel:   tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canUpdateImovel:   tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canDeleteImovel:   tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
     canValidateImovel: tem("ADMINISTRADOR_PATRIMONIAL", "VALIDADOR_DOCUMENTAL"),
 
     // Documentos
@@ -33,6 +33,17 @@ export function usePermissoes() {
     // Ocupações
     canWriteOcupacao: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
     canDeleteOcupacao: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
+
+    // Vistorias (Fase 2)
+    canWriteVistoria:  tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VISTORIADOR"),
+    canDeleteVistoria: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
+
+    // Intervenções (Fase 2)
+    canWriteIntervencao:  tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VISTORIADOR", "PLANEJAMENTO"),
+    canDeleteIntervencao: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
+
+    // Parecer FUMPH (Fase 2)
+    canWriteParecerFumph: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VISTORIADOR"),
 
     // Usuários
     canManageUsuario: tem("ADMINISTRADOR_SISTEMA"),
@@ -44,7 +55,7 @@ export function usePermissoes() {
     canManageCatalogo: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // Helpers de perfil
-    isAdmin: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
+    isAdmin:   tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
     isSistema: tem("ADMINISTRADOR_SISTEMA"),
     perfil,
   };
