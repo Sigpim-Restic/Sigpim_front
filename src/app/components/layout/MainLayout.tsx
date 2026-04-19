@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard, Building2, Users, Map, FileText,
-  ClipboardList, History, Menu, X, Bell,
+  ClipboardList, History, Menu, X, Bell, RefreshCw,
   ChevronRight, LogOut, User, Settings, ShieldCheck,
   BookOpen, List, FolderOpen, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
@@ -12,6 +12,7 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { useAuth } from "../../contexts/AuthContext";
+import { api } from "../../api/client";
 
 const menuItems = [
   { path: "/dashboard",              label: "Painel Geral",     icon: LayoutDashboard },
@@ -43,15 +44,61 @@ const PERFIL_LABEL: Record<string, string> = {
   AUDITOR:                   "Auditor",
 };
 
+interface AlertaItem {
+  id: number;
+  titulo: string;
+  descricao: string;
+  lido: boolean;
+  criadoEm: string;
+  codigoSigpim?: string;
+  nomeImovel?: string;
+}
+
 export function MainLayout() {
-  const [sidebarOpen,      setSidebarOpen]      = useState(false);  // mobile
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);  // desktop toggle
+  const [sidebarOpen,      setSidebarOpen]      = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [alertas,          setAlertas]          = useState<AlertaItem[]>([]);
+  const [totalNaoLidos,    setTotalNaoLidos]    = useState(0);
+  const [painelAberto,     setPainelAberto]     = useState(false);
+  const [carregandoAlertas, setCarregandoAlertas] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
 
   const handleLogout = () => { logout(); navigate("/login"); };
+
+  const carregarAlertas = useCallback(async () => {
+    setCarregandoAlertas(true);
+    try {
+      const dados = await api.get<AlertaItem[]>("/alertas");
+      setAlertas(dados);
+      setTotalNaoLidos(dados.filter((a) => !a.lido).length);
+    } catch {
+      // silencia — alertas são secundários
+    } finally {
+      setCarregandoAlertas(false);
+    }
+  }, []);
+
+  const marcarComoLido = async (id: number) => {
+    try {
+      await api.patch(`/alertas/${id}/lido`);
+      setAlertas((prev) => prev.map((a) => a.id === id ? { ...a, lido: true } : a));
+      setTotalNaoLidos((n) => Math.max(0, n - 1));
+    } catch { /* silencia */ }
+  };
+
+  const marcarTodosLidos = async () => {
+    try {
+      await api.patch("/alertas/marcar-todos-lidos");
+      setAlertas((prev) => prev.map((a) => ({ ...a, lido: true })));
+      setTotalNaoLidos(0);
+    } catch { /* silencia */ }
+  };
+
+  // Carrega alertas ao montar e a cada troca de página
+  useEffect(() => { carregarAlertas(); }, [carregarAlertas, location.pathname]);
 
   // Largura da sidebar desktop
   const sidebarW = sidebarCollapsed ? "w-16" : "w-64";
@@ -276,10 +323,85 @@ export function MainLayout() {
 
             {/* Notificações + usuário */}
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-4.5 w-4.5" />
-                <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-red-500" />
-              </Button>
+              <DropdownMenu open={painelAberto} onOpenChange={(v) => { setPainelAberto(v); if (v) carregarAlertas(); }}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Bell className="h-4.5 w-4.5" />
+                    {totalNaoLidos > 0 && (
+                      <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                        {totalNaoLidos > 9 ? "9+" : totalNaoLidos}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden">
+                  {/* Cabeçalho */}
+                  <div className="flex items-center justify-between border-b px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">Notificações</p>
+                      {totalNaoLidos > 0 && (
+                        <p className="text-xs text-gray-500">{totalNaoLidos} não lida(s)</p>
+                      )}
+                    </div>
+                    {totalNaoLidos > 0 && (
+                      <button
+                        onClick={marcarTodosLidos}
+                        className="text-xs text-[#1351B4] hover:underline"
+                      >
+                        Marcar todas como lidas
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Lista de alertas */}
+                  <div className="max-h-80 overflow-y-auto">
+                    {carregandoAlertas && (
+                      <div className="flex items-center justify-center py-8 text-gray-400">
+                        <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                        <span className="text-xs">Carregando...</span>
+                      </div>
+                    )}
+                    {!carregandoAlertas && alertas.length === 0 && (
+                      <div className="py-8 text-center text-xs text-gray-400">
+                        <Bell className="mx-auto mb-2 h-6 w-6 text-gray-300" />
+                        Nenhuma notificação.
+                      </div>
+                    )}
+                    {!carregandoAlertas && alertas.map((alerta) => (
+                      <div
+                        key={alerta.id}
+                        onClick={() => { if (!alerta.lido) marcarComoLido(alerta.id); }}
+                        className={`flex gap-3 border-b px-4 py-3 cursor-pointer transition-colors ${
+                          alerta.lido
+                            ? "bg-white hover:bg-gray-50"
+                            : "bg-blue-50 hover:bg-blue-100"
+                        }`}
+                      >
+                        <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${alerta.lido ? "bg-transparent" : "bg-[#1351B4]"}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-medium truncate ${alerta.lido ? "text-gray-700" : "text-gray-900"}`}>
+                            {alerta.titulo}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{alerta.descricao}</p>
+                          {alerta.codigoSigpim && (
+                            <p className="text-xs text-[#1351B4] font-mono mt-0.5">{alerta.codigoSigpim}</p>
+                          )}
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(alerta.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Rodapé */}
+                  {alertas.length > 0 && (
+                    <div className="border-t px-4 py-2 text-center">
+                      <p className="text-xs text-gray-400">{alertas.length} notificação(ões) no total</p>
+                    </div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
