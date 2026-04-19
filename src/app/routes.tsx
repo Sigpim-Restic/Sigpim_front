@@ -32,6 +32,7 @@ import { Auditoria } from "./pages/auditoria/Auditoria";
 import { MapaGIS } from "./pages/MapaGIS";
 import { Catalogos } from "./pages/Catalogos";
 import { Configuracoes } from "./pages/Configuracoes";
+import { MeuPerfil } from "./pages/auth/MeuPerfil";
 import { ProtectedRoute } from "./contexts/ProtectedRoute";
 import { CadastroImovelProvider } from "./contexts/CadastroImovelContext";
 import { RedefinirSenha } from "./pages/auth/RedefinirSenha";
@@ -59,6 +60,9 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, Component: Dashboard },
+
+      // ── Perfil do usuário logado ─────────────────────────────────────────
+      { path: "meu-perfil", Component: MeuPerfil },
 
       // ── Imóveis ─────────────────────────────────────────────────────────────
       { path: "imoveis",           Component: ListaImoveis },
@@ -98,16 +102,16 @@ export const router = createBrowserRouter([
       },
 
       // ── Resto do sistema ────────────────────────────────────────────────────
-      { path: "ocupacoes",              Component: ListaOcupacoes },
-      { path: "documentos",             Component: ListaDocumentos },
-      { path: "relatorios",             Component: Relatorios },
-      { path: "auditoria",              Component: Auditoria },
-      { path: "mapa",                   Component: MapaGIS },
-      { path: "usuarios",               Component: ListaUsuarios },
-      { path: "usuarios/novo",          Component: CadastroUsuario },
-      { path: "usuarios/:id/permissoes",Component: Permissoes },
-      { path: "usuarios/sucesso",       Component: SucessoUsuario },
-      { path: "configuracoes",          Component: Configuracoes },
+      { path: "ocupacoes",               Component: ListaOcupacoes },
+      { path: "documentos",              Component: ListaDocumentos },
+      { path: "relatorios",              Component: Relatorios },
+      { path: "auditoria",               Component: Auditoria },
+      { path: "mapa",                    Component: MapaGIS },
+      { path: "usuarios",                Component: ListaUsuarios },
+      { path: "usuarios/novo",           Component: CadastroUsuario },
+      { path: "usuarios/:id/permissoes", Component: Permissoes },
+      { path: "usuarios/sucesso",        Component: SucessoUsuario },
+      { path: "configuracoes",           Component: Configuracoes },
     ],
   },
 ]);
