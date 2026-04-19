@@ -37,7 +37,6 @@ export interface UsuarioRequest {
   cargo?: string;
   idOrgao?: number | null;
   idUnidade?: number | null;
-  // Optional — admin assigns later via PATCH /usuarios/{id}/perfil
   perfil?: PerfilUsuario;
 }
 
@@ -52,7 +51,6 @@ export interface UsuarioResponse {
   cargo: string | null;
   idOrgao: number | null;
   idUnidade: number | null;
-  // Null until admin assigns a role
   perfil: PerfilUsuario | null;
   ativo: boolean;
   criadoEm: string | null;
@@ -68,6 +66,9 @@ export const usuariosApi = {
   },
   listarInativos(): Promise<UsuarioResponse[]> {
     return api.get<UsuarioResponse[]>("/usuarios/inativos");
+  },
+  listarDeletados(): Promise<UsuarioResponse[]> {
+    return api.get<UsuarioResponse[]>("/usuarios/deletados");
   },
   buscarPorId(id: number): Promise<UsuarioResponse> {
     return api.get<UsuarioResponse>(`/usuarios/${id}`);
@@ -86,6 +87,12 @@ export const usuariosApi = {
   },
   excluir(id: number): Promise<void> {
     return api.delete<void>(`/usuarios/${id}`);
+  },
+  reativar(id: number): Promise<UsuarioResponse> {
+    return api.patch<UsuarioResponse>(`/usuarios/${id}/reativar`);
+  },
+  excluirPermanentemente(id: number): Promise<void> {
+    return api.delete<void>(`/usuarios/${id}/permanente`);
   },
   alterarMinhaSenha(novaSenha: string): Promise<void> {
     return api.patch<void>("/usuarios/minha-senha", { novaSenha });

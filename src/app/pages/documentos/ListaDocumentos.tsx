@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
-  Upload, Search, Download, Eye, FileText, Image, File,
+  Upload, Search, Download, Eye, FileText, Image, File, Trash2,
   CheckCircle2, Clock, XCircle, RefreshCw, AlertCircle, X, Loader2,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -75,7 +75,6 @@ function UploadModal({ open, onClose, onSucesso }: UploadModalProps) {
   const [enviando,      setEnviando]      = useState(false);
   const [erro,          setErro]          = useState<string | null>(null);
 
-  // Carrega lista de imóveis ao abrir
   useEffect(() => {
     if (!open) return;
     imoveisApi.listar(0, 200).then((r) => setImoveis(r.content)).catch(() => {});
@@ -90,12 +89,11 @@ function UploadModal({ open, onClose, onSucesso }: UploadModalProps) {
   const handleFechar = () => { resetar(); onClose(); };
 
   const handleEnviar = async () => {
-    if (!arquivo)    { setErro("Selecione um arquivo."); return; }
-    if (!idImovel)   { setErro("Selecione o imóvel."); return; }
+    if (!arquivo)          { setErro("Selecione um arquivo."); return; }
+    if (!idImovel)         { setErro("Selecione o imóvel."); return; }
     if (!descricao.trim()) { setErro("Informe uma descrição."); return; }
 
-    setEnviando(true);
-    setErro(null);
+    setEnviando(true); setErro(null);
     try {
       await documentosApi.upload(arquivo, {
         idImovel:      Number(idImovel),
@@ -128,7 +126,6 @@ function UploadModal({ open, onClose, onSucesso }: UploadModalProps) {
             </div>
           )}
 
-          {/* Arquivo */}
           <div className="space-y-1.5">
             <Label>Arquivo <span className="text-red-500">*</span></Label>
             <div
@@ -166,7 +163,6 @@ function UploadModal({ open, onClose, onSucesso }: UploadModalProps) {
             />
           </div>
 
-          {/* Imóvel */}
           <div className="space-y-1.5">
             <Label>Imóvel <span className="text-red-500">*</span></Label>
             <Select value={idImovel} onValueChange={setIdImovel}>
@@ -183,7 +179,6 @@ function UploadModal({ open, onClose, onSucesso }: UploadModalProps) {
             </Select>
           </div>
 
-          {/* Tipo + Descrição */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Tipo de documento</Label>
@@ -218,14 +213,8 @@ function UploadModal({ open, onClose, onSucesso }: UploadModalProps) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleFechar} disabled={enviando}>
-            Cancelar
-          </Button>
-          <Button
-            className="bg-[#1351B4] hover:bg-[#0c3b8d]"
-            onClick={handleEnviar}
-            disabled={enviando}
-          >
+          <Button variant="outline" onClick={handleFechar} disabled={enviando}>Cancelar</Button>
+          <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={handleEnviar} disabled={enviando}>
             {enviando
               ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</>
               : <><Upload className="mr-2 h-4 w-4" />Enviar</>
@@ -242,13 +231,15 @@ function UploadModal({ open, onClose, onSucesso }: UploadModalProps) {
 export function ListaDocumentos() {
   const perm = usePermissoes();
 
-  const [documentos,  setDocumentos]  = useState<DocumentoResponse[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [erro,        setErro]        = useState<string | null>(null);
-  const [total,       setTotal]       = useState(0);
-  const [page,        setPage]        = useState(0);
-  const [search,      setSearch]      = useState("");
-  const [modalAberto, setModalAberto] = useState(false);
+  const [documentos,        setDocumentos]        = useState<DocumentoResponse[]>([]);
+  const [loading,           setLoading]           = useState(true);
+  const [erro,              setErro]              = useState<string | null>(null);
+  const [total,             setTotal]             = useState(0);
+  const [page,              setPage]              = useState(0);
+  const [search,            setSearch]            = useState("");
+  const [modalAberto,       setModalAberto]       = useState(false);
+  const [excluindoId,       setExcluindoId]       = useState<number | null>(null);
+  const [confirmExcluir,    setConfirmExcluir]    = useState<DocumentoResponse | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true); setErro(null);
@@ -265,7 +256,6 @@ export function ListaDocumentos() {
 
   const handleVisualizar = async (doc: DocumentoResponse) => {
     try {
-      // Fetch with auth header, follow redirect to Supabase signed URL
       const blob = await documentosApi.download(doc.id);
       const url  = URL.createObjectURL(blob);
       window.open(url, "_blank");
@@ -286,6 +276,20 @@ export function ListaDocumentos() {
     } catch { alert("Erro ao baixar documento."); }
   };
 
+  const handleConfirmarExclusao = async () => {
+    if (!confirmExcluir) return;
+    setExcluindoId(confirmExcluir.id);
+    setConfirmExcluir(null);
+    try {
+      await documentosApi.deletar(confirmExcluir.id);
+      carregar();
+    } catch (e: unknown) {
+      setErro(e instanceof Error ? e.message : "Erro ao excluir documento.");
+    } finally {
+      setExcluindoId(null);
+    }
+  };
+
   const filtrados = documentos.filter((d) =>
     !search || [d.tipoDocumento, d.descricao, String(d.idImovel)]
       .join(" ").toLowerCase().includes(search.toLowerCase())
@@ -301,6 +305,24 @@ export function ListaDocumentos() {
         onSucesso={() => { setModalAberto(false); carregar(); }}
       />
 
+      {/* Modal de confirmação de exclusão */}
+      <Dialog open={!!confirmExcluir} onOpenChange={(v) => { if (!v) setConfirmExcluir(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Excluir documento</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600 py-2">
+            Tem certeza que deseja excluir o documento{" "}
+            <span className="font-medium">"{confirmExcluir?.descricao}"</span>?
+            O arquivo será removido do sistema.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmExcluir(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleConfirmarExclusao}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Topo */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-gray-500">
@@ -312,10 +334,7 @@ export function ListaDocumentos() {
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
           {perm.canUploadDocumento && (
-            <Button
-              className="bg-[#1351B4] hover:bg-[#0c3b8d]"
-              onClick={() => setModalAberto(true)}
-            >
+            <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={() => setModalAberto(true)}>
               <Upload className="mr-2 h-4 w-4" />Anexar Documento
             </Button>
           )}
@@ -407,6 +426,21 @@ export function ListaDocumentos() {
                           onClick={() => handleDownload(d)}>
                           <Download className="h-3.5 w-3.5" />
                         </Button>
+                        {perm.canDeleteDocumento && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            title="Excluir documento"
+                            disabled={excluindoId === d.id}
+                            onClick={() => setConfirmExcluir(d)}
+                          >
+                            {excluindoId === d.id
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Trash2 className="h-3.5 w-3.5" />
+                            }
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

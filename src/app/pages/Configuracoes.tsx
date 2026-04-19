@@ -1,12 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { Shield, Bell, Database, Users, Key, Info, Tag, Scale } from "lucide-react";
+import { Shield, Bell, Tag, Scale, Info } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Switch } from "../components/ui/switch";
-import { Badge } from "../components/ui/badge";
 
 export function Configuracoes() {
   const navigate = useNavigate();
@@ -26,7 +25,7 @@ export function Configuracoes() {
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <button
-            onClick={() => navigate("/configuracoes/tipos-imovel")}
+            onClick={() => navigate("/dashboard/configuracoes/tipos-imovel")}
             className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:bg-blue-50 hover:border-blue-300 transition-colors"
           >
             <Tag className="h-5 w-5 text-[#1351B4] shrink-0" />
@@ -36,7 +35,7 @@ export function Configuracoes() {
             </div>
           </button>
           <button
-            onClick={() => navigate("/configuracoes/situacoes-dominiais")}
+            onClick={() => navigate("/dashboard/configuracoes/situacoes-dominiais")}
             className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:bg-blue-50 hover:border-blue-300 transition-colors"
           >
             <Scale className="h-5 w-5 text-[#1351B4] shrink-0" />
@@ -48,6 +47,7 @@ export function Configuracoes() {
         </div>
       </Card>
 
+      {/* Informações do Sistema */}
       <Card className="p-6">
         <div className="mb-5 flex items-center gap-2">
           <Info className="h-4 w-4 text-[#1351B4]" />
@@ -55,10 +55,10 @@ export function Configuracoes() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            { label: "Versão", value: "1.0.0 — Fase 1 (MVP)" },
-            { label: "Ambiente", value: "Produção" },
-            { label: "Banco de dados", value: "PostgreSQL 15 + PostGIS" },
-            { label: "Última atualização", value: "06/04/2026" },
+            { label: "Versão",             value: "2.0.0 — Fase 2" },
+            { label: "Ambiente",           value: "Produção" },
+            { label: "Banco de dados",     value: "PostgreSQL 15 + PostGIS" },
+            { label: "Última atualização", value: "18/04/2026" },
           ].map((i) => (
             <div key={i.label} className="rounded-lg bg-gray-50 px-4 py-3">
               <p className="text-xs text-gray-500">{i.label}</p>
@@ -68,6 +68,7 @@ export function Configuracoes() {
         </div>
       </Card>
 
+      {/* Notificações */}
       <Card className="p-6">
         <div className="mb-5 flex items-center gap-2">
           <Bell className="h-4 w-4 text-[#1351B4]" />
@@ -75,10 +76,12 @@ export function Configuracoes() {
         </div>
         <div className="space-y-4">
           {[
-            { label: "Imóveis em pré-cadastro há mais de 30 dias", desc: "Alerta para operadores responsáveis" },
+            { label: "Imóveis em pré-cadastro há mais de 30 dias",          desc: "Alerta para operadores responsáveis" },
             { label: "Documentos pendentes de validação há mais de 7 dias", desc: "Notificação para validadores" },
-            { label: "Ocupações sem instrumento formal", desc: "Alerta diário para administradores patrimoniais" },
-            { label: "Imóveis sem validação GIS", desc: "Resumo semanal para equipe SEMURH" },
+            { label: "Ocupações sem instrumento formal",                    desc: "Alerta diário para administradores patrimoniais" },
+            { label: "Imóveis sem validação GIS",                           desc: "Resumo semanal para equipe SEMURH" },
+            { label: "Intervenções com parecer FUMPH pendente",             desc: "Alerta para vistoriadores e administradores" },
+            { label: "Vistorias de risco ALTO ou CRÍTICO",                  desc: "Notificação imediata para SEMOSP" },
           ].map((n) => (
             <div key={n.label} className="flex items-center justify-between gap-4">
               <div>
@@ -91,6 +94,7 @@ export function Configuracoes() {
         </div>
       </Card>
 
+      {/* Segurança */}
       <Card className="p-6">
         <div className="mb-5 flex items-center gap-2">
           <Shield className="h-4 w-4 text-[#1351B4]" />
@@ -99,7 +103,7 @@ export function Configuracoes() {
         <div className="space-y-4">
           <div className="space-y-1.5">
             <Label className="text-xs">Tempo de sessão (minutos)</Label>
-            <Input type="number" defaultValue={60} className="max-w-32" />
+            <Input type="number" defaultValue={120} className="max-w-32" />
           </div>
           <div className="flex items-center justify-between">
             <div>
