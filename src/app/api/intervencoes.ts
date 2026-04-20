@@ -1,8 +1,8 @@
 import { api } from "./client";
 import type { PageResponse } from "./imoveis";
 
-export type StatusIntervencao = "PLANEJADA" | "AGUARDANDO_PARECER" | "EM_EXECUCAO" | "SUSPENSA" | "CONCLUIDA" | "CANCELADA";
-export type TipoIntervencao   = "MANUTENCAO" | "REFORMA" | "RESTAURACAO" | "DEMOLICAO" | "OBRA_NOVA" | "ADAPTACAO";
+export type StatusIntervencao = "PLANEJADA" | "AGUARDANDO_PARECER" | "EM_CONTRATACAO" | "EM_EXECUCAO" | "SUSPENSA" | "CONCLUIDA" | "CANCELADA";
+export type TipoIntervencao   = "MANUTENCAO_PREVENTIVA" | "MANUTENCAO_CORRETIVA" | "REFORMA" | "OBRA_NOVA" | "EMERGENCIAL" | "DEMOLICAO";
 export type NivelIntervencao  = "N0" | "N1" | "N2" | "N3";
 export type StatusParecerFumph = "PENDENTE" | "EM_ANALISE" | "APROVADO" | "APROVADO_COM_CONDICIONANTES" | "REPROVADO";
 

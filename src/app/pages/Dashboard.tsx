@@ -164,11 +164,12 @@ export function Dashboard() {
   ].filter((e) => e.value > 0);
 
   const dadosIntervencoes = [
-    { name: "Planejada",    value: d.intervencoesPlanejadas },
-    { name: "Ag. Parecer",  value: d.intervencoesAguardandoParecer },
-    { name: "Em Execução",  value: d.intervencoesEmExecucao },
-    { name: "Concluída",    value: d.intervencoesConcluidas },
-    { name: "Cancelada",    value: d.intervencoesCanceladas },
+    { name: "Planejada",      value: d.intervencoesPlanejadas },
+    { name: "Em Contratação", value: d.intervencoesEmContratacao },
+    { name: "Ag. Parecer",    value: d.intervencoesAguardandoParecer },
+    { name: "Em Execução",    value: d.intervencoesEmExecucao },
+    { name: "Concluída",      value: d.intervencoesConcluidas },
+    { name: "Cancelada",      value: d.intervencoesCanceladas },
   ].filter((e) => e.value > 0);
 
   const dadosConservacao = d.distribuicaoConservacao.map((c) => ({

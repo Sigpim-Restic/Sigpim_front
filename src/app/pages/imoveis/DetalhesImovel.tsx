@@ -49,6 +49,7 @@ const CRITICIDADE_CFG: Record<string, { cls: string; label: string }> = {
 const STATUS_INTERV_CFG: Record<string, { cls: string; label: string; icon: React.ReactNode }> = {
   PLANEJADA:               { cls: "bg-gray-100 text-gray-700",    label: "Planejada",           icon: <Clock className="h-3 w-3" /> },
   AGUARDANDO_PARECER:      { cls: "bg-yellow-100 text-yellow-800",label: "Ag. Parecer FUMPH",   icon: <AlertTriangle className="h-3 w-3" /> },
+  EM_CONTRATACAO:          { cls: "bg-purple-100 text-purple-800",label: "Em Contratação",      icon: <Clock className="h-3 w-3" /> },
   EM_EXECUCAO:             { cls: "bg-blue-100 text-blue-800",    label: "Em Execução",         icon: <Wrench className="h-3 w-3" /> },
   SUSPENSA:                { cls: "bg-orange-100 text-orange-800",label: "Suspensa",            icon: <AlertCircle className="h-3 w-3" /> },
   CONCLUIDA:               { cls: "bg-green-100 text-green-800",  label: "Concluída",           icon: <CheckCircle2 className="h-3 w-3" /> },
@@ -349,7 +350,7 @@ function AbaIntervencoes({ idImovel }: { idImovel: number }) {
   const [avancoLoading, setAvancoLoading] = useState<number | null>(null);
 
   const [form, setForm] = useState<Partial<IntervencaoRequest>>({
-    tipoIntervencao: "MANUTENCAO",
+    tipoIntervencao: "MANUTENCAO_PREVENTIVA",
     nivelIntervencao: "N0",
   });
 
@@ -380,7 +381,7 @@ function AbaIntervencoes({ idImovel }: { idImovel: number }) {
     try {
       await intervencoesApi.criar(idImovel, form as IntervencaoRequest);
       setModalAberto(false);
-      setForm({ tipoIntervencao: "MANUTENCAO", nivelIntervencao: "N0" });
+      setForm({ tipoIntervencao: "MANUTENCAO_PREVENTIVA", nivelIntervencao: "N0" });
       carregar();
     } catch (e: unknown) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar intervenção.");
@@ -428,11 +429,11 @@ function AbaIntervencoes({ idImovel }: { idImovel: number }) {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Tipo <span className="text-red-500">*</span></Label>
-                <Select value={form.tipoIntervencao ?? "MANUTENCAO"}
+                <Select value={form.tipoIntervencao ?? "MANUTENCAO_PREVENTIVA"}
                   onValueChange={(v) => setForm((f) => ({ ...f, tipoIntervencao: v as any }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["MANUTENCAO","REFORMA","RESTAURACAO","DEMOLICAO","OBRA_NOVA","ADAPTACAO"].map((t) => (
+                    {["MANUTENCAO_PREVENTIVA","MANUTENCAO_CORRETIVA","REFORMA","OBRA_NOVA","EMERGENCIAL","DEMOLICAO"].map((t) => (
                       <SelectItem key={t} value={t}>{fmt(t)}</SelectItem>
                     ))}
                   </SelectContent>

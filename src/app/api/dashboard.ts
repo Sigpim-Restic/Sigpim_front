@@ -61,6 +61,7 @@ export interface DashboardIndicadores {
 
   // Intervenções
   intervencoesPlanejadas: number;
+  intervencoesEmContratacao: number;
   intervencoesEmExecucao: number;
   intervencoesConcluidas: number;
   intervencoesCanceladas: number;
