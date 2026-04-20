@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../../../components/ui/textarea";
 import { PropertyMap, Coordinate } from "../../../components/ui/property-map";
 import { AlertBox } from "../../../components/layout/States";
-import { Plus, Trash2, MapPin, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, MapPin, AlertTriangle, Zap, Droplets } from "lucide-react";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
 
@@ -107,7 +107,10 @@ export function CadastroImovelStep4() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Área Construída</Label>
+              <Label>
+                Área Construída
+                <span className="ml-1.5 text-xs font-normal text-gray-400">(0 para terreno baldio)</span>
+              </Label>
               <Input
                 type="text"
                 inputMode="decimal"
@@ -116,7 +119,10 @@ export function CadastroImovelStep4() {
                 placeholder="0,00"
                 onChange={e => setEtapa4({ ...etapa4, areaConstruidaM2: e.target.value.replace(/[^0-9.]/g, "") })}
                 onBlur={e => {
-                  const v = parseFloat(e.target.value);
+                  // Permite "0" explicitamente — não converte string vazia em 0
+                  const raw = e.target.value;
+                  if (raw === "" || raw === "0") return;
+                  const v = parseFloat(raw);
                   if (!isNaN(v)) setEtapa4({ ...etapa4, areaConstruidaM2: String(v) });
                 }}
               />
@@ -147,6 +153,38 @@ export function CadastroImovelStep4() {
           </div>
         </section>
 
+        {/* Concessionárias */}
+        <section className="space-y-4 border-b border-gray-100 pb-6">
+          <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Concessionárias</h4>
+          <p className="text-xs text-gray-400 -mt-2">Registros de medição junto às concessionárias (opcional)</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Zap className="h-3.5 w-3.5 text-yellow-500" />
+                Registro de Energia
+              </Label>
+              <Input
+                placeholder="Nº do medidor / UC de energia"
+                value={etapa4.registroEnergia}
+                onChange={e => setEtapa4({ ...etapa4, registroEnergia: e.target.value })}
+                maxLength={50}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <Droplets className="h-3.5 w-3.5 text-blue-500" />
+                Registro de Água
+              </Label>
+              <Input
+                placeholder="Nº do hidrômetro / matrícula CAEMA"
+                value={etapa4.registroAgua}
+                onChange={e => setEtapa4({ ...etapa4, registroAgua: e.target.value })}
+                maxLength={50}
+              />
+            </div>
+          </div>
+        </section>
+
         {/* Dimensões dinâmicas */}
         <section className="space-y-4 border-b border-gray-100 pb-6">
           <div className="flex items-start justify-between gap-4">
@@ -162,10 +200,7 @@ export function CadastroImovelStep4() {
             <div className="space-y-1.5">
               <Label>Frente</Label>
               <Input
-                type="text"
-                inputMode="decimal"
-                maxLength={10}
-                value={frente}
+                type="text" inputMode="decimal" maxLength={10} value={frente}
                 onChange={e => setFrente(e.target.value.replace(/[^0-9.]/g, ""))}
                 onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) setFrente(String(v)); }}
                 placeholder="0,00"
@@ -174,10 +209,7 @@ export function CadastroImovelStep4() {
             <div className="space-y-1.5">
               <Label>Fundo</Label>
               <Input
-                type="text"
-                inputMode="decimal"
-                maxLength={10}
-                value={fundo}
+                type="text" inputMode="decimal" maxLength={10} value={fundo}
                 onChange={e => setFundo(e.target.value.replace(/[^0-9.]/g, ""))}
                 onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) setFundo(String(v)); }}
                 placeholder="0,00"
@@ -190,10 +222,7 @@ export function CadastroImovelStep4() {
                 <div className="flex-1 space-y-1.5">
                   <Label>{lat.label}</Label>
                   <Input
-                    type="text"
-                    inputMode="decimal"
-                    maxLength={10}
-                    value={lat.valor}
+                    type="text" inputMode="decimal" maxLength={10} value={lat.valor}
                     onChange={e => atualizarLateral(lat.id, e.target.value.replace(/[^0-9.]/g, ""))}
                     onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) atualizarLateral(lat.id, String(v)); }}
                     placeholder="0,00"
@@ -242,9 +271,7 @@ export function CadastroImovelStep4() {
             <div className="space-y-1.5">
               <Label>Número de Pavimentos</Label>
               <Input
-                type="text"
-                inputMode="numeric"
-                maxLength={3}
+                type="text" inputMode="numeric" maxLength={3}
                 {...campo("numeroPavimentos")}
                 placeholder="0"
                 onChange={e => setEtapa4({ ...etapa4, numeroPavimentos: e.target.value.replace(/[^0-9]/g, "").slice(0, 3) })}
@@ -312,28 +339,22 @@ export function CadastroImovelStep4() {
                     <div className="space-y-1.5">
                       <Label className="text-xs text-gray-600">Latitude <span className="text-gray-400">(ex: -2.5296)</span></Label>
                       <Input
-                          type="text"
-                          inputMode="decimal"
-                          maxLength={12}
-                          value={ponto.lat}
-                          onChange={e => atualizarPonto(ponto.id, "lat", e.target.value)}
-                          onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) atualizarPonto(ponto.id, "lat", String(v)); }}
-                          placeholder="-2.529600"
-                          className={!latOk ? "border-red-300" : ""}
-                        />
+                        type="text" inputMode="decimal" maxLength={12} value={ponto.lat}
+                        onChange={e => atualizarPonto(ponto.id, "lat", e.target.value)}
+                        onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) atualizarPonto(ponto.id, "lat", String(v)); }}
+                        placeholder="-2.529600"
+                        className={!latOk ? "border-red-300" : ""}
+                      />
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs text-gray-600">Longitude <span className="text-gray-400">(ex: -44.3028)</span></Label>
                       <Input
-                          type="text"
-                          inputMode="decimal"
-                          maxLength={12}
-                          value={ponto.lng}
-                          onChange={e => atualizarPonto(ponto.id, "lng", e.target.value)}
-                          onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) atualizarPonto(ponto.id, "lng", String(v)); }}
-                          placeholder="-44.302800"
-                          className={!lngOk ? "border-red-300" : ""}
-                        />
+                        type="text" inputMode="decimal" maxLength={12} value={ponto.lng}
+                        onChange={e => atualizarPonto(ponto.id, "lng", e.target.value)}
+                        onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) atualizarPonto(ponto.id, "lng", String(v)); }}
+                        placeholder="-44.302800"
+                        className={!lngOk ? "border-red-300" : ""}
+                      />
                     </div>
                   </div>
                 </div>

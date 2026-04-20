@@ -18,7 +18,6 @@ export interface DadosEtapa2 {
   latitude: string; longitude: string;
 }
 export interface DadosEtapa3 {
-  // idTipoImovel replaces the old tipoImovel string enum
   idTipoImovel: string;
   idSituacaoDominial: string;
   tipologia: string; destinacaoAtual: string; descricaoUso: string;
@@ -26,6 +25,7 @@ export interface DadosEtapa3 {
 export interface DadosEtapa4 {
   areaTerrenoM2: string; areaConstruidaM2: string;
   numeroPavimentos: string; estadoConservacaoAtual: string; anoConstrucao: string;
+  registroEnergia: string; registroAgua: string;
 }
 export interface DadosEtapa5 {
   statusOcupacao: string; nivelOcupacao: string;
@@ -56,7 +56,7 @@ const Ctx = createContext<Ctx | null>(null);
 const e1: DadosEtapa1 = { nomeReferencia: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" };
 const e2: DadosEtapa2 = { logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "", latitude: "", longitude: "" };
 const e3: DadosEtapa3 = { idTipoImovel: "", idSituacaoDominial: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" };
-const e4: DadosEtapa4 = { areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "" };
+const e4: DadosEtapa4 = { areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "", registroEnergia: "", registroAgua: "" };
 const e5: DadosEtapa5 = { statusOcupacao: "", nivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" };
 
 export function CadastroImovelProvider({ children }: { children: React.ReactNode }) {
@@ -78,27 +78,29 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     setSalvando(true);
     setErro(null);
     try {
-      // Pre-registration: no field is mandatory.
-      // idUnidadeGestora and idTipoImovel may be absent — that is allowed.
       const req: ImovelRequest = {
-        nomeReferencia:           etapa1.nomeReferencia    || undefined,
-        idTipoImovel:             etapa3.idTipoImovel      ? Number(etapa3.idTipoImovel)      : undefined,
-        idSituacaoDominial:       etapa3.idSituacaoDominial ? Number(etapa3.idSituacaoDominial) : undefined,
-        tipologia:                etapa3.tipologia         || undefined,
+        nomeReferencia:           etapa1.nomeReferencia         || undefined,
+        idTipoImovel:             etapa3.idTipoImovel           ? Number(etapa3.idTipoImovel)           : undefined,
+        idSituacaoDominial:       etapa3.idSituacaoDominial     ? Number(etapa3.idSituacaoDominial)     : undefined,
+        tipologia:                etapa3.tipologia              || undefined,
         situacaoDominial:         (etapa3.situacaoDominial as any) || undefined,
-        observacoesGerais:        etapa1.observacoesGerais || undefined,
-        areaTerrenoM2:            etapa4.areaTerrenoM2     ? parseFloat(etapa4.areaTerrenoM2)  : undefined,
-        areaConstruidaM2:         etapa4.areaConstruidaM2  ? parseFloat(etapa4.areaConstruidaM2) : undefined,
-        numeroPavimentos:         etapa4.numeroPavimentos  ? parseInt(etapa4.numeroPavimentos) : undefined,
+        observacoesGerais:        etapa1.observacoesGerais      || undefined,
+        areaTerrenoM2:            etapa4.areaTerrenoM2          ? parseFloat(etapa4.areaTerrenoM2)      : undefined,
+        // Área construída: "" → undefined (não enviado), "0" → 0 (terreno baldio válido)
+        areaConstruidaM2:         etapa4.areaConstruidaM2 !== ""
+                                    ? parseFloat(etapa4.areaConstruidaM2)
+                                    : undefined,
+        numeroPavimentos:         etapa4.numeroPavimentos       ? parseInt(etapa4.numeroPavimentos)     : undefined,
         estadoConservacaoAtual:   etapa4.estadoConservacaoAtual || undefined,
-        anoConstrucao:            etapa4.anoConstrucao     ? parseInt(etapa4.anoConstrucao) : undefined,
+        anoConstrucao:            etapa4.anoConstrucao          ? parseInt(etapa4.anoConstrucao)        : undefined,
+        registroEnergia:          etapa4.registroEnergia        || undefined,
+        registroAgua:             etapa4.registroAgua           || undefined,
         idOrgaoGestorPatrimonial: etapa1.idOrgaoGestorPatrimonial ? Number(etapa1.idOrgaoGestorPatrimonial) : undefined,
-        idUnidadeGestora:         etapa1.idUnidadeGestora  ? Number(etapa1.idUnidadeGestora)  : undefined,
+        idUnidadeGestora:         etapa1.idUnidadeGestora       ? Number(etapa1.idUnidadeGestora)       : undefined,
       };
 
       const imovel = await imoveisApi.criar(req);
 
-      // Save localization if coordinates or address were provided
       const temLocalizacao =
         etapa2.latitude || etapa2.longitude || etapa2.logradouro || etapa2.bairro;
 
@@ -116,7 +118,6 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         });
       }
 
-      // Save occupation if status is defined and implies an occupant
       if (
         etapa5.statusOcupacao &&
         etapa5.statusOcupacao !== "DESOCUPADO" &&
@@ -138,7 +139,6 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         await ocupacoesApi.criar(ocReq);
       }
 
-      // Upload files (max 10 MB each)
       for (const arq of arquivos.filter((a) => a.file.size <= 10 * 1024 * 1024)) {
         const params: DocumentoUploadParams = {
           idImovel:        imovel.id,

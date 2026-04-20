@@ -13,6 +13,42 @@ const orgaos = [
   "INCID", "IMPUR", "FUMPH", "SECULT", "Outro",
 ];
 
+// ── Helpers de máscara dd/mm/aaaa ─────────────────────────────────────────────
+
+function isoParaMascara(iso: string): string {
+  if (!iso) return "";
+  const [ano, mes, dia] = iso.split("-");
+  if (!ano || !mes || !dia) return iso;
+  return `${dia}/${mes}/${ano}`;
+}
+
+function mascaraParaIso(mascara: string): string {
+  const n = mascara.replace(/\D/g, "");
+  if (n.length < 8) return "";
+  return `${n.slice(4, 8)}-${n.slice(2, 4)}-${n.slice(0, 2)}`;
+}
+
+function aplicarMascara(valor: string): string {
+  const n = valor.replace(/\D/g, "").slice(0, 8);
+  if (n.length <= 2) return n;
+  if (n.length <= 4) return `${n.slice(0, 2)}/${n.slice(2)}`;
+  return `${n.slice(0, 2)}/${n.slice(2, 4)}/${n.slice(4)}`;
+}
+
+function dataValida(mascara: string): boolean {
+  const n = mascara.replace(/\D/g, "");
+  if (n.length !== 8) return false;
+  const dia = parseInt(n.slice(0, 2), 10);
+  const mes = parseInt(n.slice(2, 4), 10);
+  const ano = parseInt(n.slice(4, 8), 10);
+  if (mes < 1 || mes > 12) return false;
+  if (dia < 1 || dia > 31) return false;
+  if (ano < 1500 || ano > new Date().getFullYear() + 100) return false;
+  return true;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function CadastroImovelStep5() {
   const { etapa4, etapa5, setEtapa5 } = useCadastroImovel();
   const navigate = useNavigate();
@@ -20,33 +56,24 @@ export function CadastroImovelStep5() {
   const set = (field: string, value: string) =>
     setEtapa5({ ...etapa5, [field]: value });
 
-  // Data minima: ano de construcao do imovel (etapa4), se preenchido
-  const anoConstucao = etapa4.anoConstrucao ? parseInt(etapa4.anoConstrucao) : null;
-  const dataMinima = anoConstucao && anoConstucao >= 1500
-    ? `${anoConstucao}-01-01`
-    : "1500-01-01";
-  // Datas de ocupacao podem ser futuras (contratos de longa duracao)
-  // Apenas bloqueamos anos absurdos (limite: ano atual + 100)
-  const anoMaximo = new Date().getFullYear() + 100;
+  // Estado local das máscaras — inicializado a partir do valor ISO armazenado no contexto
+  const [mascaraInicio,  setMascaraInicio]  = React.useState(() => isoParaMascara(etapa5.dataInicio));
+  const [mascaraFimPrev, setMascaraFimPrev] = React.useState(() => isoParaMascara(etapa5.dataFimPrevista));
 
-  const handleData = (field: "dataInicio" | "dataFimPrevista") =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const valor = e.target.value;
-      const ano = parseInt((valor || "").split("-")[0], 10);
-      if (!valor || (ano >= 1500 && ano <= anoMaximo)) {
-        set(field, valor);
-      }
-    };
+  const handleData = (
+    setMascara: (v: string) => void,
+    field: "dataInicio" | "dataFimPrevista"
+  ) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const nova = aplicarMascara(e.target.value);
+    setMascara(nova);
+    set(field, dataValida(nova) ? mascaraParaIso(nova) : "");
+  };
 
-  const validarData = (field: "dataInicio" | "dataFimPrevista") =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const valor = e.target.value;
-      if (!valor) return;
-      const ano = parseInt(valor.split("-")[0], 10);
-      if (isNaN(ano) || ano < 1500 || ano > anoMaximo) {
-        set(field, "");
-      }
-    };
+  const erroInicio = mascaraInicio.replace(/\D/g, "").length === 8 && !dataValida(mascaraInicio);
+  const erroFim    = mascaraFimPrev.replace(/\D/g, "").length === 8 && !dataValida(mascaraFimPrev);
+  const fimAntesDeInicio =
+    etapa5.dataInicio && etapa5.dataFimPrevista &&
+    etapa5.dataFimPrevista < etapa5.dataInicio;
 
   return (
     <WizardLayout currentStep={5} onNext={() => navigate("/dashboard/imoveis/novo/etapa-6")}>
@@ -98,47 +125,64 @@ export function CadastroImovelStep5() {
 
               <div className="space-y-1.5">
                 <Label>Nome do Responsável Local</Label>
-                <Input value={etapa5.nomeResponsavelLocal} onChange={(e) => set("nomeResponsavelLocal", e.target.value)} placeholder="Nome completo" />
+                <Input
+                  value={etapa5.nomeResponsavelLocal}
+                  onChange={(e) => set("nomeResponsavelLocal", e.target.value)}
+                  placeholder="Nome completo"
+                />
               </div>
 
               <div className="space-y-1.5">
                 <Label>Contato Institucional</Label>
-                <Input value={etapa5.contatoResponsavel} onChange={(e) => set("contatoResponsavel", e.target.value)} placeholder="Telefone ou e-mail institucional" />
+                <Input
+                  value={etapa5.contatoResponsavel}
+                  onChange={(e) => set("contatoResponsavel", e.target.value)}
+                  placeholder="Telefone ou e-mail institucional"
+                />
               </div>
             </>
           )}
 
           <div className="space-y-1.5">
             <Label>Destinação / Finalidade</Label>
-            <Input value={etapa5.destinacaoFinalidade} onChange={(e) => set("destinacaoFinalidade", e.target.value)} placeholder="Ex.: Atendimento básico de saúde" />
+            <Input
+              value={etapa5.destinacaoFinalidade}
+              onChange={(e) => set("destinacaoFinalidade", e.target.value)}
+              placeholder="Ex.: Atendimento básico de saúde"
+            />
           </div>
 
           <div className="space-y-1.5">
             <Label>Data de Início da Ocupação</Label>
             <Input
-              type="date"
-              value={etapa5.dataInicio}
-              min={dataMinima}
-              max={`${anoMaximo}-12-31`}
-              onChange={handleData("dataInicio")}
-              onBlur={validarData("dataInicio")}
+              type="text"
+              inputMode="numeric"
+              placeholder="dd/mm/aaaa"
+              maxLength={10}
+              value={mascaraInicio}
+              onChange={handleData(setMascaraInicio, "dataInicio")}
+              className={erroInicio ? "border-red-300" : ""}
             />
-            {anoConstucao && etapa5.dataInicio && etapa5.dataInicio < dataMinima && (
-              <p className="text-xs text-red-500">A data de início não pode ser anterior ao ano de construção ({anoConstucao}).</p>
+            {erroInicio && (
+              <p className="text-xs text-red-500">Data inválida. Use o formato dd/mm/aaaa.</p>
             )}
           </div>
 
           <div className="space-y-1.5">
             <Label>Data Fim Prevista</Label>
             <Input
-              type="date"
-              value={etapa5.dataFimPrevista}
-              min={etapa5.dataInicio || dataMinima}
-              max={`${anoMaximo}-12-31`}
-              onChange={handleData("dataFimPrevista")}
-              onBlur={validarData("dataFimPrevista")}
+              type="text"
+              inputMode="numeric"
+              placeholder="dd/mm/aaaa"
+              maxLength={10}
+              value={mascaraFimPrev}
+              onChange={handleData(setMascaraFimPrev, "dataFimPrevista")}
+              className={(erroFim || fimAntesDeInicio) ? "border-red-300" : ""}
             />
-            {etapa5.dataFimPrevista && etapa5.dataInicio && etapa5.dataFimPrevista < etapa5.dataInicio && (
+            {erroFim && (
+              <p className="text-xs text-red-500">Data inválida. Use o formato dd/mm/aaaa.</p>
+            )}
+            {!erroFim && fimAntesDeInicio && (
               <p className="text-xs text-red-500">A data fim não pode ser anterior à data de início.</p>
             )}
           </div>
@@ -146,7 +190,12 @@ export function CadastroImovelStep5() {
 
         <div className="space-y-1.5">
           <Label>Observações sobre a Ocupação</Label>
-          <Textarea value={etapa5.observacoes} onChange={(e) => set("observacoes", e.target.value)} placeholder="Informações adicionais relevantes sobre o uso do imóvel..." rows={3} />
+          <Textarea
+            value={etapa5.observacoes}
+            onChange={(e) => set("observacoes", e.target.value)}
+            placeholder="Informações adicionais relevantes sobre o uso do imóvel..."
+            rows={3}
+          />
         </div>
       </div>
     </WizardLayout>
