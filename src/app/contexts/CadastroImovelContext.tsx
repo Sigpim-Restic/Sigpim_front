@@ -28,7 +28,7 @@ export interface DadosEtapa4 {
   registroEnergia: string; registroAgua: string;
 }
 export interface DadosEtapa5 {
-  statusOcupacao: string; nivelOcupacao: string;
+  statusOcupacao: string; idNivelOcupacao: string;
   nomeOcupanteExterno: string; nomeResponsavelLocal: string;
   contatoResponsavel: string; destinacaoFinalidade: string;
   dataInicio: string; dataFimPrevista: string; observacoes: string;
@@ -57,7 +57,7 @@ const e1: DadosEtapa1 = { nomeReferencia: "", idOrgaoGestorPatrimonial: "", idUn
 const e2: DadosEtapa2 = { logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "", latitude: "", longitude: "" };
 const e3: DadosEtapa3 = { idTipoImovel: "", idSituacaoDominial: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" };
 const e4: DadosEtapa4 = { areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "", registroEnergia: "", registroAgua: "" };
-const e5: DadosEtapa5 = { statusOcupacao: "", nivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" };
+const e5: DadosEtapa5 = { statusOcupacao: "", idNivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" };
 
 export function CadastroImovelProvider({ children }: { children: React.ReactNode }) {
   const [etapa1, setEtapa1] = useState<DadosEtapa1>(e1);
@@ -86,10 +86,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         situacaoDominial:         (etapa3.situacaoDominial as any) || undefined,
         observacoesGerais:        etapa1.observacoesGerais      || undefined,
         areaTerrenoM2:            etapa4.areaTerrenoM2          ? parseFloat(etapa4.areaTerrenoM2)      : undefined,
-        // Área construída: "" → undefined (não enviado), "0" → 0 (terreno baldio válido)
-        areaConstruidaM2:         etapa4.areaConstruidaM2 !== ""
-                                    ? parseFloat(etapa4.areaConstruidaM2)
-                                    : undefined,
+        areaConstruidaM2:         etapa4.areaConstruidaM2 !== "" ? parseFloat(etapa4.areaConstruidaM2) : undefined,
         numeroPavimentos:         etapa4.numeroPavimentos       ? parseInt(etapa4.numeroPavimentos)     : undefined,
         estadoConservacaoAtual:   etapa4.estadoConservacaoAtual || undefined,
         anoConstrucao:            etapa4.anoConstrucao          ? parseInt(etapa4.anoConstrucao)        : undefined,
@@ -126,7 +123,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         const ocReq: OcupacaoRequest = {
           idImovel:             imovel.id,
           statusOcupacao:       etapa5.statusOcupacao as any,
-          nivelOcupacao:        (etapa5.nivelOcupacao as any) || undefined,
+          idNivelOcupacao:      etapa5.idNivelOcupacao ? Number(etapa5.idNivelOcupacao) : undefined,
           nomeOcupanteExterno:  etapa5.nomeOcupanteExterno  || undefined,
           nomeResponsavelLocal: etapa5.nomeResponsavelLocal || undefined,
           contatoResponsavel:   etapa5.contatoResponsavel   || undefined,

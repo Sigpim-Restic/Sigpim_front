@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { WizardLayout } from "../../../components/layout/WizardLayout";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
+import { ocupacoesApi, type NivelOcupacaoResponse } from "../../../api/ocupacoes";
 import { useNavigate } from "react-router";
 
 const orgaos = [
@@ -13,7 +14,7 @@ const orgaos = [
   "INCID", "IMPUR", "FUMPH", "SECULT", "Outro",
 ];
 
-// ── Helpers de máscara dd/mm/aaaa ─────────────────────────────────────────────
+// ── Máscara de data dd/mm/aaaa ────────────────────────────────────────────────
 
 function isoParaMascara(iso: string): string {
   if (!iso) return "";
@@ -41,26 +42,30 @@ function dataValida(mascara: string): boolean {
   const dia = parseInt(n.slice(0, 2), 10);
   const mes = parseInt(n.slice(2, 4), 10);
   const ano = parseInt(n.slice(4, 8), 10);
-  if (mes < 1 || mes > 12) return false;
-  if (dia < 1 || dia > 31) return false;
-  if (ano < 1500 || ano > new Date().getFullYear() + 100) return false;
-  return true;
+  return mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31 && ano >= 1500 && ano <= new Date().getFullYear() + 100;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function CadastroImovelStep5() {
-  const { etapa4, etapa5, setEtapa5 } = useCadastroImovel();
+  const { etapa5, setEtapa5 } = useCadastroImovel();
   const navigate = useNavigate();
+
+  const [niveis, setNiveis] = useState<NivelOcupacaoResponse[]>([]);
+
+  useEffect(() => {
+    ocupacoesApi.listarNiveis()
+      .then(setNiveis)
+      .catch(() => { /* silencia — campo fica vazio */ });
+  }, []);
 
   const set = (field: string, value: string) =>
     setEtapa5({ ...etapa5, [field]: value });
 
-  // Estado local das máscaras — inicializado a partir do valor ISO armazenado no contexto
   const [mascaraInicio,  setMascaraInicio]  = React.useState(() => isoParaMascara(etapa5.dataInicio));
   const [mascaraFimPrev, setMascaraFimPrev] = React.useState(() => isoParaMascara(etapa5.dataFimPrevista));
 
-  const handleData = (
+  const handleDataInput = (
     setMascara: (v: string) => void,
     field: "dataInicio" | "dataFimPrevista"
   ) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,12 +106,12 @@ export function CadastroImovelStep5() {
 
           <div className="space-y-1.5">
             <Label>Nível de Ocupação</Label>
-            <Select value={etapa5.nivelOcupacao} onValueChange={(v) => set("nivelOcupacao", v)}>
+            <Select value={etapa5.idNivelOcupacao} onValueChange={(v) => set("idNivelOcupacao", v)}>
               <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="TOTAL">Total</SelectItem>
-                <SelectItem value="PARCIAL">Parcial</SelectItem>
-                <SelectItem value="COMPARTILHADO">Compartilhado</SelectItem>
+                {niveis.map((n) => (
+                  <SelectItem key={n.id} value={String(n.id)}>{n.nome}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -125,31 +130,19 @@ export function CadastroImovelStep5() {
 
               <div className="space-y-1.5">
                 <Label>Nome do Responsável Local</Label>
-                <Input
-                  value={etapa5.nomeResponsavelLocal}
-                  onChange={(e) => set("nomeResponsavelLocal", e.target.value)}
-                  placeholder="Nome completo"
-                />
+                <Input value={etapa5.nomeResponsavelLocal} onChange={(e) => set("nomeResponsavelLocal", e.target.value)} placeholder="Nome completo" />
               </div>
 
               <div className="space-y-1.5">
                 <Label>Contato Institucional</Label>
-                <Input
-                  value={etapa5.contatoResponsavel}
-                  onChange={(e) => set("contatoResponsavel", e.target.value)}
-                  placeholder="Telefone ou e-mail institucional"
-                />
+                <Input value={etapa5.contatoResponsavel} onChange={(e) => set("contatoResponsavel", e.target.value)} placeholder="Telefone ou e-mail institucional" />
               </div>
             </>
           )}
 
           <div className="space-y-1.5">
             <Label>Destinação / Finalidade</Label>
-            <Input
-              value={etapa5.destinacaoFinalidade}
-              onChange={(e) => set("destinacaoFinalidade", e.target.value)}
-              placeholder="Ex.: Atendimento básico de saúde"
-            />
+            <Input value={etapa5.destinacaoFinalidade} onChange={(e) => set("destinacaoFinalidade", e.target.value)} placeholder="Ex.: Atendimento básico de saúde" />
           </div>
 
           <div className="space-y-1.5">
@@ -160,12 +153,10 @@ export function CadastroImovelStep5() {
               placeholder="dd/mm/aaaa"
               maxLength={10}
               value={mascaraInicio}
-              onChange={handleData(setMascaraInicio, "dataInicio")}
+              onChange={handleDataInput(setMascaraInicio, "dataInicio")}
               className={erroInicio ? "border-red-300" : ""}
             />
-            {erroInicio && (
-              <p className="text-xs text-red-500">Data inválida. Use o formato dd/mm/aaaa.</p>
-            )}
+            {erroInicio && <p className="text-xs text-red-500">Data inválida. Use o formato dd/mm/aaaa.</p>}
           </div>
 
           <div className="space-y-1.5">
@@ -176,26 +167,17 @@ export function CadastroImovelStep5() {
               placeholder="dd/mm/aaaa"
               maxLength={10}
               value={mascaraFimPrev}
-              onChange={handleData(setMascaraFimPrev, "dataFimPrevista")}
-              className={(erroFim || fimAntesDeInicio) ? "border-red-300" : ""}
+              onChange={handleDataInput(setMascaraFimPrev, "dataFimPrevista")}
+              className={erroFim || fimAntesDeInicio ? "border-red-300" : ""}
             />
-            {erroFim && (
-              <p className="text-xs text-red-500">Data inválida. Use o formato dd/mm/aaaa.</p>
-            )}
-            {!erroFim && fimAntesDeInicio && (
-              <p className="text-xs text-red-500">A data fim não pode ser anterior à data de início.</p>
-            )}
+            {erroFim && <p className="text-xs text-red-500">Data inválida. Use o formato dd/mm/aaaa.</p>}
+            {!erroFim && fimAntesDeInicio && <p className="text-xs text-red-500">A data fim não pode ser anterior à data de início.</p>}
           </div>
         </div>
 
         <div className="space-y-1.5">
           <Label>Observações sobre a Ocupação</Label>
-          <Textarea
-            value={etapa5.observacoes}
-            onChange={(e) => set("observacoes", e.target.value)}
-            placeholder="Informações adicionais relevantes sobre o uso do imóvel..."
-            rows={3}
-          />
+          <Textarea value={etapa5.observacoes} onChange={(e) => set("observacoes", e.target.value)} placeholder="Informações adicionais relevantes sobre o uso do imóvel..." rows={3} />
         </div>
       </div>
     </WizardLayout>

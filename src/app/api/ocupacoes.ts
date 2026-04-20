@@ -2,13 +2,20 @@ import { api } from "./client";
 import type { PageResponse } from "./imoveis";
 
 export type StatusOcupacao = "OCUPADO" | "DESOCUPADO" | "DESCONHECIDO" | "NAO_REGULARIZADO";
-export type NivelOcupacao = "TOTAL" | "PARCIAL" | "COMPARTILHADO";
+
+export interface NivelOcupacaoResponse {
+  id: number;
+  nome: string;
+  codigo: string;
+  ativo: boolean;
+}
 
 export interface OcupacaoResponse {
   id: number;
   idImovel: number;
   statusOcupacao: StatusOcupacao;
-  nivelOcupacao: NivelOcupacao | null;
+  idNivelOcupacao: number | null;
+  nomeNivelOcupacao: string | null;
   idOrgaoOcupante: number | null;
   nomeOcupanteExterno: string | null;
   nomeResponsavelLocal: string | null;
@@ -26,7 +33,7 @@ export interface OcupacaoResponse {
 export interface OcupacaoRequest {
   idImovel: number;
   statusOcupacao: StatusOcupacao;
-  nivelOcupacao?: NivelOcupacao;
+  idNivelOcupacao?: number;
   idOrgaoOcupante?: number;
   nomeOcupanteExterno?: string;
   nomeResponsavelLocal?: string;
@@ -53,5 +60,10 @@ export const ocupacoesApi = {
   },
   deletar(id: number): Promise<void> {
     return api.delete(`/ocupacoes/${id}`);
+  },
+
+  // Níveis de ocupação — catálogo extensível
+  listarNiveis(): Promise<NivelOcupacaoResponse[]> {
+    return api.get("/niveis-ocupacao");
   },
 };

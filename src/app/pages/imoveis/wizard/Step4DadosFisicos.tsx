@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../../../components/ui/textarea";
 import { PropertyMap, Coordinate } from "../../../components/ui/property-map";
 import { AlertBox } from "../../../components/layout/States";
-import { Plus, Trash2, MapPin, AlertTriangle, Zap, Droplets } from "lucide-react";
+import { Plus, Trash2, MapPin, AlertTriangle } from "lucide-react";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
 
@@ -159,10 +159,7 @@ export function CadastroImovelStep4() {
           <p className="text-xs text-gray-400 -mt-2">Registros de medição junto às concessionárias (opcional)</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <Zap className="h-3.5 w-3.5 text-yellow-500" />
-                Registro de Energia
-              </Label>
+              <Label>Registro de Energia</Label>
               <Input
                 placeholder="Nº do medidor / UC de energia"
                 value={etapa4.registroEnergia}
@@ -171,10 +168,7 @@ export function CadastroImovelStep4() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="flex items-center gap-1.5">
-                <Droplets className="h-3.5 w-3.5 text-blue-500" />
-                Registro de Água
-              </Label>
+              <Label>Registro de Água</Label>
               <Input
                 placeholder="Nº do hidrômetro / matrícula CAEMA"
                 value={etapa4.registroAgua}
