@@ -57,6 +57,9 @@ export function usePermissoes() {
     // Fase 3 — Dados Fiscais (Owner: SEMFAZ → VALIDADOR_DOCUMENTAL + admins)
     canWriteDadoFiscal: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VALIDADOR_DOCUMENTAL"),
 
+    // Fase 3 — Avaliações Patrimoniais (Owner: PLANEJAMENTO + admins)
+    canWriteAvaliacaoPatrimonial: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "PLANEJAMENTO"),
+
     // Helpers de perfil
     isAdmin:   tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
     isSistema: tem("ADMINISTRADOR_SISTEMA"),
