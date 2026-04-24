@@ -269,26 +269,32 @@ export function Dashboard() {
             });
 
             if (periodo === 1) {
-              const atual = fatia[0];
               const dtAnt = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
               const mesAntKey = `${String(dtAnt.getMonth() + 1).padStart(2, "0")}/${dtAnt.getFullYear()}`;
-              
+
               const anterior = d.cadastrosPorMes.find((c) => c.mesAno === mesAntKey);
-              
-              const qtd = atual.quantidade;
+              const porDiaMap = new Map(
+                d.cadastrosPorDiaMesAtual.map((item) => [item.dia, item.quantidade])
+              );
+
+              const diasAteHoje = Array.from({ length: hoje.getDate() }, (_, idx) => {
+                const dia = idx + 1;
+                const key = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+                const label = `${String(dia).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}`;
+                return { dia: key, label, quantidade: porDiaMap.get(key) ?? 0 };
+              });
+
+              const qtd = diasAteHoje.reduce((acc, item) => acc + item.quantidade, 0);
               const qtdAnt = anterior?.quantidade ?? 0;
               const delta = qtdAnt > 0 ? qtd - qtdAnt : null;
-              const graficoMesAtual = [
-                { mesAno: mesAntKey, quantidade: qtdAnt },
-                { mesAno: atual.mesAno, quantidade: qtd },
-              ];
+              const mesAtualLabel = `${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`;
               
               return (
                 <div className="flex flex-col gap-2 mt-2">
                   <div className="flex items-end gap-3">
                     <p className="text-4xl font-bold text-[#1351B4]">{fmt(qtd)}</p>
                     <div className="mb-1">
-                      <p className="text-xs text-gray-500">imóvel(is) em {atual.mesAno}</p>
+                      <p className="text-xs text-gray-500">imóvel(is) em {mesAtualLabel}</p>
                       {delta !== null && (
                         <span className={`inline-block mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${delta >= 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
                           {delta >= 0 ? "+" : ""}{delta} vs mês anterior
@@ -297,10 +303,13 @@ export function Dashboard() {
                     </div>
                   </div>
                   <ResponsiveContainer width="100%" height={130}>
-                    <BarChart data={graficoMesAtual} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
-                      <XAxis dataKey="mesAno" tick={{ fontSize: 10 }} />
+                    <BarChart data={diasAteHoje} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
+                      <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                      <Tooltip formatter={(v: number) => [fmt(v), "Cadastros"]} />
+                      <Tooltip
+                        formatter={(v: number) => [fmt(v), "Cadastros"]}
+                        labelFormatter={(label: string) => `Dia ${label}`}
+                      />
                       <Bar dataKey="quantidade" fill={AZUL} radius={[3, 3, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>

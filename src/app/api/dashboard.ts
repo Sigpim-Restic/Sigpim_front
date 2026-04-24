@@ -10,6 +10,11 @@ export interface CadastroMensalCount {
   quantidade: number;
 }
 
+export interface CadastroDiarioCount {
+  dia: string;
+  quantidade: number;
+}
+
 export interface DashboardIndicadores {
   // Totais gerais
   totalImoveis: number;
@@ -69,6 +74,7 @@ export interface DashboardIndicadores {
 
   // Tendência
   cadastrosPorMes: CadastroMensalCount[];
+  cadastrosPorDiaMesAtual: CadastroDiarioCount[];
 }
 
 export const dashboardApi = {
