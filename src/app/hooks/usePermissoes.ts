@@ -60,6 +60,9 @@ export function usePermissoes() {
     // Fase 3 — Avaliações Patrimoniais (Owner: PLANEJAMENTO + admins)
     canWriteAvaliacaoPatrimonial: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "PLANEJAMENTO"),
 
+    // Fase 3 — Instrumentos de Uso
+    canWriteInstrumentoUso: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+
     // Helpers de perfil
     isAdmin:   tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
     isSistema: tem("ADMINISTRADOR_SISTEMA"),
