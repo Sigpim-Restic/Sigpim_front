@@ -273,8 +273,9 @@ export function Dashboard() {
               const mesAntKey = `${String(dtAnt.getMonth() + 1).padStart(2, "0")}/${dtAnt.getFullYear()}`;
 
               const anterior = d.cadastrosPorMes.find((c) => c.mesAno === mesAntKey);
+              const cadastrosPorDiaMesAtual = d.cadastrosPorDiaMesAtual ?? [];
               const porDiaMap = new Map(
-                d.cadastrosPorDiaMesAtual.map((item) => [item.dia, item.quantidade])
+                cadastrosPorDiaMesAtual.map((item) => [item.dia, item.quantidade])
               );
 
               const diasAteHoje = Array.from({ length: hoje.getDate() }, (_, idx) => {

@@ -74,7 +74,7 @@ export interface DashboardIndicadores {
 
   // Tendência
   cadastrosPorMes: CadastroMensalCount[];
-  cadastrosPorDiaMesAtual: CadastroDiarioCount[];
+  cadastrosPorDiaMesAtual?: CadastroDiarioCount[];
 }
 
 export const dashboardApi = {
