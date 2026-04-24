@@ -211,6 +211,22 @@ export function CadastroImovelStep2() {
                 {erros.longitude && <p className="text-xs text-red-500">{erros.longitude}</p>}
               </div>
             </div>
+
+            {/* Geometria WKT — polígono do lote */}
+            <div className="border-t border-gray-100 pt-4 space-y-2">
+              <Label>Geometria do Lote (WKT)</Label>
+              <textarea
+                className="w-full rounded-md border border-gray-200 p-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#1351B4] resize-none"
+                rows={3}
+                value={(etapa2 as any).geometriaWkt ?? ""}
+                onChange={(e) => setEtapa2({ ...etapa2, geometriaWkt: e.target.value } as any)}
+                placeholder="Ex: POLYGON((-44.302 -2.529, -44.301 -2.529, -44.301 -2.530, -44.302 -2.530, -44.302 -2.529))"
+              />
+              <p className="text-xs text-gray-400">
+                Opcional. Formato WKT/WGS84. Define o polígono exato do lote.
+                Se não souber, deixe em branco — pode ser preenchido depois.
+              </p>
+            </div>
           </div>
         </div>
       </div>

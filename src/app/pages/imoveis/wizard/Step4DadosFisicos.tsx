@@ -1,21 +1,18 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { WizardLayout } from "../../../components/layout/WizardLayout";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
 import { Button } from "../../../components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 import { Textarea } from "../../../components/ui/textarea";
-import { PropertyMap, Coordinate } from "../../../components/ui/property-map";
 import { AlertBox } from "../../../components/layout/States";
-import { Plus, Trash2, MapPin, AlertTriangle } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
 
 interface Lateral { id: number; label: string; valor: string; }
-interface Ponto { id: number; lat: string; lng: string; }
 
 let _lateralId = 3;
-let _pontoId = 5;
 
 export function CadastroImovelStep4() {
   const { etapa4, setEtapa4 } = useCadastroImovel();
@@ -31,12 +28,6 @@ export function CadastroImovelStep4() {
   const [topografia, setTopografia] = useState("");
   const [formatoTerreno, setFormatoTerreno] = useState("");
   const [infraestrutura, setInfraestrutura] = useState("");
-  const [pontos, setPontos] = useState<Ponto[]>([
-    { id: 1, lat: "", lng: "" },
-    { id: 2, lat: "", lng: "" },
-    { id: 3, lat: "", lng: "" },
-    { id: 4, lat: "", lng: "" },
-  ]);
 
   const adicionarLateral = () => {
     const novoId = _lateralId++;
@@ -48,30 +39,6 @@ export function CadastroImovelStep4() {
   };
   const atualizarLateral = (id: number, valor: string) =>
     setLaterais(prev => prev.map(l => l.id === id ? { ...l, valor } : l));
-
-  const adicionarPonto = () => {
-    const novoId = _pontoId++;
-    setPontos(prev => [...prev, { id: novoId, lat: "", lng: "" }]);
-  };
-  const removerPonto = (id: number) => {
-    if (pontos.length <= 3) return;
-    setPontos(prev => prev.filter(p => p.id !== id));
-  };
-  const atualizarPonto = (id: number, campo: "lat" | "lng", valor: string) => {
-    const sanitizado = valor.replace(/[^0-9.\-]/g, "");
-    setPontos(prev => prev.map(p => p.id === id ? { ...p, [campo]: sanitizado } : p));
-  };
-
-  const coordinates: Coordinate[] = useMemo(() =>
-    pontos
-      .map(p => ({ lat: parseFloat(p.lat), lng: parseFloat(p.lng) }))
-      .filter(c => !isNaN(c.lat) && !isNaN(c.lng)),
-    [pontos]
-  );
-
-  const pontosValidos = pontos.filter(p => p.lat.trim() !== "" && p.lng.trim() !== "").length;
-  const latValida = (val: string) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= -90 && parseFloat(val) <= 90);
-  const lngValida = (val: string) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= -180 && parseFloat(val) <= 180);
 
   const campo = (field: keyof typeof etapa4) => ({
     value: etapa4[field],
@@ -295,83 +262,6 @@ export function CadastroImovelStep4() {
           </div>
         </section>
 
-        {/* Coordenadas do terreno */}
-        <section className="space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Coordenadas do Terreno</h4>
-              <p className="text-xs text-gray-400 mt-0.5">Vértices do polígono — mínimo 3 pontos</p>
-            </div>
-            <Button type="button" variant="outline" size="sm" onClick={adicionarPonto} className="shrink-0 border-[#1351B4] text-[#1351B4] hover:bg-blue-50">
-              <Plus className="mr-1.5 h-3.5 w-3.5" />Adicionar ponto
-            </Button>
-          </div>
-          <div className="space-y-3">
-            {pontos.map((ponto, index) => {
-              const label = `P${String(index + 1).padStart(3, "0")}`;
-              const latOk = latValida(ponto.lat);
-              const lngOk = lngValida(ponto.lng);
-              const temErro = !latOk || !lngOk;
-              return (
-                <div key={ponto.id} className={`rounded-lg border bg-gray-50 p-4 transition-colors ${temErro ? "border-red-200 bg-red-50/30" : "border-gray-200"}`}>
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex h-6 w-14 items-center justify-center rounded bg-[#1351B4]/10 font-mono text-xs font-semibold text-[#1351B4]">{label}</span>
-                      {temErro && (
-                        <span className="flex items-center gap-1 text-xs text-red-500">
-                          <AlertTriangle className="h-3 w-3" />Coordenada inválida
-                        </span>
-                      )}
-                    </div>
-                    {pontos.length > 3 && (
-                      <Button type="button" variant="ghost" size="icon" onClick={() => removerPonto(ponto.id)} className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-gray-600">Latitude <span className="text-gray-400">(ex: -2.5296)</span></Label>
-                      <Input
-                        type="text" inputMode="decimal" maxLength={12} value={ponto.lat}
-                        onChange={e => atualizarPonto(ponto.id, "lat", e.target.value)}
-                        onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) atualizarPonto(ponto.id, "lat", String(v)); }}
-                        placeholder="-2.529600"
-                        className={!latOk ? "border-red-300" : ""}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs text-gray-600">Longitude <span className="text-gray-400">(ex: -44.3028)</span></Label>
-                      <Input
-                        type="text" inputMode="decimal" maxLength={12} value={ponto.lng}
-                        onChange={e => atualizarPonto(ponto.id, "lng", e.target.value)}
-                        onBlur={e => { const v = parseFloat(e.target.value); if (!isNaN(v)) atualizarPonto(ponto.id, "lng", String(v)); }}
-                        placeholder="-44.302800"
-                        className={!lngOk ? "border-red-300" : ""}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-xs text-gray-400">
-            {pontos.length} pontos cadastrados · {pontosValidos} válidos
-            {pontos.length < 3 && <span className="ml-2 text-amber-600 font-medium">— mínimo 3 para exibir o polígono</span>}
-          </p>
-          {coordinates.length >= 3 && (
-            <div>
-              <p className="mb-2 text-xs font-medium text-gray-500">Pré-visualização do polígono</p>
-              <PropertyMap points={coordinates} />
-            </div>
-          )}
-          <AlertBox variant="info">
-            <div className="flex items-start gap-2">
-              <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-              <p className="text-sm">O mapa atualiza automaticamente conforme você preenche as coordenadas. Use datum WGS84.</p>
-            </div>
-          </AlertBox>
-        </section>
       </div>
     </WizardLayout>
   );

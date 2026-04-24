@@ -16,12 +16,10 @@ export function EditarStep5() {
   const set = (field: string, value: string) =>
     setEtapa5({ ...etapa5, [field]: value });
 
-  const handleSalvar = () => {
-    salvar(() => navigate(`/imoveis/${id}`));
-  };
+  const handleNext = () => navigate(`/imoveis/${id}/editar/etapa-6`);
 
   return (
-    <EditarWizardLayout currentStep={5} onNext={handleSalvar} salvando={salvando}>
+    <EditarWizardLayout currentStep={5} onNext={handleNext} salvando={salvando}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Ocupação e Destinação</h3>

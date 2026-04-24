@@ -1,4 +1,4 @@
-// ─── Etapa 3 — Classificação (editar) ────────────────────────────────────────
+// ─── Etapa 3 — Classificação e Uso (editar) ──────────────────────────────────
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Label } from "../../../components/ui/label";
@@ -9,7 +9,6 @@ import {
 import { useEditarImovel } from "../../../contexts/EditarImovelContext";
 import { EditarWizardLayout } from "./EditarWizardLayout";
 import { tiposImovelApi, type TipoImovelResponse } from "../../../api/tipos-imovel-alertas";
-import { situacoesDominiaisApi, type SituacaoDominialResponse } from "../../../api/situacoes-dominiais";
 
 export function EditarStep3() {
   const { id } = useParams<{ id: string }>();
@@ -17,20 +16,13 @@ export function EditarStep3() {
   const { etapa3, setEtapa3 } = useEditarImovel();
 
   const [tiposImovel,     setTiposImovel]     = useState<TipoImovelResponse[]>([]);
-  const [situacoes,       setSituacoes]       = useState<SituacaoDominialResponse[]>([]);
   const [carregandoTipos, setCarregandoTipos] = useState(true);
-  const [carregandoSit,   setCarregandoSit]   = useState(true);
 
   useEffect(() => {
     tiposImovelApi.listarAtivos()
       .then(setTiposImovel)
       .catch(() => {})
       .finally(() => setCarregandoTipos(false));
-
-    situacoesDominiaisApi.listarAtivas()
-      .then(setSituacoes)
-      .catch(() => {})
-      .finally(() => setCarregandoSit(false));
   }, []);
 
   const sel = (field: keyof typeof etapa3) => ({
@@ -46,12 +38,12 @@ export function EditarStep3() {
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Classificação e Uso</h3>
-          <p className="text-sm text-gray-600 mt-1">Tipo, tipologia e situação dominial do imóvel</p>
+          <p className="text-sm text-gray-600 mt-1">Tipo, tipologia e uso atual do imóvel</p>
         </div>
 
         <div className="grid gap-6">
 
-          {/* Tipo de Imóvel — dinâmico */}
+          {/* Tipo de Imóvel — dinâmico via catálogo */}
           <div className="space-y-2">
             <Label>Tipo de Imóvel</Label>
             <Select {...sel("idTipoImovel")} disabled={carregandoTipos}>
@@ -81,29 +73,27 @@ export function EditarStep3() {
             </Select>
           </div>
 
-          {/* Situação Dominial — dinâmica */}
+          {/* Destinação atual */}
           <div className="space-y-2">
-            <Label>Situação Dominial</Label>
-            <Select {...sel("idSituacaoDominial")} disabled={carregandoSit}>
-              <SelectTrigger>
-                <SelectValue placeholder={carregandoSit ? "Carregando..." : "Selecione a situação"} />
-              </SelectTrigger>
+            <Label>Destinação Atual</Label>
+            <Select {...sel("destinacaoAtual")}>
+              <SelectTrigger><SelectValue placeholder="Selecione a destinação" /></SelectTrigger>
               <SelectContent>
-                {situacoes.map((s) => (
-                  <SelectItem key={s.id} value={String(s.id)}>{s.nome}</SelectItem>
+                {["Uso próprio","Cedido a terceiros","Imóvel locado","Sem uso definido","Em obras","Desativado"].map(d => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Descrição */}
+          {/* Descrição do uso */}
           <div className="space-y-2">
             <Label>Descrição do Uso Atual</Label>
             <Textarea
               value={etapa3.descricaoUso}
               onChange={(e) => setEtapa3({ ...etapa3, descricaoUso: e.target.value })}
               placeholder="Descreva o uso atual do imóvel..."
-              rows={4}
+              rows={3}
             />
           </div>
 
