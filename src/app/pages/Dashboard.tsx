@@ -255,10 +255,16 @@ export function Dashboard() {
           {(() => {
             // Gera N meses consecutivos terminando no mês atual, preenchendo com 0 os sem dados
             const hoje = new Date();
+            
             const fatia = Array.from({ length: periodo }, (_, i) => {
-              const dt = new Date(hoje.getFullYear(), hoje.getMonth() - (periodo - 1 - i), 1);
+              // Calcula corretamente o mês: para periodo=1, i=0 deve ser mês atual
+              const mesesAtrás = periodo - 1 - i;
+              const dt = new Date(hoje.getFullYear(), hoje.getMonth() - mesesAtrás, 1);
               const mesAno = `${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
+              
+              // Procura nos dados da API
               const entrada = d.cadastrosPorMes.find((c) => c.mesAno === mesAno);
+              
               return { mesAno, quantidade: entrada?.quantidade ?? 0 };
             });
 
@@ -266,10 +272,13 @@ export function Dashboard() {
               const atual = fatia[0];
               const dtAnt = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
               const mesAntKey = `${String(dtAnt.getMonth() + 1).padStart(2, "0")}/${dtAnt.getFullYear()}`;
+              
               const anterior = d.cadastrosPorMes.find((c) => c.mesAno === mesAntKey);
+              
               const qtd = atual.quantidade;
               const qtdAnt = anterior?.quantidade ?? 0;
               const delta = qtdAnt > 0 ? qtd - qtdAnt : null;
+              
               return (
                 <div className="flex items-end gap-3 mt-2">
                   <p className="text-4xl font-bold text-[#1351B4]">{fmt(qtd)}</p>
