@@ -20,6 +20,7 @@ import {
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
 import { documentosApi, type DocumentoResponse } from "../../api/documentos";
 import { ocupacoesApi, type OcupacaoResponse } from "../../api/ocupacoes";
+import { localizacoesApi, type LocalizacaoResponse } from "../../api/localizacoes";
 import {
   vistoriasApi, type VistoriaResponse, type VistoriaRequest,
 } from "../../api/vistorias";
@@ -1488,6 +1489,7 @@ export function DetalhesImovel() {
   const [imovel,      setImovel]      = useState<ImovelResponse | null>(null);
   const [documentos,  setDocumentos]  = useState<DocumentoResponse[]>([]);
   const [ocupacoes,   setOcupacoes]   = useState<OcupacaoResponse[]>([]);
+  const [localizacao, setLocalizacao] = useState<LocalizacaoResponse | null>(null);
   const [loading,     setLoading]     = useState(true);
   const [erro,        setErro]        = useState<string | null>(null);
   const [loadingPdf,  setLoadingPdf]  = useState(false);
@@ -1502,11 +1504,13 @@ export function DetalhesImovel() {
       imoveisApi.buscarPorId(numId),
       documentosApi.listarPorImovel(numId, 0, 5),
       ocupacoesApi.listarPorImovel(numId, 0, 5),
+      localizacoesApi.buscarPorImovel(numId).catch(() => null),
     ])
-      .then(([im, docs, ocup]) => {
+      .then(([im, docs, ocup, loc]) => {
         setImovel(im);
         setDocumentos(docs.content);
         setOcupacoes(ocup.content);
+        setLocalizacao(loc);
       })
       .catch(() => setErro("Não foi possível carregar os dados do imóvel."))
       .finally(() => setLoading(false));
@@ -1634,26 +1638,160 @@ export function DetalhesImovel() {
 
         {/* ── ABA DADOS ─────────────────────────────────────────────── */}
         <TabsContent value="dados" className="space-y-5 mt-5">
-          <Secao icone={<Building2 className="h-4 w-4" />} titulo="Identificação">
+
+          {/* ── 1. Identificação e Governança ─────────────────────── */}
+          <Secao icone={<Building2 className="h-4 w-4" />} titulo="Identificação e Governança">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              <Campo label="Código SIGPIM"        valor={imovel.codigoSigpim} />
-              <Campo label="Tipo de imóvel"       valor={imovel.nomeTipoImovel} />
-              <Campo label="Situação dominial"    valor={imovel.nomeSituacaoDominial} />
-              <Campo label="Origem do cadastro"   valor={imovel.origemCadastro} />
+              <Campo label="Código SIGPIM"         valor={imovel.codigoSigpim} />
+              <Campo label="Status de cadastro"    valor={STATUS_CFG[imovel.statusCadastro]?.label ?? imovel.statusCadastro} />
+              <Campo label="Tipo de imóvel"        valor={imovel.nomeTipoImovel} />
+              <Campo label="Situação dominial"     valor={imovel.nomeSituacaoDominial} />
+              <Campo label="Origem do cadastro"    valor={imovel.origemCadastro} />
               <Campo label="Inscrição imobiliária" valor={imovel.inscricaoImobiliaria} />
-              <Campo label="Matrícula"            valor={imovel.matriculaRegistro} />
-              <Campo label="Cartório"             valor={imovel.cartorio} />
-              <Campo label="Versão"               valor={imovel.versao} />
+              <Campo label="Matrícula"             valor={imovel.matriculaRegistro} />
+              <Campo label="Cartório"              valor={imovel.cartorio} />
+              <Campo label="Versão do registro"    valor={imovel.versao} />
+              <Campo label="Cadastrado em"         valor={imovel.criadoEm ? new Date(imovel.criadoEm).toLocaleDateString("pt-BR") : null} />
+              <Campo label="Atualizado em"         valor={imovel.atualizadoEm ? new Date(imovel.atualizadoEm).toLocaleDateString("pt-BR") : null} />
             </div>
             {imovel.descricao && (
-              <div className="mt-4">
-                <p className="text-xs text-gray-500 mb-0.5">Descrição</p>
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <p className="text-xs text-gray-500 mb-1">Descrição</p>
                 <p className="text-sm text-gray-700">{imovel.descricao}</p>
+              </div>
+            )}
+            {imovel.observacoesGerais && (
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 mb-1">Observações gerais</p>
+                <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{imovel.observacoesGerais}</p>
               </div>
             )}
           </Secao>
 
-          <Secao icone={<Building2 className="h-4 w-4" />} titulo="Dados Físicos">
+          {/* ── 2. Gestão e Responsabilidade ──────────────────────── */}
+          <Secao icone={<Users className="h-4 w-4" />} titulo="Gestão e Responsabilidade">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              <Campo label="Órgão gestor patrimonial (ID)" valor={imovel.idOrgaoGestorPatrimonial} />
+              <Campo label="Órgão gestor operacional (ID)" valor={imovel.idOrgaoGestorOperacional} />
+              <Campo label="Unidade gestora (ID)"          valor={imovel.idUnidadeGestora} />
+              <Campo label="Registro de energia"           valor={imovel.registroEnergia} />
+              <Campo label="Registro de água"              valor={imovel.registroAgua} />
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Situação</p>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${imovel.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                  {imovel.ativo ? "Ativo" : "Inativo"}
+                </span>
+              </div>
+            </div>
+            {imovel.motivoEncerramento && (
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <p className="text-xs text-gray-500 mb-1">Motivo de encerramento</p>
+                <p className="text-sm text-gray-700">{fmt(imovel.motivoEncerramento as string)}</p>
+                {imovel.encerradoEm && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Encerrado em {new Date(imovel.encerradoEm).toLocaleDateString("pt-BR")}
+                  </p>
+                )}
+              </div>
+            )}
+          </Secao>
+
+          {/* ── 3. Localização e GIS ──────────────────────────────── */}
+          <Secao icone={<MapPin className="h-4 w-4" />} titulo="Localização e GIS">
+            {localizacao ? (
+              <div className="space-y-5">
+                {/* Endereço */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Endereço</p>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    <Campo label="Logradouro"        valor={localizacao.logradouro} />
+                    <Campo label="Número"            valor={localizacao.numero} />
+                    <Campo label="Complemento"       valor={localizacao.complemento} />
+                    <Campo label="Bairro"            valor={localizacao.bairro} />
+                    <Campo label="Distrito/Regional" valor={localizacao.distritoRegional} />
+                    <Campo label="CEP"               valor={localizacao.cep} />
+                  </div>
+                </div>
+                {/* Geodados */}
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Georeferenciamento</p>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    <Campo label="Latitude"           valor={localizacao.latitude?.toString()} />
+                    <Campo label="Longitude"          valor={localizacao.longitude?.toString()} />
+                    <Campo label="Sistema de coord."  valor={localizacao.sistemaCoordenadas} />
+                    <Campo label="Tipo de geometria"  valor={localizacao.tipoGeometria} />
+                    <Campo label="Fonte da geometria" valor={localizacao.fonteGeometria} />
+                    <Campo label="Precisão"           valor={localizacao.precisaoLocalizacao} />
+                    {localizacao.geometriaWkt && (
+                      <div className="col-span-2 sm:col-span-3 lg:col-span-4">
+                        <p className="text-xs text-gray-500 mb-0.5">Geometria (WKT)</p>
+                        <p className="text-xs font-mono text-gray-600 bg-gray-50 rounded p-2 break-all">{localizacao.geometriaWkt}</p>
+                      </div>
+                    )}
+                  </div>
+                  {localizacao.latitude && localizacao.longitude && (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => navigate(`/dashboard/mapa?imovel=${imovel.id}`)}
+                        className="inline-flex items-center gap-1.5 text-xs text-[#1351B4] hover:underline"
+                      >
+                        <MapPin className="h-3.5 w-3.5" />
+                        Ver no mapa ({localizacao.latitude}, {localizacao.longitude})
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {/* GIS / Validação */}
+                <div className="border-t border-gray-100 pt-4">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Validação GIS</p>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-0.5">Selo GIS (SEMURH)</p>
+                      {localizacao.seloGis ? (
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          localizacao.seloGis === "VALIDADO" ? "bg-green-100 text-green-800" :
+                          localizacao.seloGis === "CONFLITO" ? "bg-orange-100 text-orange-800" :
+                          "bg-yellow-100 text-yellow-800"
+                        }`}>
+                          {localizacao.seloGis === "VALIDADO" ? "✓ Validado" :
+                           localizacao.seloGis === "CONFLITO" ? "⚠ Conflito" : "○ Não validado"}
+                        </span>
+                      ) : <p className="text-sm font-medium text-gray-400">—</p>}
+                    </div>
+                    <Campo label="Data validação GIS" valor={localizacao.dataValidacaoGis?.toString()} />
+                    <div>
+                      <p className="text-xs text-gray-500 mb-0.5">Revisão INCID</p>
+                      {localizacao.revisaoIncid ? (
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          localizacao.revisaoIncid === "OK" ? "bg-green-100 text-green-800" :
+                          localizacao.revisaoIncid === "RESSALVA" ? "bg-orange-100 text-orange-800" :
+                          "bg-gray-100 text-gray-600"
+                        }`}>
+                          {localizacao.revisaoIncid}
+                        </span>
+                      ) : <p className="text-sm font-medium text-gray-400">—</p>}
+                    </div>
+                  </div>
+                  {localizacao.observacaoGis && (
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-500 mb-1">Observação GIS</p>
+                      <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{localizacao.observacaoGis}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 rounded-lg bg-yellow-50 border border-yellow-200 px-4 py-3">
+                <AlertTriangle className="h-4 w-4 text-yellow-600 shrink-0" />
+                <p className="text-sm text-yellow-800">
+                  Localização não registrada. Edite o imóvel para adicionar endereço e coordenadas.
+                </p>
+              </div>
+            )}
+          </Secao>
+
+          {/* ── 4. Dados Físicos e Construtivos ───────────────────── */}
+          <Secao icone={<Building2 className="h-4 w-4" />} titulo="Dados Físicos e Construtivos">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               <Campo label="Área do terreno (m²)"  valor={imovel.areaTerrenoM2} />
               <Campo label="Área construída (m²)"  valor={imovel.areaConstruidaM2} />
@@ -1661,24 +1799,23 @@ export function DetalhesImovel() {
               <Campo label="Ano de construção"     valor={imovel.anoConstrucao} />
               <Campo label="Categoria macro"       valor={imovel.categoriaMacro} />
               <Campo label="Tipologia"             valor={imovel.tipologia} />
-              <Campo label="Estado de conservação" valor={imovel.estadoConservacaoAtual} />
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">Estado de conservação</p>
+                {imovel.estadoConservacaoAtual ? (
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                    imovel.estadoConservacaoAtual === "OTIMO"   ? "bg-green-100 text-green-800"  :
+                    imovel.estadoConservacaoAtual === "BOM"     ? "bg-emerald-100 text-emerald-800" :
+                    imovel.estadoConservacaoAtual === "REGULAR" ? "bg-yellow-100 text-yellow-800" :
+                    imovel.estadoConservacaoAtual === "RUIM"    ? "bg-orange-100 text-orange-800" :
+                    "bg-red-100 text-red-800"
+                  }`}>
+                    {fmt(imovel.estadoConservacaoAtual)}
+                  </span>
+                ) : <p className="text-sm font-medium text-gray-400">—</p>}
+              </div>
             </div>
           </Secao>
 
-          <Secao icone={<Users className="h-4 w-4" />} titulo="Gestão">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <Campo label="Registro de energia" valor={imovel.registroEnergia} />
-              <Campo label="Registro de água"    valor={imovel.registroAgua} />
-              <Campo label="Cadastrado em"       valor={imovel.criadoEm?.slice(0, 10)} />
-              <Campo label="Atualizado em"       valor={imovel.atualizadoEm?.slice(0, 10)} />
-            </div>
-            {imovel.observacoesGerais && (
-              <div className="mt-4">
-                <p className="text-xs text-gray-500 mb-0.5">Observações gerais</p>
-                <p className="text-sm text-gray-700">{imovel.observacoesGerais}</p>
-              </div>
-            )}
-          </Secao>
         </TabsContent>
 
         {/* ── ABA OCUPAÇÃO ──────────────────────────────────────────── */}

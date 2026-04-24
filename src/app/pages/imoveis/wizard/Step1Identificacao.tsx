@@ -51,13 +51,11 @@ export function CadastroImovelStep1() {
       .finally(() => setCarregandoUnidades(false));
   }, [etapa1.idOrgaoGestorPatrimonial]);
 
+  // Pré-cadastro: nenhum campo é obrigatório (Manual SIGPIM §4.2 — Checklist P).
+  // A denominação é fortemente recomendada mas não trava o fluxo.
   const validar = () => {
-    const e: Record<string, string> = {};
-    if (!etapa1.nomeReferencia.trim()) e.nomeReferencia = "Denominação é obrigatória.";
-    if (!etapa1.idOrgaoGestorPatrimonial) e.idOrgaoGestorPatrimonial = "Selecione o órgão responsável.";
-    if (!etapa1.idUnidadeGestora) e.idUnidadeGestora = "Selecione a unidade gestora.";
-    setErros(e);
-    return Object.keys(e).length === 0;
+    setErros({});
+    return true;
   };
 
   const handleNext = () => {
@@ -83,7 +81,7 @@ export function CadastroImovelStep1() {
           <AlertBox variant="error">{erroCarregamento}</AlertBox>
         ) : (
           <AlertBox variant="info">
-            Campos com <span className="text-red-600">*</span> são obrigatórios.
+            Pré-cadastro: preencha o que souber agora. Campos incompletos viram pendências formais — nada bloqueia o registro inicial.
           </AlertBox>
         )}
 
@@ -91,7 +89,7 @@ export function CadastroImovelStep1() {
           {/* Denominação */}
           <div className="space-y-2">
             <Label htmlFor="nomeReferencia">
-              Denominação do Imóvel <span className="text-red-600">*</span>
+              Denominação do Imóvel
             </Label>
             <Input
               id="nomeReferencia"
@@ -109,7 +107,7 @@ export function CadastroImovelStep1() {
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="orgao">
-                Órgão Responsável <span className="text-red-600">*</span>
+                Órgão Responsável
               </Label>
               <Select
                 value={etapa1.idOrgaoGestorPatrimonial}
@@ -137,7 +135,7 @@ export function CadastroImovelStep1() {
 
             <div className="space-y-2">
               <Label htmlFor="unidade">
-                Unidade Gestora <span className="text-red-600">*</span>
+                Unidade Gestora
               </Label>
               <Select
                 value={etapa1.idUnidadeGestora}

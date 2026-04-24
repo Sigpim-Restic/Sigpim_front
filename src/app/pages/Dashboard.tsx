@@ -231,27 +231,59 @@ export function Dashboard() {
           </div>
         </Card>
 
-        {/* Linha — cadastros por mês */}
+        {/* Cadastros do mês atual + mini-histórico */}
         <Card className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
-            <SectionTitle>Cadastros — Últimos 6 Meses</SectionTitle>
+            <SectionTitle>Cadastros — Mês Atual</SectionTitle>
             <TrendingUp className="h-4 w-4 text-gray-400" />
           </div>
-          {d.cadastrosPorMes.length === 0 ? (
-            <div className="flex items-center justify-center h-36 text-sm text-gray-400">
-              Nenhum dado disponível
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={150}>
-              <LineChart data={d.cadastrosPorMes}>
-                <XAxis dataKey="mesAno" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                <Tooltip formatter={(v: number) => [fmt(v), "Cadastros"]} />
-                <Line type="monotone" dataKey="quantidade" stroke={AZUL}
-                  strokeWidth={2} dot={{ r: 4, fill: AZUL }} />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
+          {(() => {
+            const mesAtual = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+            const mesAnoKey = new Date().toLocaleDateString("pt-BR", { month: "2-digit", year: "numeric" }).replace("/", "/");
+            // cadastrosPorMes vem ordenado cronologicamente — pega o último (mês atual)
+            const entrada = d.cadastrosPorMes.length > 0
+              ? d.cadastrosPorMes[d.cadastrosPorMes.length - 1]
+              : null;
+            const qtdMes = entrada?.quantidade ?? 0;
+            // últimos 4 meses para mini-histórico (excluindo o atual)
+            const historico = d.cadastrosPorMes.slice(-5, -1);
+            return (
+              <div className="flex flex-col gap-4">
+                {/* KPI principal */}
+                <div className="flex items-end gap-4">
+                  <div>
+                    <p className="text-4xl font-bold text-[#1351B4]">{fmt(qtdMes)}</p>
+                    <p className="text-xs text-gray-500 mt-1 capitalize">imóvel(is) cadastrado(s) em {mesAtual}</p>
+                  </div>
+                  {historico.length > 0 && (() => {
+                    const ant = historico[historico.length - 1]?.quantidade ?? 0;
+                    if (ant === 0) return null;
+                    const delta = qtdMes - ant;
+                    const subiu = delta >= 0;
+                    return (
+                      <span className={`mb-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${subiu ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                        {subiu ? "+" : ""}{delta} vs mês anterior
+                      </span>
+                    );
+                  })()}
+                </div>
+                {/* Mini-histórico dos últimos 4 meses */}
+                {historico.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-2">Histórico recente</p>
+                    <ResponsiveContainer width="100%" height={80}>
+                      <BarChart data={historico} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
+                        <XAxis dataKey="mesAno" tick={{ fontSize: 10 }} />
+                        <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                        <Tooltip formatter={(v: number) => [fmt(v), "Cadastros"]} />
+                        <Bar dataKey="quantidade" fill={CINZA} radius={[3,3,0,0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </Card>
       </div>
 

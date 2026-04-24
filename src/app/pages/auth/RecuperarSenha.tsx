@@ -160,7 +160,7 @@ export function RecuperarSenha() {
             <p className="text-xs text-center text-gray-600">
               Prefeitura Municipal de São Luís — SEMAD
               <br />
-              Sistema oficial do governo. Seus dados estão seguros.
+              Sistema de gestão patrimonial municipal. Seus dados estão protegidos.
             </p>
           </div>
         </div>

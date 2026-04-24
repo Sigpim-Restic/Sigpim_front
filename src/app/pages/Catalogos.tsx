@@ -223,6 +223,31 @@ export function Catalogos() {
     }
   };
 
+  // ── Desativar domínio inteiro ────────────────────────────────────────────────
+
+  const [desativandoDominio, setDesativandoDominio] = useState<string | null>(null);
+
+  const handleDesativarDominio = async (dominio: Dominio) => {
+    const ativos = dominio.itens.filter((i) => i.ativo !== false);
+    if (ativos.length === 0) {
+      setErro("Este domínio não possui itens ativos para desativar.");
+      return;
+    }
+    const confirmar = window.confirm(
+      `Desativar o domínio "${TIPO_LABEL[dominio.tipo] ?? dominio.tipo}" e todos os seus ${ativos.length} valor(es) ativo(s)?\n\nOs valores ficarão inativos e não aparecerão nos dropdowns. Esta ação pode ser revertida reativando cada item individualmente.`
+    );
+    if (!confirmar) return;
+    setDesativandoDominio(dominio.tipo);
+    try {
+      await Promise.all(ativos.map((item) => catalogosApi.desativar(item.id)));
+      carregar();
+    } catch (e: unknown) {
+      setErro(e instanceof Error ? e.message : "Erro ao desativar domínio.");
+    } finally {
+      setDesativandoDominio(null);
+    }
+  };
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -386,6 +411,19 @@ export function Catalogos() {
                     </button>
                     <div className="flex items-center gap-2 shrink-0">
                       <Badge variant="secondary" className="font-mono text-xs">{d.tipo}</Badge>
+                      {perm.canManageCatalogo && ativos.length > 0 && (
+                        <button
+                          onClick={() => handleDesativarDominio(d)}
+                          disabled={desativandoDominio === d.tipo}
+                          title="Desativar este domínio inteiro"
+                          className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        >
+                          {desativandoDominio === d.tipo
+                            ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                            : <X className="h-3.5 w-3.5" />
+                          }
+                        </button>
+                      )}
                       <button onClick={() => toggleExpandir(d.tipo)} className="text-gray-400 hover:text-gray-600">
                         {expandido
                           ? <ChevronUp className="h-4 w-4" />
