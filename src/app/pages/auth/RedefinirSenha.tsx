@@ -12,13 +12,14 @@ import { api } from "../../api/client";
 import { ApiError } from "../../api/client";
 
 function validarSenha(senha: string) {
+  const caracteresEspeciais = "!@#$%^&*()_+-=[]{};':\"\\|,.<>/?";
+
   return {
     tamanho: senha.length >= 8,
     numero: /\d/.test(senha),
     maiuscula: /[A-Z]/.test(senha),
-    especial: /[][!@#$%^&*()_+\-={};:"|,.<>/?\\]/.test(senha),
+    especial: senha.split('').some(char => caracteresEspeciais.includes(char)),
   };
-
 }
 
 export function RedefinirSenha() {
