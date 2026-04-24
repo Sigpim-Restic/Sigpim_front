@@ -174,10 +174,14 @@ export function CadastroImovelStep1() {
             <Textarea
               id="observacoes"
               value={etapa1.observacoesGerais}
-              onChange={(e) => setEtapa1({ ...etapa1, observacoesGerais: e.target.value })}
+              onChange={(e) => setEtapa1({ ...etapa1, observacoesGerais: e.target.value.slice(0, 500) })}
               placeholder="Informações adicionais relevantes sobre o imóvel..."
+              maxLength={500}
               rows={3}
             />
+            <p className="text-xs text-gray-500">
+              Máximo de 500 caracteres ({etapa1.observacoesGerais.length}/500).
+            </p>
           </div>
         </div>
       </div>

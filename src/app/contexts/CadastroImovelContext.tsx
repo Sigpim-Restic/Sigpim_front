@@ -130,15 +130,16 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     setSalvando(true);
     setErro(null);
     try {
-      // Mapear tipoImovel (string livre) para idTipoImovel se for um ID numérico
-      // ou enviar via campo legado. O backend aceita nomeReferencia como identif.
+      const idTipoImovel = etapa3.tipoImovel && /^\d+$/.test(etapa3.tipoImovel)
+        ? Number(etapa3.tipoImovel)
+        : undefined;
+
       const req: ImovelRequest = {
         nomeReferencia:           etapa1.nomeReferencia         || undefined,
-        // etapa3: tipo de imóvel vem como string (PROPRIO/LOCADO/INCERTO)
-        // O backend usa idTipoImovel (FK). Aqui enviamos undefined — o type será
-        // ajustado no editar após o cadastro inicial (pré-cadastro).
+        idTipoImovel,
+        descricao:                etapa3.descricaoUso ? etapa3.descricaoUso.slice(0, 500) : undefined,
         tipologia:                etapa3.tipologia              || undefined,
-        observacoesGerais:        etapa1.observacoesGerais      || undefined,
+        observacoesGerais:        etapa1.observacoesGerais ? etapa1.observacoesGerais.slice(0, 500) : undefined,
         areaTerrenoM2:            etapa4.areaTerrenoM2          ? parseFloat(etapa4.areaTerrenoM2)      : undefined,
         areaConstruidaM2:         etapa4.areaConstruidaM2 !== "" ? parseFloat(etapa4.areaConstruidaM2) : undefined,
         numeroPavimentos:         etapa4.numeroPavimentos       ? parseInt(etapa4.numeroPavimentos)     : undefined,

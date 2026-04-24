@@ -1,15 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { WizardLayout } from "../../../components/layout/WizardLayout";
 import { Label } from "../../../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 import { Textarea } from "../../../components/ui/textarea";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
+import { tiposImovelApi, type TipoImovelResponse } from "../../../api/tipos-imovel-alertas";
 
 export function CadastroImovelStep3() {
   const { etapa3, setEtapa3 } = useCadastroImovel();
   const navigate = useNavigate();
   const [erros] = useState<Record<string, string>>({});
+  const [tiposImovel, setTiposImovel] = useState<TipoImovelResponse[]>([]);
+  const [carregandoTipos, setCarregandoTipos] = useState(true);
+
+  useEffect(() => {
+    tiposImovelApi.listarAtivos()
+      .then(setTiposImovel)
+      .catch(() => {})
+      .finally(() => setCarregandoTipos(false));
+  }, []);
 
   // Pré-cadastro: nenhum campo obrigatório — §4.2 do Manual SIGPIM
   const handleNext = () => navigate("/dashboard/imoveis/novo/etapa-4");
@@ -31,12 +41,14 @@ export function CadastroImovelStep3() {
           {/* Tipo de Imóvel */}
           <div className="space-y-2">
             <Label>Tipo de Imóvel</Label>
-            <Select {...sel("tipoImovel")}>
-              <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+            <Select {...sel("tipoImovel")} disabled={carregandoTipos}>
+              <SelectTrigger>
+                <SelectValue placeholder={carregandoTipos ? "Carregando..." : "Selecione o tipo"} />
+              </SelectTrigger>
               <SelectContent>
-                <SelectItem value="PROPRIO">Próprio</SelectItem>
-                <SelectItem value="LOCADO">Locado</SelectItem>
-                <SelectItem value="INCERTO">Incerto</SelectItem>
+                {tiposImovel.map((tipo) => (
+                  <SelectItem key={tipo.id} value={String(tipo.id)}>{tipo.nome}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -74,10 +86,14 @@ export function CadastroImovelStep3() {
             <Label>Descrição do Uso Atual</Label>
             <Textarea
               value={etapa3.descricaoUso}
-              onChange={(e) => setEtapa3({ ...etapa3, descricaoUso: e.target.value })}
+              onChange={(e) => setEtapa3({ ...etapa3, descricaoUso: e.target.value.slice(0, 500) })}
               placeholder="Descreva o uso atual do imóvel, atividades realizadas e finalidade..."
+              maxLength={500}
               rows={3}
             />
+            <p className="text-xs text-gray-500">
+              Máximo de 500 caracteres ({etapa3.descricaoUso.length}/500).
+            </p>
           </div>
         </div>
       </div>

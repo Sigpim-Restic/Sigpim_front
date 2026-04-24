@@ -147,10 +147,11 @@ export function CadastroImovelStep2() {
               <Input
                 id="numero"
                 value={etapa2.numero}
-                onChange={(e) => setEtapa2({ ...etapa2, numero: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                placeholder="450"
-                inputMode="numeric"
+                onChange={(e) => setEtapa2({ ...etapa2, numero: e.target.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10) })}
+                placeholder="450 ou 1A"
+                inputMode="text"
               />
+              <p className="text-xs text-gray-500">Use apenas letras e números (ex: 50B).</p>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="complemento">Complemento</Label>

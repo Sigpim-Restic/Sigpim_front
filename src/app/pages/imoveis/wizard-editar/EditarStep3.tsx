@@ -91,10 +91,14 @@ export function EditarStep3() {
             <Label>Descrição do Uso Atual</Label>
             <Textarea
               value={etapa3.descricaoUso}
-              onChange={(e) => setEtapa3({ ...etapa3, descricaoUso: e.target.value })}
+              onChange={(e) => setEtapa3({ ...etapa3, descricaoUso: e.target.value.slice(0, 500) })}
               placeholder="Descreva o uso atual do imóvel..."
+              maxLength={500}
               rows={3}
             />
+            <p className="text-xs text-gray-500">
+              Máximo de 500 caracteres ({etapa3.descricaoUso.length}/500).
+            </p>
           </div>
 
         </div>
