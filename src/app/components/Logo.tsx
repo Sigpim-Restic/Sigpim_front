@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface LogoProps {
   size?: "small" | "medium" | "large";
@@ -14,19 +14,19 @@ const sizeMap = {
 
 export function Logo({ size = "medium", variant = "icon-only", className = "" }: LogoProps) {
   const sizeClass = sizeMap[size];
+  const [imageNotFound, setImageNotFound] = useState(false);
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <div className={`flex shrink-0 items-center justify-center rounded-xl ${sizeClass} bg-white/10 backdrop-blur-sm`}>
-        <img
-          src="/assets/logo.svg"
-          alt="SIGPIM Logo"
-          className="h-full w-full object-contain p-1"
-          onError={(e) => {
-            // Fallback em caso de imagem não encontrada
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-          }}
-        />
+        {!imageNotFound && (
+          <img
+            src="/assets/logo.png"
+            alt="Brasão de São Luís"
+            className="h-full w-full object-contain p-1"
+            onError={() => setImageNotFound(true)}
+          />
+        )}
       </div>
       {variant === "with-text" && (
         <div className="overflow-hidden">

@@ -2,22 +2,22 @@
 
 ## Local onde colocar o arquivo
 
-O componente `Logo.tsx` já está configurado para buscar o arquivo do logo em:
+O componente `Logo.tsx` está configurado para buscar o arquivo do logo em:
 
 ```
-public/assets/logo.svg
+public/assets/logo.png
 ```
 
 ## Instruções
 
-1. **Salve o arquivo do logo** (brasão de São Luís) na pasta `public/assets/` com o nome `logo.svg`
-   - Se for um arquivo PNG, você pode converter para SVG usando uma ferramenta online como [Convertio](https://convertio.co/pt/) ou [Online-Convert](https://image.online-convert.com/pt/)
-   - Ou simplesmente renomeie para `logo.png` e atualize a referência em `Logo.tsx` para `src="/assets/logo.png"`
+1. **Salve o brasão de São Luís** na pasta `public/assets/` com o nome `logo.png`
+   - Você pode usar a imagem que já foi anexada (o brasão com os 7 aros)
+   - Se quiser converter para SVG, pode usar uma ferramenta online como [Convertio](https://convertio.co/pt/) ou [Online-Convert](https://image.online-convert.com/pt/)
 
 2. **Formatos suportados**:
-   - `.svg` (recomendado - melhor escalabilidade)
-   - `.png`
+   - `.png` (recomendado - é o que o componente busca)
    - `.jpg` / `.jpeg`
+   - `.svg`
 
 ## Arquivos que usam o logo
 
@@ -29,7 +29,7 @@ O logo será exibido automaticamente em:
 - ✅ Redefinir Senha (`/auth/redefinir-senha`)
 - ✅ Sidebar do Dashboard (no topo)
 
-## Se precisar ajustar o logo
+## Customização
 
 O arquivo `src/app/components/Logo.tsx` pode ser customizado. Atualmente suporta 3 tamanhos:
 - `small`: 40x40px (usada na sidebar)
@@ -39,3 +39,15 @@ O arquivo `src/app/components/Logo.tsx` pode ser customizado. Atualmente suporta
 E 2 variantes:
 - `icon-only`: apenas o logo
 - `with-text`: logo + título e subtítulo (usada na sidebar)
+
+## Próximos passos
+
+1. Salve a imagem do brasão em `public/assets/logo.png`
+2. Faça commit:
+```bash
+git add public/assets/logo.png
+git commit -m "Add São Luís coat of arms logo"
+git push
+```
+
+O logo aparecerá automaticamente em todas as páginas!
