@@ -19,12 +19,16 @@ import { CadastroImovelStep2 } from "./pages/imoveis/wizard/Step2Localizacao";
 import { CadastroImovelStep3 } from "./pages/imoveis/wizard/Step3Classificacao";
 import { CadastroImovelStep4 } from "./pages/imoveis/wizard/Step4DadosFisicos";
 import { CadastroImovelStep5 } from "./pages/imoveis/wizard/Step5Ocupacao";
-import { CadastroImovelStep6 } from "./pages/imoveis/wizard/Step6Anexos";
+import { CadastroImovelStep6 } from "./pages/imoveis/wizard/Step6Instrumentos";
+import { CadastroImovelStep7 } from "./pages/imoveis/wizard/Step7Dominial";
+import { CadastroImovelStep8 } from "./pages/imoveis/wizard/Step8PatrimonioHistorico";
+import { CadastroImovelStep9 } from "./pages/imoveis/wizard/Step9Anexos";
 import { EditarStep1 } from "./pages/imoveis/wizard-editar/EditarStep1";
 import { EditarStep2 } from "./pages/imoveis/wizard-editar/EditarStep2";
 import { EditarStep3 } from "./pages/imoveis/wizard-editar/EditarStep3";
 import { EditarStep4 } from "./pages/imoveis/wizard-editar/EditarStep4";
 import { EditarStep5 } from "./pages/imoveis/wizard-editar/EditarStep5";
+import { EditarStep6 } from "./pages/imoveis/wizard-editar/EditarStep6";
 import { ListaOcupacoes } from "./pages/ocupacoes/ListaOcupacoes";
 import { ListaDocumentos } from "./pages/documentos/ListaDocumentos";
 import { Relatorios } from "./pages/relatorios/Relatorios";
@@ -85,6 +89,9 @@ export const router = createBrowserRouter([
           { path: "etapa-4", Component: CadastroImovelStep4 },
           { path: "etapa-5", Component: CadastroImovelStep5 },
           { path: "etapa-6", Component: CadastroImovelStep6 },
+          { path: "etapa-7", Component: CadastroImovelStep7 },
+          { path: "etapa-8", Component: CadastroImovelStep8 },
+          { path: "etapa-9", Component: CadastroImovelStep9 },
         ],
       },
 
@@ -103,6 +110,7 @@ export const router = createBrowserRouter([
           { path: "etapa-3", Component: EditarStep3 },
           { path: "etapa-4", Component: EditarStep4 },
           { path: "etapa-5", Component: EditarStep5 },
+          { path: "etapa-6", Component: EditarStep6 },
         ],
       },
 

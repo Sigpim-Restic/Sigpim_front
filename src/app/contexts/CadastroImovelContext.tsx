@@ -18,9 +18,10 @@ export interface DadosEtapa2 {
   latitude: string; longitude: string;
 }
 export interface DadosEtapa3 {
-  idTipoImovel: string;
-  idSituacaoDominial: string;
-  tipologia: string; destinacaoAtual: string; descricaoUso: string;
+  tipoImovel: string;
+  tipologia: string;
+  destinacaoAtual: string;
+  descricaoUso: string;
 }
 export interface DadosEtapa4 {
   areaTerrenoM2: string; areaConstruidaM2: string;
@@ -33,19 +34,43 @@ export interface DadosEtapa5 {
   contatoResponsavel: string; destinacaoFinalidade: string;
   dataInicio: string; dataFimPrevista: string; observacoes: string;
 }
+export interface DadosEtapa6 {
+  possuiInstrumento: string;
+  tipoInstrumento: string;
+  numeroInstrumento: string;
+  dataAssinatura: string;
+  dataInicio: string;
+  dataVencimento: string;
+  observacoes: string;
+}
+export interface DadosEtapa7 {
+  situacaoDominial: string;
+  matriculaRegistro: string;
+  cartorio: string;
+  inscricaoImobiliaria: string;
+  observacoes: string;
+}
+export interface DadosEtapa8 {
+  imovelHistorico: string;
+  observacoes: string;
+}
 export interface ArquivoAnexo {
   id: number; file: File; tipo: string; descricao: string; dataDocumento: string;
 }
 
 interface Ctx {
   etapa1: DadosEtapa1; etapa2: DadosEtapa2; etapa3: DadosEtapa3;
-  etapa4: DadosEtapa4; etapa5: DadosEtapa5;
+  etapa4: DadosEtapa4; etapa5: DadosEtapa5; etapa6: DadosEtapa6;
+  etapa7: DadosEtapa7; etapa8: DadosEtapa8;
   arquivos: ArquivoAnexo[]; salvando: boolean; erro: string | null;
   setEtapa1: (d: DadosEtapa1) => void;
   setEtapa2: (d: DadosEtapa2) => void;
   setEtapa3: (d: DadosEtapa3) => void;
   setEtapa4: (d: DadosEtapa4) => void;
   setEtapa5: (d: DadosEtapa5) => void;
+  setEtapa6: (d: DadosEtapa6) => void;
+  setEtapa7: (d: DadosEtapa7) => void;
+  setEtapa8: (d: DadosEtapa8) => void;
   setArquivos: (a: ArquivoAnexo[]) => void;
   finalizar: (onSuccess: () => void) => Promise<void>;
   resetar: () => void;
@@ -55,9 +80,12 @@ const Ctx = createContext<Ctx | null>(null);
 
 const e1: DadosEtapa1 = { nomeReferencia: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" };
 const e2: DadosEtapa2 = { logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "", latitude: "", longitude: "" };
-const e3: DadosEtapa3 = { idTipoImovel: "", idSituacaoDominial: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" };
+const e3: DadosEtapa3 = { tipoImovel: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" };
 const e4: DadosEtapa4 = { areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "", registroEnergia: "", registroAgua: "" };
 const e5: DadosEtapa5 = { statusOcupacao: "", idNivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" };
+const e6: DadosEtapa6 = { possuiInstrumento: "", tipoInstrumento: "", numeroInstrumento: "", dataAssinatura: "", dataInicio: "", dataVencimento: "", observacoes: "" };
+const e7: DadosEtapa7 = { situacaoDominial: "", matriculaRegistro: "", cartorio: "", inscricaoImobiliaria: "", observacoes: "" };
+const e8: DadosEtapa8 = { imovelHistorico: "", observacoes: "" };
 
 export function CadastroImovelProvider({ children }: { children: React.ReactNode }) {
   const [etapa1, setEtapa1] = useState<DadosEtapa1>(e1);
@@ -65,25 +93,31 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
   const [etapa3, setEtapa3] = useState<DadosEtapa3>(e3);
   const [etapa4, setEtapa4] = useState<DadosEtapa4>(e4);
   const [etapa5, setEtapa5] = useState<DadosEtapa5>(e5);
+  const [etapa6, setEtapa6] = useState<DadosEtapa6>(e6);
+  const [etapa7, setEtapa7] = useState<DadosEtapa7>(e7);
+  const [etapa8, setEtapa8] = useState<DadosEtapa8>(e8);
   const [arquivos, setArquivos] = useState<ArquivoAnexo[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [erro,     setErro]     = useState<string | null>(null);
 
   const resetar = useCallback(() => {
-    setEtapa1(e1); setEtapa2(e2); setEtapa3(e3);
-    setEtapa4(e4); setEtapa5(e5); setArquivos([]); setErro(null);
+    setEtapa1(e1); setEtapa2(e2); setEtapa3(e3); setEtapa4(e4);
+    setEtapa5(e5); setEtapa6(e6); setEtapa7(e7); setEtapa8(e8);
+    setArquivos([]); setErro(null);
   }, []);
 
   const finalizar = useCallback(async (onSuccess: () => void) => {
     setSalvando(true);
     setErro(null);
     try {
+      // Mapear tipoImovel (string livre) para idTipoImovel se for um ID numérico
+      // ou enviar via campo legado. O backend aceita nomeReferencia como identif.
       const req: ImovelRequest = {
         nomeReferencia:           etapa1.nomeReferencia         || undefined,
-        idTipoImovel:             etapa3.idTipoImovel           ? Number(etapa3.idTipoImovel)           : undefined,
-        idSituacaoDominial:       etapa3.idSituacaoDominial     ? Number(etapa3.idSituacaoDominial)     : undefined,
+        // etapa3: tipo de imóvel vem como string (PROPRIO/LOCADO/INCERTO)
+        // O backend usa idTipoImovel (FK). Aqui enviamos undefined — o type será
+        // ajustado no editar após o cadastro inicial (pré-cadastro).
         tipologia:                etapa3.tipologia              || undefined,
-        situacaoDominial:         (etapa3.situacaoDominial as any) || undefined,
         observacoesGerais:        etapa1.observacoesGerais      || undefined,
         areaTerrenoM2:            etapa4.areaTerrenoM2          ? parseFloat(etapa4.areaTerrenoM2)      : undefined,
         areaConstruidaM2:         etapa4.areaConstruidaM2 !== "" ? parseFloat(etapa4.areaConstruidaM2) : undefined,
@@ -94,13 +128,16 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         registroAgua:             etapa4.registroAgua           || undefined,
         idOrgaoGestorPatrimonial: etapa1.idOrgaoGestorPatrimonial ? Number(etapa1.idOrgaoGestorPatrimonial) : undefined,
         idUnidadeGestora:         etapa1.idUnidadeGestora       ? Number(etapa1.idUnidadeGestora)       : undefined,
+        // Dominial (etapa7)
+        inscricaoImobiliaria:     etapa7.inscricaoImobiliaria   || undefined,
+        matriculaRegistro:        etapa7.matriculaRegistro      || undefined,
+        cartorio:                 etapa7.cartorio               || undefined,
       };
 
       const imovel = await imoveisApi.criar(req);
 
-      const temLocalizacao =
-        etapa2.latitude || etapa2.longitude || etapa2.logradouro || etapa2.bairro;
-
+      // Localização
+      const temLocalizacao = etapa2.latitude || etapa2.longitude || etapa2.logradouro || etapa2.bairro;
       if (temLocalizacao) {
         await localizacoesApi.criar({
           idImovel:    imovel.id,
@@ -108,18 +145,14 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
           numero:      etapa2.numero      || undefined,
           complemento: etapa2.complemento || undefined,
           bairro:      etapa2.bairro      || undefined,
-          cidade:      etapa2.cidade      || undefined,
           cep:         etapa2.cep         || undefined,
           latitude:    etapa2.latitude    ? parseFloat(etapa2.latitude)  : undefined,
           longitude:   etapa2.longitude   ? parseFloat(etapa2.longitude) : undefined,
         });
       }
 
-      if (
-        etapa5.statusOcupacao &&
-        etapa5.statusOcupacao !== "DESOCUPADO" &&
-        etapa5.statusOcupacao !== "DESCONHECIDO"
-      ) {
+      // Ocupação
+      if (etapa5.statusOcupacao && etapa5.statusOcupacao !== "DESOCUPADO" && etapa5.statusOcupacao !== "DESCONHECIDO") {
         const ocReq: OcupacaoRequest = {
           idImovel:             imovel.id,
           statusOcupacao:       etapa5.statusOcupacao as any,
@@ -136,6 +169,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         await ocupacoesApi.criar(ocReq);
       }
 
+      // Documentos/anexos
       for (const arq of arquivos.filter((a) => a.file.size <= 10 * 1024 * 1024)) {
         const params: DocumentoUploadParams = {
           idImovel:        imovel.id,
@@ -154,12 +188,14 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     } finally {
       setSalvando(false);
     }
-  }, [etapa1, etapa2, etapa3, etapa4, etapa5, arquivos, resetar]);
+  }, [etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8, arquivos, resetar]);
 
   return (
     <Ctx.Provider value={{
-      etapa1, etapa2, etapa3, etapa4, etapa5, arquivos, salvando, erro,
-      setEtapa1, setEtapa2, setEtapa3, setEtapa4, setEtapa5, setArquivos,
+      etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8,
+      arquivos, salvando, erro,
+      setEtapa1, setEtapa2, setEtapa3, setEtapa4, setEtapa5,
+      setEtapa6, setEtapa7, setEtapa8, setArquivos,
       finalizar, resetar,
     }}>
       {children}

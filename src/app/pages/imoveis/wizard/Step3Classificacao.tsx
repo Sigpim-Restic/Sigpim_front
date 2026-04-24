@@ -9,18 +9,10 @@ import { useNavigate } from "react-router";
 export function CadastroImovelStep3() {
   const { etapa3, setEtapa3 } = useCadastroImovel();
   const navigate = useNavigate();
-  const [erros, setErros] = useState<Record<string, string>>({});
+  const [erros] = useState<Record<string, string>>({});
 
-  const validar = () => {
-    const e: Record<string, string> = {};
-    if (!etapa3.tipoImovel) e.tipoImovel = "Selecione o tipo do imóvel.";
-    setErros(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validar()) navigate("/dashboard/imoveis/novo/etapa-4");
-  };
+  // Pré-cadastro: nenhum campo obrigatório — §4.2 do Manual SIGPIM
+  const handleNext = () => navigate("/dashboard/imoveis/novo/etapa-4");
 
   const sel = (field: keyof typeof etapa3) => ({
     value: etapa3[field],
@@ -32,24 +24,21 @@ export function CadastroImovelStep3() {
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Classificação e Uso</h3>
-          <p className="text-sm text-gray-600 mt-1">Tipo, tipologia e situação dominial do imóvel</p>
+          <p className="text-sm text-gray-600 mt-1">Tipo, tipologia e uso atual do imóvel</p>
         </div>
 
         <div className="grid gap-6">
           {/* Tipo de Imóvel */}
           <div className="space-y-2">
-            <Label>Tipo de Imóvel <span className="text-red-600">*</span></Label>
+            <Label>Tipo de Imóvel</Label>
             <Select {...sel("tipoImovel")}>
-              <SelectTrigger className={erros.tipoImovel ? "border-red-400" : ""}>
-                <SelectValue placeholder="Selecione o tipo" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="PROPRIO">Próprio</SelectItem>
                 <SelectItem value="LOCADO">Locado</SelectItem>
                 <SelectItem value="INCERTO">Incerto</SelectItem>
               </SelectContent>
             </Select>
-            {erros.tipoImovel && <p className="text-xs text-red-500">{erros.tipoImovel}</p>}
           </div>
 
           {/* Tipologia */}
@@ -58,43 +47,36 @@ export function CadastroImovelStep3() {
             <Select {...sel("tipologia")}>
               <SelectTrigger><SelectValue placeholder="Selecione a tipologia" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Administrativo">Administrativo</SelectItem>
-                <SelectItem value="Educação">Educação</SelectItem>
-                <SelectItem value="Saúde">Saúde</SelectItem>
-                <SelectItem value="Cultura">Cultura</SelectItem>
-                <SelectItem value="Esporte e Lazer">Esporte e Lazer</SelectItem>
-                <SelectItem value="Segurança Pública">Segurança Pública</SelectItem>
-                <SelectItem value="Assistência Social">Assistência Social</SelectItem>
-                <SelectItem value="Infraestrutura">Infraestrutura</SelectItem>
-                <SelectItem value="Terreno">Terreno</SelectItem>
-                <SelectItem value="Residencial">Residencial</SelectItem>
-                <SelectItem value="Outro">Outro</SelectItem>
+                {["Administrativo","Educação","Saúde","Cultura","Esporte e Lazer",
+                  "Segurança Pública","Assistência Social","Infraestrutura","Terreno",
+                  "Residencial","Outro"].map(t => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Situação Dominial */}
+          {/* Destinação atual */}
           <div className="space-y-2">
-            <Label>Situação Dominial</Label>
-            <Select {...sel("situacaoDominial")}>
-              <SelectTrigger><SelectValue placeholder="Selecione a situação" /></SelectTrigger>
+            <Label>Destinação Atual</Label>
+            <Select {...sel("destinacaoAtual")}>
+              <SelectTrigger><SelectValue placeholder="Selecione a destinação" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="REGULAR">Regular</SelectItem>
-                <SelectItem value="IRREGULAR">Irregular</SelectItem>
-                <SelectItem value="EM_APURACAO">Em Apuração</SelectItem>
-                <SelectItem value="EM_LITIGIO">Em Litígio</SelectItem>
+                {["Uso próprio","Cedido a terceiros","Imóvel locado","Sem uso definido","Em obras","Desativado"].map(d => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Descrição */}
+          {/* Descrição do uso */}
           <div className="space-y-2">
             <Label>Descrição do Uso Atual</Label>
             <Textarea
               value={etapa3.descricaoUso}
               onChange={(e) => setEtapa3({ ...etapa3, descricaoUso: e.target.value })}
               placeholder="Descreva o uso atual do imóvel, atividades realizadas e finalidade..."
-              rows={4}
+              rows={3}
             />
           </div>
         </div>

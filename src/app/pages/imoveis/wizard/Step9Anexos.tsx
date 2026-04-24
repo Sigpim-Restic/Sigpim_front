@@ -67,7 +67,7 @@ function mascaraParaIso(mascara: string): string {
 
 let _id = 1;
 
-export function CadastroImovelStep6() {
+export function CadastroImovelStep9() {
   const { arquivos, setArquivos, finalizar, salvando, erro } = useCadastroImovel();
   const navigate = useNavigate();
   const [dragging, setDragging] = useState(false);
@@ -113,7 +113,7 @@ export function CadastroImovelStep6() {
   };
 
   return (
-    <WizardLayout currentStep={6} onNext={handleFinalizar} salvando={salvando}>
+    <WizardLayout currentStep={9} onNext={handleFinalizar} salvando={salvando}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Documentos e Anexos</h3>
