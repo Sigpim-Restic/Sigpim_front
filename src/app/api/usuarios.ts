@@ -40,7 +40,6 @@ export interface UsuarioRequest {
   perfil?: PerfilUsuario;
   trocarSenhaNoProximoLogin?: boolean;
 }
-}
 
 export interface UsuarioResponse {
   id: number;
