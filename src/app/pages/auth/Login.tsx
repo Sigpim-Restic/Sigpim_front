@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { ArrowLeft, Building2, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, UserPlus } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, UserPlus } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Checkbox } from "../../components/ui/checkbox";
 import { useAuth } from "../../contexts/AuthContext";
+import { Logo } from "../../components/Logo";
 
 export function Login() {
   const navigate = useNavigate();
@@ -42,9 +43,7 @@ export function Login() {
           {/* Header */}
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                <Building2 className="h-9 w-9 text-white" />
-              </div>
+              <Logo size="medium" />
             </div>
             <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
             <p className="text-sm text-white/80 mt-1">

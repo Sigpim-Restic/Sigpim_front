@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router";
 import {
-  Building2, Lock, Eye, EyeOff, CheckCircle2,
+  Lock, Eye, EyeOff, CheckCircle2,
   AlertCircle, Loader2, ArrowLeft
 } from "lucide-react";
+import { Logo } from "../../components/Logo";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -87,9 +88,7 @@ export function RedefinirSenha() {
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
-                <Building2 className="h-9 w-9 text-white" />
-              </div>
+              <Logo size="medium" />
             </div>
             <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
           </div>
@@ -119,9 +118,7 @@ export function RedefinirSenha() {
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
-                <Building2 className="h-9 w-9 text-white" />
-              </div>
+              <Logo size="medium" />
             </div>
             <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
           </div>
@@ -159,13 +156,10 @@ export function RedefinirSenha() {
   // Formulário
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
-                <Building2 className="h-9 w-9 text-white" />
-              </div>
+              <Logo size="medium" />
             </div>
             <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
             <p className="text-sm text-white/80 mt-1">

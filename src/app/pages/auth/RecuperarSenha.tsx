@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router";
-import { Building2, Mail, ArrowLeft, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Logo } from "../../components/Logo";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -35,9 +36,7 @@ export function RecuperarSenha() {
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
             <div className="bg-[#1351B4] px-8 py-6 text-center">
               <div className="flex justify-center mb-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                  <Building2 className="h-9 w-9 text-white" />
-                </div>
+                <Logo size="medium" />
               </div>
               <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
               <p className="text-sm text-white/80 mt-1">
@@ -84,9 +83,7 @@ export function RecuperarSenha() {
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-                <Building2 className="h-9 w-9 text-white" />
-              </div>
+              <Logo size="medium" />
             </div>
             <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
             <p className="text-sm text-white/80 mt-1">

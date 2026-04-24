@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import {
-  Building2, User, Mail, Lock, Eye, EyeOff, ArrowLeft,
+  User, Mail, Lock, Eye, EyeOff, ArrowLeft,
   CheckCircle2, CreditCard, Briefcase, Phone, Hash, AtSign, Loader2, AlertCircle,
 } from "lucide-react";
+import { Logo } from "../../components/Logo";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -119,9 +120,7 @@ export function CriarConta() {
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
-                <Building2 className="h-9 w-9 text-white" />
-              </div>
+              <Logo size="medium" />
             </div>
             <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
           </div>
@@ -157,9 +156,7 @@ export function CriarConta() {
 
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white/10">
-                <Building2 className="h-9 w-9 text-white" />
-              </div>
+              <Logo size="medium" />
             </div>
             <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
             <p className="text-sm text-white/80 mt-1">Sistema Integrado de Gestão do Patrimônio Imobiliário</p>

@@ -3,9 +3,10 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard, Building2, Users, Map, FileText,
   ClipboardList, History, Menu, X, Bell, RefreshCw,
-  ChevronRight, LogOut, User, Settings, ShieldCheck,
+  ChevronRight, LogOut, User, Settings,
   BookOpen, List, FolderOpen, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
+import { Logo } from "../Logo";
 import { Button } from "../ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -112,15 +113,7 @@ export function MainLayout() {
       <div className={`flex h-20 items-center border-b border-white/10 transition-all duration-300 ${
         sidebarCollapsed ? "justify-center px-0" : "gap-3 px-6"
       }`}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10">
-          <ShieldCheck className="h-6 w-6 text-white" />
-        </div>
-        {!sidebarCollapsed && (
-          <div className="overflow-hidden">
-            <h1 className="text-lg font-semibold text-white whitespace-nowrap">SIGPIM-SLZ</h1>
-            <p className="text-xs text-white/60 whitespace-nowrap">Fase 2</p>
-          </div>
-        )}
+        <Logo size="small" variant={sidebarCollapsed ? "icon-only" : "with-text"} />
       </div>
 
       {/* Nav */}
