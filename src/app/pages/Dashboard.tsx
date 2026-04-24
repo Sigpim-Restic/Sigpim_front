@@ -274,7 +274,7 @@ export function Dashboard() {
 
               const anterior = d.cadastrosPorMes.find((c) => c.mesAno === mesAntKey);
               const cadastrosPorDiaMesAtual = d.cadastrosPorDiaMesAtual ?? [];
-              const porDiaMap = new Map(
+              const porDiaMap = new globalThis.Map(
                 cadastrosPorDiaMesAtual.map((item) => [item.dia, item.quantidade])
               );
 
