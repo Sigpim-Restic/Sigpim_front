@@ -278,18 +278,32 @@ export function Dashboard() {
               const qtd = atual.quantidade;
               const qtdAnt = anterior?.quantidade ?? 0;
               const delta = qtdAnt > 0 ? qtd - qtdAnt : null;
+              const graficoMesAtual = [
+                { mesAno: mesAntKey, quantidade: qtdAnt },
+                { mesAno: atual.mesAno, quantidade: qtd },
+              ];
               
               return (
-                <div className="flex items-end gap-3 mt-2">
-                  <p className="text-4xl font-bold text-[#1351B4]">{fmt(qtd)}</p>
-                  <div className="mb-1">
-                    <p className="text-xs text-gray-500">imóvel(is) em {atual.mesAno}</p>
-                    {delta !== null && (
-                      <span className={`inline-block mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${delta >= 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-                        {delta >= 0 ? "+" : ""}{delta} vs mês anterior
-                      </span>
-                    )}
+                <div className="flex flex-col gap-2 mt-2">
+                  <div className="flex items-end gap-3">
+                    <p className="text-4xl font-bold text-[#1351B4]">{fmt(qtd)}</p>
+                    <div className="mb-1">
+                      <p className="text-xs text-gray-500">imóvel(is) em {atual.mesAno}</p>
+                      {delta !== null && (
+                        <span className={`inline-block mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${delta >= 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                          {delta >= 0 ? "+" : ""}{delta} vs mês anterior
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <ResponsiveContainer width="100%" height={130}>
+                    <BarChart data={graficoMesAtual} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
+                      <XAxis dataKey="mesAno" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                      <Tooltip formatter={(v: number) => [fmt(v), "Cadastros"]} />
+                      <Bar dataKey="quantidade" fill={AZUL} radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               );
             }
