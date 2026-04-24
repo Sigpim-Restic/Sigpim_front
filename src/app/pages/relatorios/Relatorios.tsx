@@ -10,6 +10,8 @@ import { Label } from "../../components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "../../components/ui/select";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
 import { ocupacoesApi, type OcupacaoResponse } from "../../api/ocupacoes";
 import { api } from "../../api/client";
@@ -29,6 +31,8 @@ interface RelatorioGerado {
   totalRegistros: number;
   nomeArquivo: string;
 }
+
+type FormatoExportacao = "pdf" | "csv" | "json";
 
 const tiposRelatorio = [
   {
@@ -84,6 +88,40 @@ function baixarCSV(linhas: string[][], nome: string) {
   URL.revokeObjectURL(url);
 }
 
+function baixarPDF(cabecalho: string[], linhas: Array<Array<string | number | boolean>>, nome: string, titulo: string) {
+  const doc = new jsPDF({
+    orientation: cabecalho.length > 8 ? "landscape" : "portrait",
+    unit: "pt",
+    format: "a4",
+  });
+
+  doc.setFontSize(13);
+  doc.text(`SIGPIM - ${titulo}`, 40, 36);
+  doc.setFontSize(9);
+  doc.text(`Gerado em: ${agora()}`, 40, 52);
+
+  autoTable(doc, {
+    startY: 66,
+    head: [cabecalho],
+    body: linhas.map((linha) => linha.map((c) => String(c ?? ""))),
+    styles: { fontSize: 8, cellPadding: 4 },
+    headStyles: { fillColor: [19, 81, 180] },
+    theme: "grid",
+  });
+
+  doc.save(nome);
+}
+
+function linhasParaObjetos(cabecalho: string[], linhas: Array<Array<string | number | boolean>>) {
+  return linhas.map((linha) => {
+    const obj: Record<string, string | number | boolean> = {};
+    cabecalho.forEach((coluna, idx) => {
+      obj[coluna] = linha[idx] ?? "";
+    });
+    return obj;
+  });
+}
+
 function agora() {
   return new Date().toLocaleString("pt-BR");
 }
@@ -97,6 +135,7 @@ function nomeArquivo(tipo: string, ext: string) {
 
 export function Relatorios() {
   const [selected,  setSelected]  = useState("");
+  const [formato,   setFormato]   = useState<FormatoExportacao>("pdf");
   const [filtros,   setFiltros]   = useState<FiltrosRelatorio>({
     periodo_ini: "", periodo_fim: "", orgao: "", status: "",
   });
@@ -112,23 +151,49 @@ export function Relatorios() {
     try {
       let totalRegistros = 0;
       let arquivo = "";
+      let cabecalho: string[] = [];
+      let linhas: Array<Array<string | number | boolean>> = [];
+      let tituloRelatorio = tiposRelatorio.find((t) => t.id === selected)?.title ?? selected;
+      let dadosJsonCustom: object | null = null;
+
+      const exportar = (baseNome: string) => {
+        arquivo = nomeArquivo(baseNome, formato);
+
+        if (formato === "csv") {
+          baixarCSV([cabecalho, ...linhas.map((l) => l.map((c) => String(c ?? "")))], arquivo);
+          return;
+        }
+
+        if (formato === "pdf") {
+          baixarPDF(cabecalho, linhas, arquivo, tituloRelatorio);
+          return;
+        }
+
+        const payload = dadosJsonCustom ?? {
+          tipo: selected,
+          titulo: tituloRelatorio,
+          geradoEm: agora(),
+          totalRegistros,
+          registros: linhasParaObjetos(cabecalho, linhas),
+        };
+        baixarJSON(payload, arquivo);
+      };
 
       if (selected === "LISTA_IMOVEIS") {
-        // Busca até 500 imóveis e exporta CSV
+        // Busca até 500 imóveis e exporta no formato escolhido
         const res = await imoveisApi.listar(0, 500);
         const imoveis = res.content.filter((im) => {
           if (filtros.status && filtros.status !== "todos" && im.statusCadastro !== filtros.status) return false;
           return true;
         });
         totalRegistros = imoveis.length;
-        arquivo = nomeArquivo("LISTA_IMOVEIS", "csv");
 
-        const cabecalho = [
+        cabecalho = [
           "Código SIGPIM", "Nome / Referência", "Tipo", "Status",
           "Situação Dominial", "Área Terreno (m²)", "Área Construída (m²)",
           "Tipologia", "Estado de Conservação", "Cadastrado em",
         ];
-        const linhas = imoveis.map((im) => [
+        linhas = imoveis.map((im) => [
           im.codigoSigpim,
           im.nomeReferencia ?? "",
           im.nomeTipoImovel ?? "",
@@ -140,21 +205,29 @@ export function Relatorios() {
           im.estadoConservacaoAtual ?? "",
           im.criadoEm?.slice(0, 10) ?? "",
         ]);
-        baixarCSV([cabecalho, ...linhas], arquivo);
+        if (formato === "json") {
+          dadosJsonCustom = {
+            tipo: selected,
+            titulo: tituloRelatorio,
+            geradoEm: agora(),
+            totalRegistros,
+            imoveis,
+          };
+        }
+        exportar("LISTA_IMOVEIS");
 
       } else if (selected === "RELATORIO_OCUPACAO") {
         const res = await api.get<{ content: OcupacaoResponse[] }>("/ocupacoes?size=500");
         const ocupacoes = res.content;
         totalRegistros = ocupacoes.length;
-        arquivo = nomeArquivo("OCUPACAO", "csv");
 
-        const cabecalho = [
+        cabecalho = [
           "ID Imóvel", "Status Ocupação", "Nível Ocupação",
           "Ocupante Externo", "Responsável Local", "Contato",
           "Destinação", "Data Início", "Data Fim Prevista",
           "Vigente", "Observações",
         ];
-        const linhas = ocupacoes.map((oc) => [
+        linhas = ocupacoes.map((oc) => [
           oc.idImovel,
           oc.statusOcupacao,
           oc.nivelOcupacao ?? "",
@@ -167,7 +240,16 @@ export function Relatorios() {
           oc.vigente ? "Sim" : "Não",
           oc.observacoes ?? "",
         ]);
-        baixarCSV([cabecalho, ...linhas], arquivo);
+        if (formato === "json") {
+          dadosJsonCustom = {
+            tipo: selected,
+            titulo: tituloRelatorio,
+            geradoEm: agora(),
+            totalRegistros,
+            ocupacoes,
+          };
+        }
+        exportar("OCUPACAO");
 
       } else if (selected === "HISTORICO_AUDITORIA") {
         const res = await api.get<{ content: any[] }>("/auditorias?size=500&sort=realizadoEm,desc");
@@ -180,13 +262,12 @@ export function Relatorios() {
           return true;
         });
         totalRegistros = filtrados.length;
-        arquivo = nomeArquivo("AUDITORIA", "csv");
 
-        const cabecalho = [
+        cabecalho = [
           "Data/Hora", "Ação", "Tabela", "Registro",
           "Usuário", "Perfil", "IP", "Descrição",
         ];
-        const linhas = filtrados.map((l) => [
+        linhas = filtrados.map((l) => [
           l.realizadoEm ? new Date(l.realizadoEm).toLocaleString("pt-BR") : "",
           l.acao,
           l.tabela,
@@ -196,18 +277,48 @@ export function Relatorios() {
           l.ipOrigem ?? "",
           l.descricao ?? "",
         ]);
-        baixarCSV([cabecalho, ...linhas], arquivo);
+        if (formato === "json") {
+          dadosJsonCustom = {
+            tipo: selected,
+            titulo: tituloRelatorio,
+            geradoEm: agora(),
+            totalRegistros,
+            auditoria: filtrados,
+          };
+        }
+        exportar("AUDITORIA");
 
       } else if (selected === "FICHA_IMOVEL") {
-        // Exporta todos os imóveis como JSON completo
+        // Exporta imóveis em formato tabular (CSV/PDF) ou JSON completo
         const res = await imoveisApi.listar(0, 500);
         totalRegistros = res.content.length;
-        arquivo = nomeArquivo("FICHAS", "json");
-        baixarJSON({
-          geradoEm: agora(),
-          totalImoveis: totalRegistros,
-          imoveis: res.content,
-        }, arquivo);
+        const imoveis = res.content;
+
+        cabecalho = [
+          "Código SIGPIM", "Nome / Referência", "Status", "Tipo",
+          "Situação Dominial", "Área Terreno (m²)", "Área Construída (m²)", "Cadastrado em",
+        ];
+        linhas = imoveis.map((im) => [
+          im.codigoSigpim,
+          im.nomeReferencia ?? "",
+          im.statusCadastro,
+          im.nomeTipoImovel ?? "",
+          im.nomeSituacaoDominial ?? "",
+          im.areaTerrenoM2 ?? "",
+          im.areaConstruidaM2 ?? "",
+          im.criadoEm?.slice(0, 10) ?? "",
+        ]);
+
+        if (formato === "json") {
+          dadosJsonCustom = {
+            tipo: selected,
+            titulo: tituloRelatorio,
+            geradoEm: agora(),
+            totalImoveis: totalRegistros,
+            imoveis,
+          };
+        }
+        exportar("FICHAS_IMOVEIS");
       }
 
       // Adiciona ao histórico local
@@ -300,6 +411,20 @@ export function Relatorios() {
                 </Select>
               </div>
             )}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Formato</Label>
+              <Select
+                value={formato}
+                onValueChange={(v) => setFormato(v as FormatoExportacao)}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="json">JSON</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="mt-5 flex gap-3">
@@ -310,7 +435,7 @@ export function Relatorios() {
             >
               {gerando
                 ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Gerando...</>
-                : <><Download className="mr-2 h-4 w-4" />Gerar e Baixar</>
+                : <><Download className="mr-2 h-4 w-4" />Gerar e Baixar ({formato.toUpperCase()})</>
               }
             </Button>
             <Button variant="outline" onClick={() => { setSelected(""); setErro(null); }}>
