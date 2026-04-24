@@ -253,43 +253,41 @@ export function Dashboard() {
             </div>
           </div>
           {(() => {
-            // Fatia os dados conforme o período selecionado
-            const fatia = d.cadastrosPorMes.slice(-periodo);
-            if (fatia.length === 0) return (
-              <div className="flex items-center justify-center h-36 text-sm text-gray-400">
-                Nenhum dado disponível
-              </div>
-            );
+            // Gera N meses consecutivos terminando no mês atual, preenchendo com 0 os sem dados
+            const hoje = new Date();
+            const fatia = Array.from({ length: periodo }, (_, i) => {
+              const dt = new Date(hoje.getFullYear(), hoje.getMonth() - (periodo - 1 - i), 1);
+              const mesAno = `${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
+              const entrada = d.cadastrosPorMes.find((c) => c.mesAno === mesAno);
+              return { mesAno, quantidade: entrada?.quantidade ?? 0 };
+            });
 
             if (periodo === 1) {
-              // Vista de mês atual: KPI grande + comparativo
-              const atual = fatia[fatia.length - 1];
-              const anterior = d.cadastrosPorMes.slice(-(periodo + 1), -1).pop();
-              const qtd = atual?.quantidade ?? 0;
+              const atual = fatia[0];
+              const dtAnt = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+              const mesAntKey = `${String(dtAnt.getMonth() + 1).padStart(2, "0")}/${dtAnt.getFullYear()}`;
+              const anterior = d.cadastrosPorMes.find((c) => c.mesAno === mesAntKey);
+              const qtd = atual.quantidade;
               const qtdAnt = anterior?.quantidade ?? 0;
               const delta = qtdAnt > 0 ? qtd - qtdAnt : null;
-              const mesLabel = atual?.mesAno ?? "";
               return (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-end gap-3">
-                    <p className="text-4xl font-bold text-[#1351B4]">{fmt(qtd)}</p>
-                    <div className="mb-1">
-                      <p className="text-xs text-gray-500 capitalize">imóvel(is) em {mesLabel}</p>
-                      {delta !== null && (
-                        <span className={`inline-block mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${delta >= 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
-                          {delta >= 0 ? "+" : ""}{delta} vs mês anterior
-                        </span>
-                      )}
-                    </div>
+                <div className="flex items-end gap-3 mt-2">
+                  <p className="text-4xl font-bold text-[#1351B4]">{fmt(qtd)}</p>
+                  <div className="mb-1">
+                    <p className="text-xs text-gray-500">imóvel(is) em {atual.mesAno}</p>
+                    {delta !== null && (
+                      <span className={`inline-block mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${delta >= 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                        {delta >= 0 ? "+" : ""}{delta} vs mês anterior
+                      </span>
+                    )}
                   </div>
                 </div>
               );
             }
 
-            // Vista de 3 ou 6 meses: gráfico de barras
             const total = fatia.reduce((acc, m) => acc + m.quantidade, 0);
             return (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2 mt-2">
                 <p className="text-xs text-gray-400">
                   Total no período: <span className="font-semibold text-gray-700">{fmt(total)}</span> cadastro(s)
                 </p>

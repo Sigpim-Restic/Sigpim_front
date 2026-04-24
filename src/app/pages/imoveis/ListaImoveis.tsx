@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
-import {
-  Plus, Search, Filter, MoreVertical, Edit, Eye,
+import {  Plus, Search, Filter, MoreVertical, Edit, Eye, Save,
   MapPin, Download, RefreshCw, AlertCircle, Trash2, Loader2, FileText,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -198,6 +197,35 @@ export function ListaImoveis() {
           )}
         </div>
       </div>
+
+      {/* Banner de rascunho salvo */}
+      {(() => {
+        try {
+          const r = localStorage.getItem("sigpim_rascunho_imovel");
+          if (!r) return null;
+          const d = JSON.parse(r);
+          const nome = d?.etapa1?.nomeReferencia;
+          return (
+            <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+              <Save className="h-4 w-4 text-amber-600 shrink-0" />
+              <p className="flex-1 text-sm text-amber-800">
+                Você tem um rascunho salvo{nome ? `: "${nome}"` : ""}. Deseja continuar de onde parou?
+              </p>
+              <div className="flex gap-2">
+                <Link to="/dashboard/imoveis/novo/etapa-1">
+                  <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
+                    Continuar Rascunho
+                  </Button>
+                </Link>
+                <Button size="sm" variant="ghost" className="text-amber-700"
+                  onClick={() => { localStorage.removeItem("sigpim_rascunho_imovel"); window.location.reload(); }}>
+                  Descartar
+                </Button>
+              </div>
+            </div>
+          );
+        } catch { return null; }
+      })()}
 
       {/* Erro geral */}
       {erro && (

@@ -74,6 +74,8 @@ interface Ctx {
   setArquivos: (a: ArquivoAnexo[]) => void;
   finalizar: (onSuccess: () => void) => Promise<void>;
   resetar: () => void;
+  salvarRascunhoManual: () => void;
+  temRascunho: boolean;
 }
 
 const Ctx = createContext<Ctx | null>(null);
@@ -87,15 +89,28 @@ const e6: DadosEtapa6 = { possuiInstrumento: "", tipoInstrumento: "", numeroInst
 const e7: DadosEtapa7 = { situacaoDominial: "", matriculaRegistro: "", cartorio: "", inscricaoImobiliaria: "", observacoes: "" };
 const e8: DadosEtapa8 = { imovelHistorico: "", observacoes: "" };
 
+
+const LS_KEY = "sigpim_rascunho_imovel";
+
+function salvarRascunho(state: object) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {}
+}
+function carregarRascunho() {
+  try { const v = localStorage.getItem(LS_KEY); return v ? JSON.parse(v) : null; } catch { return null; }
+}
+function limparRascunho() {
+  try { localStorage.removeItem(LS_KEY); } catch {}
+}
 export function CadastroImovelProvider({ children }: { children: React.ReactNode }) {
-  const [etapa1, setEtapa1] = useState<DadosEtapa1>(e1);
-  const [etapa2, setEtapa2] = useState<DadosEtapa2>(e2);
-  const [etapa3, setEtapa3] = useState<DadosEtapa3>(e3);
-  const [etapa4, setEtapa4] = useState<DadosEtapa4>(e4);
-  const [etapa5, setEtapa5] = useState<DadosEtapa5>(e5);
-  const [etapa6, setEtapa6] = useState<DadosEtapa6>(e6);
-  const [etapa7, setEtapa7] = useState<DadosEtapa7>(e7);
-  const [etapa8, setEtapa8] = useState<DadosEtapa8>(e8);
+  const rascunho = carregarRascunho();
+  const [etapa1, setEtapa1] = useState<DadosEtapa1>(rascunho?.etapa1 ?? e1);
+  const [etapa2, setEtapa2] = useState<DadosEtapa2>(rascunho?.etapa2 ?? e2);
+  const [etapa3, setEtapa3] = useState<DadosEtapa3>(rascunho?.etapa3 ?? e3);
+  const [etapa4, setEtapa4] = useState<DadosEtapa4>(rascunho?.etapa4 ?? e4);
+  const [etapa5, setEtapa5] = useState<DadosEtapa5>(rascunho?.etapa5 ?? e5);
+  const [etapa6, setEtapa6] = useState<DadosEtapa6>(rascunho?.etapa6 ?? e6);
+  const [etapa7, setEtapa7] = useState<DadosEtapa7>(rascunho?.etapa7 ?? e7);
+  const [etapa8, setEtapa8] = useState<DadosEtapa8>(rascunho?.etapa8 ?? e8);
   const [arquivos, setArquivos] = useState<ArquivoAnexo[]>([]);
   const [salvando, setSalvando] = useState(false);
   const [erro,     setErro]     = useState<string | null>(null);
@@ -104,7 +119,12 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     setEtapa1(e1); setEtapa2(e2); setEtapa3(e3); setEtapa4(e4);
     setEtapa5(e5); setEtapa6(e6); setEtapa7(e7); setEtapa8(e8);
     setArquivos([]); setErro(null);
+    limparRascunho();
   }, []);
+
+  const salvarRascunhoManual = useCallback(() => {
+    salvarRascunho({ etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8 });
+  }, [etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8]);
 
   const finalizar = useCallback(async (onSuccess: () => void) => {
     setSalvando(true);
@@ -187,7 +207,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         await documentosApi.upload(arq.file, params);
       }
 
-      resetar();
+      resetar(); // also clears localStorage
       onSuccess();
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao salvar imóvel.");
@@ -202,7 +222,8 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
       arquivos, salvando, erro,
       setEtapa1, setEtapa2, setEtapa3, setEtapa4, setEtapa5,
       setEtapa6, setEtapa7, setEtapa8, setArquivos,
-      finalizar, resetar,
+      finalizar, resetar, salvarRascunhoManual,
+      temRascunho: carregarRascunho() !== null,
     }}>
       {children}
     </Ctx.Provider>

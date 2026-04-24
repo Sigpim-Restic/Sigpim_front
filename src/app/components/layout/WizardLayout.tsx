@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { ArrowLeft, ArrowRight, Save } from "lucide-react";
 import { Button } from "../ui/button";
 import { Stepper } from "./Stepper";
+import { useCadastroImovel } from "../../contexts/CadastroImovelContext";
 
 const wizardSteps = [
   { number: 1, label: "Identificação",  path: "/dashboard/imoveis/novo/etapa-1" },
@@ -10,7 +11,10 @@ const wizardSteps = [
   { number: 3, label: "Classificação",  path: "/dashboard/imoveis/novo/etapa-3" },
   { number: 4, label: "Dados Físicos",  path: "/dashboard/imoveis/novo/etapa-4" },
   { number: 5, label: "Ocupação",       path: "/dashboard/imoveis/novo/etapa-5" },
-  { number: 6, label: "Documentos",     path: "/dashboard/imoveis/novo/etapa-6" },
+  { number: 6, label: "Instrumentos",   path: "/dashboard/imoveis/novo/etapa-6" },
+  { number: 7, label: "Dominial",       path: "/dashboard/imoveis/novo/etapa-7" },
+  { number: 8, label: "Pat. Histórico", path: "/dashboard/imoveis/novo/etapa-8" },
+  { number: 9, label: "Anexos",         path: "/dashboard/imoveis/novo/etapa-9" },
 ];
 
 const TOTAL = wizardSteps.length;
@@ -20,23 +24,35 @@ interface WizardLayoutProps {
   children: React.ReactNode;
   onNext?: () => void;
   onBack?: () => void;
-  onSaveDraft?: () => void;
   salvando?: boolean;
 }
 
-export function WizardLayout({ currentStep, children, onNext, onBack, onSaveDraft, salvando }: WizardLayoutProps) {
+export function WizardLayout({ currentStep, children, onNext, onBack, salvando }: WizardLayoutProps) {
   const navigate = useNavigate();
+  const { salvarRascunhoManual } = useCadastroImovel();
 
   const handleBack = () => {
+    salvarRascunhoManual(); // persiste antes de navegar
     if (onBack) { onBack(); return; }
     if (currentStep > 1) navigate(`/dashboard/imoveis/novo/etapa-${currentStep - 1}`);
     else navigate("/dashboard/imoveis");
   };
 
   const handleNext = () => {
+    salvarRascunhoManual(); // persiste antes de navegar
     if (onNext) { onNext(); return; }
     if (currentStep < TOTAL) navigate(`/dashboard/imoveis/novo/etapa-${currentStep + 1}`);
     else navigate("/dashboard/imoveis/sucesso");
+  };
+
+  const handleSalvarRascunho = () => {
+    salvarRascunhoManual();
+    // Feedback visual mínimo
+    const btn = document.getElementById("btn-rascunho");
+    if (btn) {
+      btn.textContent = "✓ Salvo!";
+      setTimeout(() => { if (btn) btn.textContent = "Salvar Rascunho"; }, 2000);
+    }
   };
 
   return (
@@ -48,10 +64,10 @@ export function WizardLayout({ currentStep, children, onNext, onBack, onSaveDraf
         <div className="flex-1">
           <h2 className="text-xl font-semibold text-gray-900">Cadastro de Imóvel</h2>
           <p className="text-xs text-gray-500">
-            Etapa {currentStep} de {TOTAL} — preencha todos os campos obrigatórios
+            Etapa {currentStep} de {TOTAL} — preencha o que souber; campos incompletos viram pendências
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={onSaveDraft || (() => alert("Rascunho salvo!"))}>
+        <Button id="btn-rascunho" variant="outline" size="sm" onClick={handleSalvarRascunho}>
           <Save className="mr-2 h-4 w-4" />Salvar Rascunho
         </Button>
       </div>

@@ -38,6 +38,8 @@ export interface UsuarioRequest {
   idOrgao?: number | null;
   idUnidade?: number | null;
   perfil?: PerfilUsuario;
+  trocarSenhaNoProximoLogin?: boolean;
+}
 }
 
 export interface UsuarioResponse {

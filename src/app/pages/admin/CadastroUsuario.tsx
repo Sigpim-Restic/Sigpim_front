@@ -1,365 +1,315 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Save, AlertCircle } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "../../components/ui/select";
 import { Card } from "../../components/ui/card";
 import { AlertBox } from "../../components/layout/States";
+import { orgaosApi, type OrgaoResponse } from "../../api/orgaos";
+import { unidadesApi, type UnidadeOrganizacionalResponse } from "../../api/unidades";
+import { usuariosApi, type PerfilUsuario } from "../../api/usuarios";
+
+// Os 7 perfis do Manual SIGPIM §1 — Usuários, Perfis e Auditoria
+const PERFIS: { value: PerfilUsuario; label: string; descricao: string }[] = [
+  { value: "ADMINISTRADOR_SISTEMA",    label: "Administrador do Sistema",      descricao: "SIN/SEMAD — infraestrutura, perfis, auditoria técnica" },
+  { value: "ADMINISTRADOR_PATRIMONIAL",label: "Administrador Patrimonial",     descricao: "SEMAD — cadastro patrimonial, termos, guarda/uso" },
+  { value: "CADASTRADOR_SETORIAL",     label: "Cadastrador Setorial",          descricao: "Por secretaria — alimenta as abas de sua competência" },
+  { value: "VALIDADOR_DOCUMENTAL",     label: "Validador Documental/Jurídico", descricao: "SEMAD/Procuradoria — valida documentos e situação dominial" },
+  { value: "VISTORIADOR",              label: "Vistoriador",                   descricao: "SEMOSP/SEMAD — vistorias, conservação e risco" },
+  { value: "PLANEJAMENTO",             label: "Planejamento",                  descricao: "SEPLAN — carteira de projetos e uso planejado" },
+  { value: "AUDITOR",                  label: "Auditor/Controladoria",         descricao: "Somente leitura e exportações" },
+];
 
 export function CadastroUsuario() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    nome: "",
-    email: "",
-    orgao: "",
-    unidade: "",
-    perfil: "",
+
+  const [form, setForm] = useState({
+    nomeCompleto: "", cpf: "", email: "", celular: "",
+    nomeUsuario: "", matricula: "", cargo: "",
+    idOrgao: "", idUnidade: "", perfil: "" as PerfilUsuario | "",
     status: "Ativo",
+    senha: "", confirmarSenha: "",
+    trocarSenhaNoProximoLogin: true,
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [erros, setErros] = useState<Record<string, string>>({});
+  const [orgaos,   setOrgaos]   = useState<OrgaoResponse[]>([]);
+  const [unidades, setUnidades] = useState<UnidadeOrganizacionalResponse[]>([]);
+  const [salvando, setSalvando] = useState(false);
+  const [erroApi,  setErroApi]  = useState<string | null>(null);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
 
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
+  // Carregar órgãos via API
+  useEffect(() => {
+    orgaosApi.listarAtivos().then(setOrgaos).catch(() => {});
+  }, []);
+
+  // Carregar unidades quando órgão muda
+  useEffect(() => {
+    if (!form.idOrgao) { setUnidades([]); return; }
+    unidadesApi.listarAtivasPorOrgao(Number(form.idOrgao))
+      .then(setUnidades)
+      .catch(() => setUnidades([]));
+  }, [form.idOrgao]);
+
+  const set = (field: string, value: string | boolean) =>
+    setForm(prev => ({ ...prev, [field]: value }));
+
+  const validar = () => {
+    const e: Record<string, string> = {};
+    if (!form.nomeCompleto.trim()) e.nomeCompleto = "Nome completo é obrigatório.";
+    if (!form.cpf.replace(/\D/g, "") || form.cpf.replace(/\D/g, "").length !== 11)
+      e.cpf = "CPF deve conter 11 dígitos.";
+    if (!form.email.trim()) e.email = "E-mail é obrigatório.";
+    else if (!form.email.includes(".gov.br")) e.email = "Utilize e-mail institucional com domínio .gov.br.";
+    if (!form.nomeUsuario.trim()) e.nomeUsuario = "Nome de usuário é obrigatório.";
+    if (!form.idOrgao) e.idOrgao = "Órgão é obrigatório.";
+    if (!form.idUnidade) e.idUnidade = "Unidade é obrigatória.";
+    if (!form.perfil) e.perfil = "Perfil de acesso é obrigatório.";
+    if (!form.senha) e.senha = "Senha é obrigatória.";
+    else if (form.senha.length < 8) e.senha = "Senha deve ter no mínimo 8 caracteres.";
+    if (form.senha !== form.confirmarSenha) e.confirmarSenha = "As senhas não coincidem.";
+    setErros(e);
+    return Object.keys(e).length === 0;
   };
 
-  const handleBlur = (field: string) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    validateField(field);
-  };
-
-  const validateField = (field: string) => {
-    const newErrors: Record<string, string> = {};
-
-    switch (field) {
-      case "nome":
-        if (!formData.nome.trim()) {
-          newErrors.nome = "Nome completo é obrigatório";
-        } else if (formData.nome.trim().length < 3) {
-          newErrors.nome = "Nome deve ter pelo menos 3 caracteres";
-        }
-        break;
-      case "email":
-        if (!formData.email.trim()) {
-          newErrors.email = "E-mail institucional é obrigatório";
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-          newErrors.email = "E-mail inválido";
-        } else if (!formData.email.includes(".gov.br")) {
-          newErrors.email = "Deve ser um e-mail institucional (.gov.br)";
-        }
-        break;
-      case "orgao":
-        if (!formData.orgao) {
-          newErrors.orgao = "Órgão é obrigatório";
-        }
-        break;
-      case "unidade":
-        if (!formData.unidade.trim()) {
-          newErrors.unidade = "Unidade é obrigatória";
-        }
-        break;
-      case "perfil":
-        if (!formData.perfil) {
-          newErrors.perfil = "Perfil de acesso é obrigatório";
-        }
-        break;
-    }
-
-    setErrors((prev) => ({ ...prev, ...newErrors }));
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateForm = () => {
-    const fields = ["nome", "email", "orgao", "unidade", "perfil"];
-    let isValid = true;
-
-    fields.forEach((field) => {
-      if (!validateField(field)) {
-        isValid = false;
-      }
-    });
-
-    // Mark all fields as touched
-    const allTouched = fields.reduce((acc, field) => {
-      acc[field] = true;
-      return acc;
-    }, {} as Record<string, boolean>);
-    setTouched(allTouched);
-
-    return isValid;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (validateForm()) {
-      // Simulate API call
-      setTimeout(() => {
-        navigate("/dashboard/usuarios/sucesso");
-      }, 500);
+    if (!validar()) return;
+    setSalvando(true);
+    setErroApi(null);
+    try {
+      await usuariosApi.criar({
+        nomeCompleto: form.nomeCompleto,
+        cpf:          form.cpf.replace(/\D/g, ""),
+        email:        form.email,
+        celular:      form.celular || undefined,
+        nomeUsuario:  form.nomeUsuario,
+        senha:        form.senha,
+        matricula:    form.matricula || undefined,
+        cargo:        form.cargo     || undefined,
+        idOrgao:      Number(form.idOrgao),
+        idUnidade:    Number(form.idUnidade),
+        perfil:       form.perfil as PerfilUsuario,
+        trocarSenhaNoProximoLogin: form.trocarSenhaNoProximoLogin,
+      });
+      navigate("/dashboard/usuarios/sucesso");
+    } catch (err: unknown) {
+      setErroApi(err instanceof Error ? err.message : "Erro ao criar usuário.");
+    } finally {
+      setSalvando(false);
     }
   };
+
+  const campo = (field: string, label: string, opts?: { required?: boolean; placeholder?: string; hint?: string; type?: string }) => (
+    <div className="space-y-2">
+      <Label htmlFor={field}>
+        {label}{opts?.required && <span className="text-red-600 ml-0.5">*</span>}
+      </Label>
+      <Input
+        id={field}
+        type={opts?.type ?? "text"}
+        value={(form as any)[field]}
+        onChange={e => set(field, e.target.value)}
+        placeholder={opts?.placeholder}
+        className={erros[field] ? "border-red-400" : ""}
+      />
+      {opts?.hint && <p className="text-xs text-gray-500">{opts.hint}</p>}
+      {erros[field] && (
+        <p className="flex items-center gap-1 text-xs text-red-600">
+          <AlertCircle className="h-3 w-3" />{erros[field]}
+        </p>
+      )}
+    </div>
+  );
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/dashboard/usuarios")}
-        >
+        <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/usuarios")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h2 className="text-2xl font-semibold text-gray-900">
-            Novo Usuário
-          </h2>
-          <p className="text-sm text-gray-600">
-            Cadastre um novo usuário no sistema e defina suas permissões
-          </p>
+          <h2 className="text-2xl font-semibold text-gray-900">Novo Usuário</h2>
+          <p className="text-sm text-gray-600">Cadastre um novo usuário e defina suas permissões</p>
         </div>
       </div>
 
       <AlertBox variant="info">
-        <p>
-          Todos os campos marcados com <span className="text-red-600">*</span>{" "}
-          são obrigatórios. O usuário receberá um e-mail com instruções de
-          acesso após o cadastro.
-        </p>
+        Campos com <span className="text-red-600 font-medium">*</span> são obrigatórios.
+        Se marcado "Exigir troca de senha no primeiro login", o usuário verá um modal ao entrar pela primeira vez.
       </AlertBox>
 
-      <form onSubmit={handleSubmit}>
-        <Card className="p-6">
-          <div className="space-y-6">
-            {/* Nome Completo */}
-            <div className="space-y-2">
-              <Label htmlFor="nome">
-                Nome Completo <span className="text-red-600">*</span>
-              </Label>
-              <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => handleChange("nome", e.target.value)}
-                onBlur={() => handleBlur("nome")}
-                placeholder="Ex: Maria Silva Santos"
-                className={errors.nome && touched.nome ? "border-red-500" : ""}
-                aria-invalid={errors.nome && touched.nome ? "true" : "false"}
-                aria-describedby={
-                  errors.nome && touched.nome ? "nome-error" : undefined
-                }
-              />
-              {errors.nome && touched.nome && (
-                <p
-                  id="nome-error"
-                  className="flex items-center gap-1 text-sm text-red-600"
-                >
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.nome}
-                </p>
-              )}
-            </div>
+      {erroApi && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />{erroApi}
+        </div>
+      )}
 
-            {/* E-mail Institucional */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+
+        {/* ── Dados pessoais ───────────────────────────────────────────────── */}
+        <Card className="p-6 space-y-5">
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Dados Pessoais</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {campo("nomeCompleto", "Nome Completo", { required: true, placeholder: "Ex: Maria Silva Santos" })}
+            {campo("cpf", "CPF", { required: true, placeholder: "000.000.000-00", hint: "Somente números" })}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {campo("email", "E-mail Institucional", { required: true, placeholder: "usuario@orgao.slz.ma.gov.br", hint: "Domínio .gov.br obrigatório" })}
+            {campo("celular", "Celular", { placeholder: "(98) 99999-9999" })}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {campo("matricula", "Matrícula", { placeholder: "Ex: 123456" })}
+            {campo("cargo", "Cargo", { placeholder: "Ex: Analista de TI" })}
+          </div>
+        </Card>
+
+        {/* ── Acesso ao sistema ────────────────────────────────────────────── */}
+        <Card className="p-6 space-y-5">
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Acesso ao Sistema</h3>
+          {campo("nomeUsuario", "Nome de Usuário", { required: true, placeholder: "Ex: maria.silva" })}
+
+          {/* Senha */}
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="email">
-                E-mail Institucional <span className="text-red-600">*</span>
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange("email", e.target.value)}
-                onBlur={() => handleBlur("email")}
-                placeholder="usuario@orgao.slz.ma.gov.br"
-                className={
-                  errors.email && touched.email ? "border-red-500" : ""
-                }
-                aria-invalid={errors.email && touched.email ? "true" : "false"}
-                aria-describedby={
-                  errors.email && touched.email ? "email-error" : undefined
-                }
-              />
-              {errors.email && touched.email && (
-                <p
-                  id="email-error"
-                  className="flex items-center gap-1 text-sm text-red-600"
-                >
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.email}
-                </p>
-              )}
-              <p className="text-xs text-gray-500">
-                Utilize apenas e-mails corporativos com domínio .gov.br
+              <Label htmlFor="senha">Senha <span className="text-red-600">*</span></Label>
+              <div className="relative">
+                <Input
+                  id="senha"
+                  type={mostrarSenha ? "text" : "password"}
+                  value={form.senha}
+                  onChange={e => set("senha", e.target.value)}
+                  placeholder="Mínimo 8 caracteres"
+                  className={erros.senha ? "border-red-400 pr-10" : "pr-10"}
+                />
+                <button type="button" tabIndex={-1}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setMostrarSenha(v => !v)}>
+                  {mostrarSenha ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {erros.senha && <p className="flex items-center gap-1 text-xs text-red-600"><AlertCircle className="h-3 w-3" />{erros.senha}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmarSenha">Confirmar Senha <span className="text-red-600">*</span></Label>
+              <div className="relative">
+                <Input
+                  id="confirmarSenha"
+                  type={mostrarConfirmar ? "text" : "password"}
+                  value={form.confirmarSenha}
+                  onChange={e => set("confirmarSenha", e.target.value)}
+                  placeholder="Repita a senha"
+                  className={erros.confirmarSenha ? "border-red-400 pr-10" : "pr-10"}
+                />
+                <button type="button" tabIndex={-1}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setMostrarConfirmar(v => !v)}>
+                  {mostrarConfirmar ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {erros.confirmarSenha && <p className="flex items-center gap-1 text-xs text-red-600"><AlertCircle className="h-3 w-3" />{erros.confirmarSenha}</p>}
+            </div>
+          </div>
+
+          {/* Troca de senha no primeiro login */}
+          <label className="flex items-start gap-3 cursor-pointer select-none rounded-lg border border-orange-200 bg-orange-50 p-3">
+            <input
+              type="checkbox"
+              checked={form.trocarSenhaNoProximoLogin}
+              onChange={e => set("trocarSenhaNoProximoLogin", e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-[#1351B4]"
+            />
+            <div>
+              <p className="text-sm font-medium text-orange-900">Exigir troca de senha no primeiro login</p>
+              <p className="text-xs text-orange-700 mt-0.5">
+                Recomendado. O usuário verá um modal ao entrar pela primeira vez solicitando que defina uma nova senha pessoal.
               </p>
             </div>
+          </label>
+        </Card>
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              {/* Órgão */}
-              <div className="space-y-2">
-                <Label htmlFor="orgao">
-                  Órgão <span className="text-red-600">*</span>
-                </Label>
-                <Select
-                  value={formData.orgao}
-                  onValueChange={(value) => handleChange("orgao", value)}
-                >
-                  <SelectTrigger
-                    id="orgao"
-                    className={
-                      errors.orgao && touched.orgao ? "border-red-500" : ""
-                    }
-                    aria-invalid={
-                      errors.orgao && touched.orgao ? "true" : "false"
-                    }
-                    onBlur={() => handleBlur("orgao")}
-                  >
-                    <SelectValue placeholder="Selecione o órgão" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SEPLAN">
-                      SEPLAN - Sec. Municipal de Planejamento
-                    </SelectItem>
-                    <SelectItem value="SEMED">
-                      SEMED - Sec. Municipal de Educação
-                    </SelectItem>
-                    <SelectItem value="SEMUS">
-                      SEMUS - Sec. Municipal de Saúde
-                    </SelectItem>
-                    <SelectItem value="SEMFAZ">
-                      SEMFAZ - Sec. Municipal de Fazenda
-                    </SelectItem>
-                    <SelectItem value="SEINFRA">
-                      SEINFRA - Sec. Municipal de Infraestrutura
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.orgao && touched.orgao && (
-                  <p className="flex items-center gap-1 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4" />
-                    {errors.orgao}
-                  </p>
-                )}
-              </div>
+        {/* ── Vínculo organizacional ───────────────────────────────────────── */}
+        <Card className="p-6 space-y-5">
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Vínculo Organizacional e Perfil</h3>
 
-              {/* Unidade */}
-              <div className="space-y-2">
-                <Label htmlFor="unidade">
-                  Unidade <span className="text-red-600">*</span>
-                </Label>
-                <Input
-                  id="unidade"
-                  value={formData.unidade}
-                  onChange={(e) => handleChange("unidade", e.target.value)}
-                  onBlur={() => handleBlur("unidade")}
-                  placeholder="Ex: Diretoria de Patrimônio"
-                  className={
-                    errors.unidade && touched.unidade ? "border-red-500" : ""
-                  }
-                  aria-invalid={
-                    errors.unidade && touched.unidade ? "true" : "false"
-                  }
-                />
-                {errors.unidade && touched.unidade && (
-                  <p className="flex items-center gap-1 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4" />
-                    {errors.unidade}
-                  </p>
-                )}
-              </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Órgão — via API */}
+            <div className="space-y-2">
+              <Label>Órgão <span className="text-red-600">*</span></Label>
+              <Select value={form.idOrgao} onValueChange={v => { set("idOrgao", v); set("idUnidade", ""); }}>
+                <SelectTrigger className={erros.idOrgao ? "border-red-400" : ""}>
+                  <SelectValue placeholder="Selecione o órgão" />
+                </SelectTrigger>
+                <SelectContent>
+                  {orgaos.map(o => (
+                    <SelectItem key={o.id} value={String(o.id)}>
+                      {o.sigla} — {o.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {erros.idOrgao && <p className="flex items-center gap-1 text-xs text-red-600"><AlertCircle className="h-3 w-3" />{erros.idOrgao}</p>}
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              {/* Perfil de Acesso */}
-              <div className="space-y-2">
-                <Label htmlFor="perfil">
-                  Perfil de Acesso <span className="text-red-600">*</span>
-                </Label>
-                <Select
-                  value={formData.perfil}
-                  onValueChange={(value) => handleChange("perfil", value)}
-                >
-                  <SelectTrigger
-                    id="perfil"
-                    className={
-                      errors.perfil && touched.perfil ? "border-red-500" : ""
-                    }
-                    onBlur={() => handleBlur("perfil")}
-                  >
-                    <SelectValue placeholder="Selecione o perfil" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Administrador">
-                      Administrador - Acesso total
+            {/* Unidade — dropdown encadeado ao órgão */}
+            <div className="space-y-2">
+              <Label>Unidade <span className="text-red-600">*</span></Label>
+              <Select
+                value={form.idUnidade}
+                onValueChange={v => set("idUnidade", v)}
+                disabled={!form.idOrgao || unidades.length === 0}
+              >
+                <SelectTrigger className={erros.idUnidade ? "border-red-400" : ""}>
+                  <SelectValue placeholder={!form.idOrgao ? "Selecione o órgão primeiro" : unidades.length === 0 ? "Carregando..." : "Selecione a unidade"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {unidades.map(u => (
+                    <SelectItem key={u.id} value={String(u.id)}>
+                      {u.sigla ? `${u.sigla} — ` : ""}{u.nome}
                     </SelectItem>
-                    <SelectItem value="Gestor">
-                      Gestor - Gestão e aprovações
-                    </SelectItem>
-                    <SelectItem value="Operacional">
-                      Operacional - Cadastro e edição
-                    </SelectItem>
-                    <SelectItem value="Consulta">
-                      Consulta - Apenas visualização
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.perfil && touched.perfil && (
-                  <p className="flex items-center gap-1 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4" />
-                    {errors.perfil}
-                  </p>
-                )}
-              </div>
-
-              {/* Status */}
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => handleChange("status", value)}
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Ativo">Ativo</SelectItem>
-                    <SelectItem value="Inativo">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  ))}
+                </SelectContent>
+              </Select>
+              {erros.idUnidade && <p className="flex items-center gap-1 text-xs text-red-600"><AlertCircle className="h-3 w-3" />{erros.idUnidade}</p>}
             </div>
+          </div>
+
+          {/* Perfil — 7 perfis do Manual SIGPIM */}
+          <div className="space-y-2">
+            <Label>Perfil de Acesso <span className="text-red-600">*</span></Label>
+            <Select value={form.perfil} onValueChange={v => set("perfil", v)}>
+              <SelectTrigger className={erros.perfil ? "border-red-400" : ""}>
+                <SelectValue placeholder="Selecione o perfil" />
+              </SelectTrigger>
+              <SelectContent>
+                {PERFIS.map(p => (
+                  <SelectItem key={p.value} value={p.value}>
+                    <div>
+                      <span className="font-medium">{p.label}</span>
+                      <span className="text-xs text-gray-500 ml-2">— {p.descricao}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {erros.perfil && <p className="flex items-center gap-1 text-xs text-red-600"><AlertCircle className="h-3 w-3" />{erros.perfil}</p>}
           </div>
         </Card>
 
         {/* Actions */}
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end mt-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate("/dashboard/usuarios")}
-          >
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={() => navigate("/dashboard/usuarios")}>
             Cancelar
           </Button>
-          <Button type="submit" className="bg-[#1351B4] hover:bg-[#0c3b8d]">
+          <Button type="submit" disabled={salvando} className="bg-[#1351B4] hover:bg-[#0c3b8d]">
             <Save className="mr-2 h-4 w-4" />
-            Salvar e Continuar
+            {salvando ? "Salvando..." : "Salvar e Continuar"}
           </Button>
         </div>
       </form>
