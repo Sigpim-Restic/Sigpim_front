@@ -6,7 +6,7 @@ export interface CatalogoItem {
   codigo: string;
   valor: string;
   descricao: string | null;
-  ativo?: boolean;
+  ativo: boolean;
 }
 
 export interface CatalogoItemRequest {
@@ -40,5 +40,8 @@ export const catalogosApi = {
   },
   desativar(id: number): Promise<CatalogoItem> {
     return api.patch(`/catalogos/${id}/desativar`);
+  },
+  excluirDefinitivo(id: number): Promise<void> {
+    return api.delete(`/catalogos/${id}`);
   },
 };

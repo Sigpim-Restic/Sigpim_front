@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Database, Search, Plus, Edit2, Check, X,
-  RefreshCw, AlertCircle, ChevronDown, ChevronUp,
+  RefreshCw, AlertCircle, ChevronDown, ChevronUp, Trash2,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -32,6 +32,8 @@ interface FormState {
   valor: string;
   descricao: string;
 }
+
+type AbaCatalogos = "ativos" | "desativados";
 
 const formVazio: FormState = {
   aberto: false,
@@ -78,6 +80,8 @@ export function Catalogos() {
   const [formErro, setFormErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [acaoId,   setAcaoId]   = useState<number | null>(null);
+  const [aba,      setAba]      = useState<AbaCatalogos>("ativos");
+  const [acaoDominioTipo, setAcaoDominioTipo] = useState<string | null>(null);
 
   // ── Carregamento ────────────────────────────────────────────────────────────
 
@@ -115,6 +119,12 @@ export function Catalogos() {
       d.itens.some((i) => i.valor.toLowerCase().includes(txt) || i.codigo.toLowerCase().includes(txt))
     );
   });
+
+  const dominiosAtivos = dominiosFiltrados.filter((d) => d.itens.some((i) => i.ativo !== false));
+  const dominiosDesativados = dominiosFiltrados.filter((d) =>
+    d.itens.length > 0 && d.itens.every((i) => i.ativo === false)
+  );
+  const dominiosExibidos = aba === "ativos" ? dominiosAtivos : dominiosDesativados;
 
   // ── Toggle expand ────────────────────────────────────────────────────────────
 
@@ -248,6 +258,47 @@ export function Catalogos() {
     }
   };
 
+  const handleRestaurarDominio = async (dominio: Dominio) => {
+    const inativos = dominio.itens.filter((i) => i.ativo === false);
+    if (inativos.length === 0) {
+      setErro("Este domínio não possui itens inativos para restaurar.");
+      return;
+    }
+
+    setAcaoDominioTipo(dominio.tipo);
+    try {
+      await Promise.all(inativos.map((item) => catalogosApi.ativar(item.id)));
+      await carregar();
+    } catch (e: unknown) {
+      setErro(e instanceof Error ? e.message : "Erro ao restaurar domínio.");
+    } finally {
+      setAcaoDominioTipo(null);
+    }
+  };
+
+  const handleExcluirDominioDefinitivo = async (dominio: Dominio) => {
+    const itensDominio = dominio.itens;
+    if (itensDominio.length === 0) {
+      setErro("Este domínio não possui itens para excluir.");
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `Excluir definitivamente o domínio "${TIPO_LABEL[dominio.tipo] ?? dominio.tipo}" e todos os seus ${itensDominio.length} valor(es)?\n\nEsta ação remove os registros do banco e não pode ser desfeita.`
+    );
+    if (!confirmar) return;
+
+    setAcaoDominioTipo(dominio.tipo);
+    try {
+      await Promise.all(itensDominio.map((item) => catalogosApi.excluirDefinitivo(item.id)));
+      await carregar();
+    } catch (e: unknown) {
+      setErro(e instanceof Error ? e.message : "Erro ao excluir domínio definitivamente.");
+    } finally {
+      setAcaoDominioTipo(null);
+    }
+  };
+
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -365,6 +416,29 @@ export function Catalogos() {
         )}
       </div>
 
+      <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
+        <button
+          onClick={() => setAba("ativos")}
+          className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+            aba === "ativos"
+              ? "bg-[#1351B4] text-white"
+              : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          Domínios ativos ({dominiosAtivos.length})
+        </button>
+        <button
+          onClick={() => setAba("desativados")}
+          className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+            aba === "desativados"
+              ? "bg-[#1351B4] text-white"
+              : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          Domínios desativados ({dominiosDesativados.length})
+        </button>
+      </div>
+
       {/* Erro global */}
       {erro && (
         <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -386,7 +460,7 @@ export function Catalogos() {
       {/* Grid de domínios */}
       {!loading && (
         <div className="grid gap-5 lg:grid-cols-2">
-          {dominiosFiltrados.map((d) => {
+          {dominiosExibidos.map((d) => {
             const expandido = expandidos.has(d.tipo);
             const ativos   = d.itens.filter((i) => i.ativo !== false);
             const inativos = d.itens.filter((i) => i.ativo === false);
@@ -497,7 +571,7 @@ export function Catalogos() {
                       ))}
 
                       {/* Botão Adicionar */}
-                      {perm.canManageCatalogo && (
+                      {perm.canManageCatalogo && aba === "ativos" && (
                         <button
                           onClick={() => abrirNovoValor(d.tipo)}
                           className="flex items-center gap-1 rounded-md border border-dashed border-gray-300 px-2.5 py-1 text-xs text-gray-400 hover:border-[#1351B4] hover:text-[#1351B4] transition-colors"
@@ -511,17 +585,52 @@ export function Catalogos() {
                       {ativos.length} valor(es) ativo(s)
                       {inativos.length > 0 && ` · ${inativos.length} inativo(s)`}
                     </p>
+
+                    {aba === "desativados" && perm.canManageCatalogo && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRestaurarDominio(d)}
+                          disabled={acaoDominioTipo === d.tipo}
+                        >
+                          {acaoDominioTipo === d.tipo
+                            ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+                            : <Check className="mr-2 h-3.5 w-3.5" />
+                          }
+                          Restaurar domínio
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleExcluirDominioDefinitivo(d)}
+                          disabled={acaoDominioTipo === d.tipo}
+                          className="border-red-200 text-red-600 hover:bg-red-50"
+                        >
+                          {acaoDominioTipo === d.tipo
+                            ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+                            : <Trash2 className="mr-2 h-3.5 w-3.5" />
+                          }
+                          Excluir definitivamente
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 )}
               </Card>
             );
           })}
 
-          {!loading && dominiosFiltrados.length === 0 && !erro && (
+          {!loading && dominiosExibidos.length === 0 && !erro && (
             <div className="col-span-2 rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-400 shadow-sm">
               <Database className="mx-auto mb-3 h-8 w-8 text-gray-300" />
               <p className="font-medium">
-                {search ? "Nenhum domínio corresponde à busca." : "Nenhum catálogo cadastrado."}
+                {search
+                  ? "Nenhum domínio corresponde à busca."
+                  : aba === "ativos"
+                  ? "Nenhum domínio ativo cadastrado."
+                  : "Nenhum domínio desativado encontrado."
+                }
               </p>
             </div>
           )}
