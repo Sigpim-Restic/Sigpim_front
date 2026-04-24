@@ -37,6 +37,7 @@ export interface DadosEtapa6 {
   cartorio: string;
   inscricaoImobiliaria: string;
   observacoesDominial: string;
+  imovelHistorico: boolean | null;
 }
 
 interface Ctx {
@@ -63,7 +64,7 @@ const vazios = {
   e3: (): DadosEtapa3 => ({ tipoImovel: "", idTipoImovel: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" }),
   e4: (): DadosEtapa4 => ({ areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "" }),
   e5: (): DadosEtapa5 => ({ statusOcupacao: "", nivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" }),
-  e6: (): DadosEtapa6 => ({ idSituacaoDominial: "", matriculaRegistro: "", cartorio: "", inscricaoImobiliaria: "", observacoesDominial: "" }),
+  e6: (): DadosEtapa6 => ({ idSituacaoDominial: "", matriculaRegistro: "", cartorio: "", inscricaoImobiliaria: "", observacoesDominial: "", imovelHistorico: null }),
 };
 
 export function EditarImovelProvider({
@@ -147,6 +148,7 @@ export function EditarImovelProvider({
           cartorio:            im.cartorio           ?? "",
           inscricaoImobiliaria: im.inscricaoImobiliaria ?? "",
           observacoesDominial: "",
+          imovelHistorico:     im.imovelHistorico ?? null,
         });
         const ocup = ocupPage?.content?.[0];
         if (ocup && ocup.vigente) {
@@ -184,6 +186,7 @@ export function EditarImovelProvider({
         inscricaoImobiliaria:     etapa6.inscricaoImobiliaria || undefined,
         matriculaRegistro:        etapa6.matriculaRegistro   || undefined,
         cartorio:                 etapa6.cartorio            || undefined,
+        imovelHistorico:          etapa6.imovelHistorico ?? undefined,
         descricao:                etapa3.descricaoUso    || undefined,
         observacoesGerais:        etapa1.observacoesGerais || undefined,
         areaTerrenoM2:            etapa4.areaTerrenoM2    ? parseFloat(etapa4.areaTerrenoM2)    : undefined,

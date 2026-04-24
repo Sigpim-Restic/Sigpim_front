@@ -224,6 +224,28 @@ export function EditarStep6() {
             />
           </div>
 
+          {/* Patrimônio Histórico */}
+          <div className="space-y-2">
+            <Label>Patrimônio Histórico ou Cultural?</Label>
+            <select
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1351B4]"
+              value={etapa6.imovelHistorico === true ? "true" : etapa6.imovelHistorico === false ? "false" : ""}
+              onChange={(e) => setEtapa6({
+                ...etapa6,
+                imovelHistorico: e.target.value === "true" ? true : e.target.value === "false" ? false : null,
+              })}
+            >
+              <option value="">Não informado</option>
+              <option value="false">Não</option>
+              <option value="true">Sim — aciona gate FUMPH em intervenções N1+</option>
+            </select>
+            {etapa6.imovelHistorico === true && (
+              <p className="text-xs text-orange-600">
+                ⚠ Intervenções nível N1 ou superior exigirão parecer e aceite da FUMPH.
+              </p>
+            )}
+          </div>
+
         </div>
       </div>
     </EditarWizardLayout>

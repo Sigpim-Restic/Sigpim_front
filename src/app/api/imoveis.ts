@@ -42,6 +42,8 @@ export interface ImovelResponse {
   // GIS coordinates resolved from localizacoes
   latitude: number | null;
   longitude: number | null;
+  // Patrimônio histórico — ativa gate FUMPH em intervenções N1+
+  imovelHistorico: boolean | null;
 }
 
 export interface ImovelRequest {

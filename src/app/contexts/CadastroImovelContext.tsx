@@ -132,6 +132,12 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         inscricaoImobiliaria:     etapa7.inscricaoImobiliaria   || undefined,
         matriculaRegistro:        etapa7.matriculaRegistro      || undefined,
         cartorio:                 etapa7.cartorio               || undefined,
+        // Patrimônio histórico (etapa8)
+        imovelHistorico: etapa8.imovelHistorico === "SIM_TOMBADO" ||
+                         etapa8.imovelHistorico === "SIM_EM_PROCESSO" ||
+                         etapa8.imovelHistorico === "SIM_INVENTARIADO"
+                         ? true
+                         : etapa8.imovelHistorico === "NAO" ? false : undefined,
       };
 
       const imovel = await imoveisApi.criar(req);
