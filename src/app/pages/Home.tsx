@@ -73,7 +73,7 @@ export function Home() {
         <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#1351B4]">
-              <Building2 className="h-7 w-7 text-white" />
+              <img src="/assets/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-[#1351B4]">SIGPIM</h1>
@@ -333,7 +333,7 @@ export function Home() {
             <div>
               <div className="flex items-center gap-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1351B4]">
-                  <Building2 className="h-5 w-5 text-white" />
+                  <img src="/assets/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
                 </div>
                 <h4 className="font-semibold text-gray-900">SIGPIM-SLZ</h4>
               </div>
