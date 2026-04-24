@@ -16,8 +16,9 @@ function validarSenha(senha: string) {
     tamanho: senha.length >= 8,
     numero: /\d/.test(senha),
     maiuscula: /[A-Z]/.test(senha),
-    especial: /[!@#$%^&*()_+\-=\[\]{};:"|,.<>/?\\]/.test(senha),
+    especial: /[][!@#$%^&*()_+\-={};:"|,.<>/?\\]/.test(senha),
   };
+
 }
 
 export function RedefinirSenha() {
