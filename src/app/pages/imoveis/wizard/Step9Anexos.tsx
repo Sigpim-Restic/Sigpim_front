@@ -108,7 +108,17 @@ export function CadastroImovelStep9() {
     atualizar(id, "dataDocumento", dataValida(nova) ? mascaraParaIso(nova) : "");
   };
 
+  const [erroEvidencia, setErroEvidencia] = useState<string | null>(null);
+
   const handleFinalizar = () => {
+    // Pré-cadastro §4.2: exige ao menos 1 evidência (foto/arquivo)
+    if (arquivos.length === 0) {
+      setErroEvidencia(
+        "Anexe ao menos uma evidência (foto, planta, documento) antes de finalizar. Isso é obrigatório no pré-cadastro."
+      );
+      return;
+    }
+    setErroEvidencia(null);
     finalizar(() => navigate("/dashboard/imoveis/sucesso"));
   };
 
@@ -235,9 +245,17 @@ export function CadastroImovelStep9() {
           </div>
         )}
 
-        {arquivos.length === 0 && (
+        {erroEvidencia && (
+          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{erroEvidencia}</span>
+          </div>
+        )}
+
+        {arquivos.length === 0 && !erroEvidencia && (
           <AlertBox variant="warning">
-            Nenhum arquivo anexado. Os documentos podem ser complementados posteriormente.
+            <strong>Atenção:</strong> Ao menos uma evidência (foto, planta ou documento) é
+            obrigatória para concluir o pré-cadastro. Adicione um arquivo antes de finalizar.
           </AlertBox>
         )}
 
