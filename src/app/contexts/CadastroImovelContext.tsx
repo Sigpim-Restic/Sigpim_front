@@ -8,15 +8,28 @@ import { documentosApi, type DocumentoUploadParams } from "../api/documentos";
 
 export interface DadosEtapa1 {
   nomeReferencia: string;
+  origemCadastro: string;   // obrigatório no pré-cadastro (§4.2 Manual SIGPIM)
   idOrgaoGestorPatrimonial: string;
   idUnidadeGestora: string;
   observacoesGerais: string;
 }
+
+// Cada vértice do polígono do imóvel
+export interface PontoPoligono {
+  id: string;       // ex: "P001", "P002"
+  latitude: string;
+  longitude: string;
+}
+
 export interface DadosEtapa2 {
   logradouro: string; numero: string; complemento: string;
   bairro: string; cidade: string; cep: string;
+  // Ponto de referência (centróide / acesso principal)
   latitude: string; longitude: string;
+  // Polígono: lista de vértices em ordem
+  pontos: PontoPoligono[];
 }
+
 export interface DadosEtapa3 {
   tipoImovel: string;
   tipologia: string;
@@ -80,8 +93,12 @@ interface Ctx {
 
 const Ctx = createContext<Ctx | null>(null);
 
-const e1: DadosEtapa1 = { nomeReferencia: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" };
-const e2: DadosEtapa2 = { logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "", latitude: "", longitude: "" };
+const e1: DadosEtapa1 = { nomeReferencia: "", origemCadastro: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" };
+const e2: DadosEtapa2 = {
+  logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "",
+  latitude: "", longitude: "",
+  pontos: [],
+};
 const e3: DadosEtapa3 = { tipoImovel: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" };
 const e4: DadosEtapa4 = { areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "", registroEnergia: "", registroAgua: "" };
 const e5: DadosEtapa5 = { statusOcupacao: "", idNivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" };
@@ -89,6 +106,25 @@ const e6: DadosEtapa6 = { possuiInstrumento: "", tipoInstrumento: "", numeroInst
 const e7: DadosEtapa7 = { situacaoDominial: "", matriculaRegistro: "", cartorio: "", inscricaoImobiliaria: "", observacoes: "" };
 const e8: DadosEtapa8 = { imovelHistorico: "", observacoes: "" };
 
+// ── Utilitário: converte lista de pontos em WKT POLYGON ──────────────────────
+// Exige ao menos 3 pontos válidos. Fecha o anel automaticamente (repete o 1º no fim).
+function pontosParaWkt(pontos: PontoPoligono[]): string | undefined {
+  const validos = pontos.filter(
+    (p) =>
+      p.latitude.trim() !== "" &&
+      p.longitude.trim() !== "" &&
+      !isNaN(parseFloat(p.latitude)) &&
+      !isNaN(parseFloat(p.longitude))
+  );
+  if (validos.length < 3) return undefined;
+
+  const coords = validos
+    .map((p) => `${parseFloat(p.longitude)} ${parseFloat(p.latitude)}`)
+    .join(", ");
+  // Fecha o anel: repete o primeiro ponto
+  const primeiro = `${parseFloat(validos[0].longitude)} ${parseFloat(validos[0].latitude)}`;
+  return `POLYGON((${coords}, ${primeiro}))`;
+}
 
 const LS_KEY = "sigpim_rascunho_imovel";
 
@@ -101,6 +137,7 @@ function carregarRascunho() {
 function limparRascunho() {
   try { localStorage.removeItem(LS_KEY); } catch {}
 }
+
 export function CadastroImovelProvider({ children }: { children: React.ReactNode }) {
   const rascunho = carregarRascunho();
   const [etapa1, setEtapa1] = useState<DadosEtapa1>(rascunho?.etapa1 ?? e1);
@@ -136,6 +173,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
 
       const req: ImovelRequest = {
         nomeReferencia:           etapa1.nomeReferencia         || undefined,
+        origemCadastro:           etapa1.origemCadastro         || undefined,
         idTipoImovel,
         descricao:                etapa3.descricaoUso ? etapa3.descricaoUso.slice(0, 500) : undefined,
         tipologia:                etapa3.tipologia              || undefined,
@@ -163,9 +201,16 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
 
       const imovel = await imoveisApi.criar(req);
 
-      // Localização
-      const temLocalizacao = etapa2.latitude || etapa2.longitude || etapa2.logradouro || etapa2.bairro;
+      // ── Localização ────────────────────────────────────────────────────────
+      const temLocalizacao =
+        etapa2.latitude || etapa2.longitude ||
+        etapa2.logradouro || etapa2.bairro  ||
+        etapa2.pontos.length > 0;
+
       if (temLocalizacao) {
+        // Gera WKT a partir dos pontos; usa campo bruto apenas como fallback (não há mais textarea WKT)
+        const geometriaWkt = pontosParaWkt(etapa2.pontos);
+
         await localizacoesApi.criar({
           idImovel:    imovel.id,
           logradouro:  etapa2.logradouro  || undefined,
@@ -175,10 +220,13 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
           cep:         etapa2.cep         || undefined,
           latitude:    etapa2.latitude    ? parseFloat(etapa2.latitude)  : undefined,
           longitude:   etapa2.longitude   ? parseFloat(etapa2.longitude) : undefined,
+          geometriaWkt,
+          sistemaCoordenadas: geometriaWkt ? "WGS84" : undefined,
+          fonteGeometria:     geometriaWkt ? "CADASTRO_MANUAL" : undefined,
         });
       }
 
-      // Ocupação
+      // ── Ocupação ───────────────────────────────────────────────────────────
       if (etapa5.statusOcupacao && etapa5.statusOcupacao !== "DESOCUPADO" && etapa5.statusOcupacao !== "DESCONHECIDO") {
         const ocReq: OcupacaoRequest = {
           idImovel:             imovel.id,
@@ -196,7 +244,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         await ocupacoesApi.criar(ocReq);
       }
 
-      // Documentos/anexos
+      // ── Documentos/anexos ──────────────────────────────────────────────────
       for (const arq of arquivos.filter((a) => a.file.size <= 10 * 1024 * 1024)) {
         const params: DocumentoUploadParams = {
           idImovel:        imovel.id,
