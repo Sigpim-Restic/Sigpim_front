@@ -67,6 +67,7 @@ export interface ImovelRequest {
   idOrgaoGestorOperacional?: number;
   idUnidadeGestora?: number;
   observacoesGerais?: string;
+  imovelHistorico?: boolean;
 }
 
 export interface PageResponse<T> {
@@ -80,6 +81,10 @@ export interface PageResponse<T> {
 export interface ValidacaoResponse {
   validado: boolean;
   pendencias: string[];
+}
+
+export interface VerificarNomeResponse {
+  disponivel: boolean;
 }
 
 export const imoveisApi = {
@@ -100,5 +105,15 @@ export const imoveisApi = {
   },
   deletar(id: number): Promise<void> {
     return api.delete(`/imoveis/${id}`);
+  },
+  /**
+   * Verifica se um nome de referência está disponível (não duplicado).
+   * @param nome      Nome a verificar.
+   * @param excluirId ID do imóvel sendo editado — omitir em criações.
+   */
+  verificarNome(nome: string, excluirId?: number): Promise<VerificarNomeResponse> {
+    const params = new URLSearchParams({ nome });
+    if (excluirId !== undefined) params.append("excluirId", String(excluirId));
+    return api.get(`/imoveis/verificar-nome?${params.toString()}`);
   },
 };

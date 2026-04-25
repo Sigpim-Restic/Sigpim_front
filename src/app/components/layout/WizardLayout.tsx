@@ -25,9 +25,10 @@ interface WizardLayoutProps {
   onNext?: () => void;
   onBack?: () => void;
   salvando?: boolean;
+  nextDisabled?: boolean;
 }
 
-export function WizardLayout({ currentStep, children, onNext, onBack, salvando }: WizardLayoutProps) {
+export function WizardLayout({ currentStep, children, onNext, onBack, salvando, nextDisabled }: WizardLayoutProps) {
   const navigate = useNavigate();
   const { salvarRascunhoManual } = useCadastroImovel();
 
@@ -85,7 +86,11 @@ export function WizardLayout({ currentStep, children, onNext, onBack, salvando }
           <ArrowLeft className="mr-2 h-4 w-4" />
           {currentStep === 1 ? "Cancelar" : "Voltar"}
         </Button>
-        <Button onClick={handleNext} disabled={salvando} className="bg-[#1351B4] hover:bg-[#0c3b8d]">
+        <Button
+          onClick={handleNext}
+          disabled={salvando || nextDisabled}
+          className="bg-[#1351B4] hover:bg-[#0c3b8d]"
+        >
           {currentStep === TOTAL ? "Finalizar Cadastro" : "Próxima Etapa"}
           {currentStep < TOTAL && <ArrowRight className="ml-2 h-4 w-4" />}
         </Button>
