@@ -30,7 +30,7 @@ const PERFIL_LABELS: Record<PerfilUsuario, string> = {
   ADMINISTRADOR_SISTEMA:     "Admin. Sistema",
   ADMINISTRADOR_PATRIMONIAL: "Admin. Patrimonial",
   CADASTRADOR_SETORIAL:      "Cadastrador",
-  VALIDADOR_DOCUMENTAL:      "Validador",
+  VALIDADOR_DOCUMENTAL:      "Validador Documental",
   VISTORIADOR:               "Vistoriador",
   PLANEJAMENTO:              "Planejamento",
   AUDITOR:                   "Auditor",
