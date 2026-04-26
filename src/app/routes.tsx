@@ -33,6 +33,7 @@ import { ListaOcupacoes } from "./pages/ocupacoes/ListaOcupacoes";
 import { ListaDocumentos } from "./pages/documentos/ListaDocumentos";
 import { Relatorios } from "./pages/relatorios/Relatorios";
 import { Auditoria } from "./pages/auditoria/Auditoria";
+import { Pendencias } from "./pages/pendencias/Pendencias";
 import { MapaGIS } from "./pages/MapaGIS";
 import { Catalogos } from "./pages/Catalogos";
 import { Configuracoes } from "./pages/Configuracoes";
@@ -116,6 +117,7 @@ export const router = createBrowserRouter([
 
       // ── Resto do sistema ────────────────────────────────────────────────────
       { path: "ocupacoes",               Component: ListaOcupacoes },
+      { path: "pendencias",              Component: Pendencias },
       { path: "documentos",              Component: ListaDocumentos },
       { path: "relatorios",              Component: Relatorios },
       { path: "auditoria",               Component: Auditoria },

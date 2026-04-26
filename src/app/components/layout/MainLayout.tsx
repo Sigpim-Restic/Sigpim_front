@@ -5,6 +5,7 @@ import {
   ClipboardList, History, Menu, X, Bell, RefreshCw,
   ChevronRight, LogOut, User, Settings,
   BookOpen, List, FolderOpen, PanelLeftClose, PanelLeftOpen, Shield,
+  AlertTriangle,
 } from "lucide-react";
 import { Logo } from "../Logo";
 import { Button } from "../ui/button";
@@ -95,6 +96,12 @@ const menuItems: MenuItem[] = [
     label: "Ocupações",
     icon:  ClipboardList,
     // Todos os perfis precisam consultar ocupações
+  },
+  {
+    path:  "/dashboard/pendencias",
+    label: "Pendências",
+    icon:  AlertTriangle,
+    // Todos os perfis — cada um vê as pendências do seu órgão
   },
   {
     path:  "/dashboard/documentos",
@@ -518,6 +525,7 @@ function getBreadcrumbs(pathname: string) {
   const crumbs   = [{ path: "/dashboard", label: "Início" }];
   const labels: Record<string, string> = {
     imoveis: "Imóveis", novo: "Novo", ocupacoes: "Ocupações",
+    pendencias: "Pendências",
     documentos: "Documentos", relatorios: "Relatórios",
     auditoria: "Auditoria", mapa: "Mapa GIS",
     usuarios: "Usuários", configuracoes: "Configurações",
