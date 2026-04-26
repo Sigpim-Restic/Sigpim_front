@@ -1521,6 +1521,8 @@ export function DetalhesImovel() {
       setErroNotificar(e instanceof Error ? e.message : "Erro ao notificar validador.");
     } finally { setLoadingNotificar(false); }
   };
+
+  const handleValidar = async () => {
     if (!imovel) return;
     setLoadingValidacao(true); setErroValidacao(null); setPendencias([]);
     try {
