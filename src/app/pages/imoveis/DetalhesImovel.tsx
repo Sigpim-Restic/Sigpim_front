@@ -1492,8 +1492,68 @@ export function DetalhesImovel() {
   const [localizacao, setLocalizacao] = useState<LocalizacaoResponse | null>(null);
   const [loading,     setLoading]     = useState(true);
   const [erro,        setErro]        = useState<string | null>(null);
-  const [loadingPdf,  setLoadingPdf]  = useState(false);
-  const [erroPdf,     setErroPdf]     = useState<string | null>(null);
+  const [loadingPdf,       setLoadingPdf]       = useState(false);
+  const [erroPdf,          setErroPdf]          = useState<string | null>(null);
+  const [loadingValidacao, setLoadingValidacao] = useState(false);
+  const [erroValidacao,    setErroValidacao]    = useState<string | null>(null);
+  const [pendencias,       setPendencias]       = useState<string[]>([]);
+
+  // Modal de recusa
+  const [modalRecusa,   setModalRecusa]   = useState(false);
+  const [motivoRecusa,  setMotivoRecusa]  = useState("");
+  const [erroRecusa,    setErroRecusa]    = useState<string | null>(null);
+  const [salvandoRecusa, setSalvandoRecusa] = useState(false);
+
+  const handleValidar = async () => {
+    if (!imovel) return;
+    setLoadingValidacao(true); setErroValidacao(null); setPendencias([]);
+    try {
+      const res = await imoveisApi.validar(imovel.id);
+      if (res.validado) {
+        setImovel((prev) => prev ? { ...prev, statusCadastro: "VALIDADO" } : prev);
+      } else {
+        setPendencias(res.pendencias ?? []);
+      }
+    } catch (e: unknown) {
+      setErroValidacao(e instanceof Error ? e.message : "Erro ao validar imóvel.");
+    } finally { setLoadingValidacao(false); }
+  };
+
+  const handlePromoverGestaoPlena = async () => {
+    if (!imovel) return;
+    setLoadingValidacao(true); setErroValidacao(null); setPendencias([]);
+    try {
+      const res = await imoveisApi.promoverGestaoPlena(imovel.id);
+      if (res.validado) {
+        setImovel((prev) => prev ? { ...prev, statusCadastro: "GESTAO_PLENA" } : prev);
+      } else {
+        setPendencias(res.pendencias ?? []);
+      }
+    } catch (e: unknown) {
+      setErroValidacao(e instanceof Error ? e.message : "Erro ao promover para Gestão Plena.");
+    } finally { setLoadingValidacao(false); }
+  };
+
+  const handleConfirmarRecusa = async () => {
+    if (!imovel) return;
+    if (motivoRecusa.trim().length < 10) {
+      setErroRecusa("O motivo deve ter pelo menos 10 caracteres.");
+      return;
+    }
+    setSalvandoRecusa(true); setErroRecusa(null);
+    try {
+      await imoveisApi.recusarValidacao(imovel.id, motivoRecusa.trim());
+      setModalRecusa(false);
+      setMotivoRecusa("");
+      // Feedback visual: alerta de sucesso temporário
+      setErroValidacao(null);
+      setPendencias([]);
+      // Mostra confirmação inline usando o mesmo estado de pendências com msg especial
+      setPendencias(["✓ Recusa registrada. O órgão gestor foi notificado com o motivo informado."]);
+    } catch (e: unknown) {
+      setErroRecusa(e instanceof Error ? e.message : "Erro ao registrar recusa.");
+    } finally { setSalvandoRecusa(false); }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -1553,6 +1613,72 @@ export function DetalhesImovel() {
   return (
     <div className="space-y-5">
 
+      {/* Modal de recusa de validação */}
+      <Dialog open={modalRecusa} onOpenChange={(v) => {
+        if (!v) { setModalRecusa(false); setMotivoRecusa(""); setErroRecusa(null); }
+      }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <XCircle className="h-5 w-5" />
+              Recusar Validação — {imovel.codigoSigpim}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              O imóvel <strong>permanecerá em Pré-cadastro</strong>. O motivo será registrado
+              em auditoria e enviado como alerta ao órgão gestor patrimonial do imóvel,
+              para que saibam exatamente o que corrigir.
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="motivoRecusa">
+                Motivo da recusa <span className="text-red-500">*</span>
+              </Label>
+              <textarea
+                id="motivoRecusa"
+                className={`w-full rounded-md border p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 ${
+                  erroRecusa ? "border-red-400" : "border-gray-200"
+                }`}
+                rows={5}
+                maxLength={1000}
+                placeholder="Descreva detalhadamente o motivo pelo qual este imóvel não pode ser validado no momento. Ex: documentação dominial incompleta, divergência nas coordenadas informadas, ocupação não formalizada..."
+                value={motivoRecusa}
+                onChange={(e) => {
+                  setMotivoRecusa(e.target.value);
+                  if (erroRecusa) setErroRecusa(null);
+                }}
+              />
+              <div className="flex items-center justify-between">
+                {erroRecusa
+                  ? <p className="text-xs text-red-500">{erroRecusa}</p>
+                  : <p className="text-xs text-gray-400">Mínimo 10 caracteres.</p>
+                }
+                <p className="text-xs text-gray-400">{motivoRecusa.length}/1000</p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => { setModalRecusa(false); setMotivoRecusa(""); setErroRecusa(null); }}
+              disabled={salvandoRecusa}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmarRecusa}
+              disabled={salvandoRecusa || motivoRecusa.trim().length < 10}
+            >
+              {salvandoRecusa
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Registrando...</>
+                : <><XCircle className="mr-2 h-4 w-4" />Confirmar Recusa</>
+              }
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Cabeçalho */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
@@ -1582,6 +1708,51 @@ export function DetalhesImovel() {
               : <><Download className="mr-2 h-4 w-4" />Ficha PDF + QR</>
             }
           </Button>
+
+          {/* P → V: botões de aprovação e recusa */}
+          {perm.canValidarImovel && imovel.statusCadastro === "PRE_CADASTRO" && (
+            <>
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700"
+                onClick={handleValidar}
+                disabled={loadingValidacao}
+                title="Aprovar validação — promove para Validado"
+              >
+                {loadingValidacao
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Validando...</>
+                  : <><CheckCircle2 className="mr-2 h-4 w-4" />Validar Imóvel</>
+                }
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-red-600 border-red-300 hover:bg-red-50"
+                onClick={() => { setPendencias([]); setErroValidacao(null); setModalRecusa(true); }}
+                disabled={loadingValidacao}
+                title="Recusar validação — registra motivo e notifica o órgão gestor"
+              >
+                <XCircle className="mr-2 h-4 w-4" />Recusar
+              </Button>
+            </>
+          )}
+
+          {/* V → G: Promover para Gestão Plena */}
+          {perm.canPromoverGestaoPlena && imovel.statusCadastro === "VALIDADO" && (
+            <Button
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handlePromoverGestaoPlena}
+              disabled={loadingValidacao}
+              title="Promover este imóvel de Validado para Gestão Plena"
+            >
+              {loadingValidacao
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Promovendo...</>
+                : <><CheckCircle2 className="mr-2 h-4 w-4" />Gestão Plena</>
+              }
+            </Button>
+          )}
+
           {perm.canUpdateImovel && (
             <Button size="sm" className="bg-[#1351B4] hover:bg-[#0c3b8d]"
               onClick={() => navigate(`/dashboard/imoveis/${imovel.id}/editar`)}>
@@ -1597,6 +1768,39 @@ export function DetalhesImovel() {
           <div className="flex-1">{erroPdf}</div>
           <button onClick={() => setErroPdf(null)} className="text-red-400 hover:text-red-600">✕</button>
         </div>
+      )}
+
+      {/* Erros e pendências de validação */}
+      {erroValidacao && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="flex-1">{erroValidacao}</div>
+          <button onClick={() => setErroValidacao(null)} className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
+      {pendencias.length > 0 && (
+        pendencias[0].startsWith("✓") ? (
+          <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+            <p>{pendencias[0].replace("✓ ", "")}</p>
+            <button onClick={() => setPendencias([])} className="ml-auto text-green-400 hover:text-green-600">✕</button>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+            <p className="text-sm font-semibold text-yellow-800 mb-2 flex items-center gap-1.5">
+              <AlertTriangle className="h-4 w-4" />
+              Pendências impedem a validação — corrija antes de prosseguir:
+            </p>
+            <ul className="space-y-1">
+              {pendencias.map((p, i) => (
+                <li key={i} className="text-sm text-yellow-700 flex items-start gap-2">
+                  <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-yellow-600 shrink-0" />
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
       )}
 
       {/* Abas */}
