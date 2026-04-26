@@ -44,6 +44,7 @@ export interface ImovelResponse {
   longitude: number | null;
   // Patrimônio histórico — ativa gate FUMPH em intervenções N1+
   imovelHistorico: boolean | null;
+  ultimaRecusaEm: string | null;
 }
 
 export interface ImovelRequest {
@@ -105,6 +106,13 @@ export const imoveisApi = {
   },
   recusarValidacao(id: number, motivo: string): Promise<void> {
     return api.post(`/imoveis/${id}/recusar-validacao`, { motivo });
+  },
+  notificarPendenciasCorrigidas(id: number): Promise<void> {
+    return api.post(`/imoveis/${id}/notificar-pendencias-corrigidas`);
+  },
+  /** Retorna lista de pendências do checklist. Lista vazia = pronto para validar. */
+  verificarPendencias(id: number): Promise<string[]> {
+    return api.get(`/imoveis/${id}/verificar-pendencias`);
   },
   promoverGestaoPlena(id: number): Promise<ValidacaoResponse> {
     return api.patch(`/imoveis/${id}/promover-gestao-plena`);

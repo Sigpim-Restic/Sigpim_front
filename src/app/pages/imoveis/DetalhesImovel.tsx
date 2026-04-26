@@ -4,7 +4,7 @@ import {
   ArrowLeft, RefreshCw, AlertCircle, MapPin, FileText,
   Building2, Users, Edit, Map, Download, Loader2,
   ClipboardCheck, Wrench, Plus, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Clock, AlertTriangle, RotateCcw, DollarSign, Pencil, Trash2, BarChart2, FileCheck,
+  CheckCircle2, XCircle, Clock, AlertTriangle, RotateCcw, DollarSign, Pencil, Trash2, BarChart2, FileCheck, Bell,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -1504,7 +1504,23 @@ export function DetalhesImovel() {
   const [erroRecusa,    setErroRecusa]    = useState<string | null>(null);
   const [salvandoRecusa, setSalvandoRecusa] = useState(false);
 
-  const handleValidar = async () => {
+  const [loadingNotificar,  setLoadingNotificar]  = useState(false);
+  const [erroNotificar,     setErroNotificar]      = useState<string | null>(null);
+  const [notificadoOk,      setNotificadoOk]       = useState(false);
+  // Pendências do checklist de validação — consultadas ao carregar o imóvel
+  const [pendenciasChecklist, setPendenciasChecklist] = useState<string[]>([]);
+
+  const handleNotificarValidador = async () => {
+    if (!imovel) return;
+    setLoadingNotificar(true); setErroNotificar(null); setNotificadoOk(false);
+    try {
+      await imoveisApi.notificarPendenciasCorrigidas(imovel.id);
+      setNotificadoOk(true);
+      setTimeout(() => setNotificadoOk(false), 5000);
+    } catch (e: unknown) {
+      setErroNotificar(e instanceof Error ? e.message : "Erro ao notificar validador.");
+    } finally { setLoadingNotificar(false); }
+  };
     if (!imovel) return;
     setLoadingValidacao(true); setErroValidacao(null); setPendencias([]);
     try {
@@ -1571,6 +1587,14 @@ export function DetalhesImovel() {
         setDocumentos(docs.content);
         setOcupacoes(ocup.content);
         setLocalizacao(loc);
+        // Consulta pendências do checklist se imóvel está em PRE_CADASTRO
+        if (im.statusCadastro === "PRE_CADASTRO") {
+          imoveisApi.verificarPendencias(numId)
+            .then(setPendenciasChecklist)
+            .catch(() => setPendenciasChecklist([]));
+        } else {
+          setPendenciasChecklist([]);
+        }
       })
       .catch(() => setErro("Não foi possível carregar os dados do imóvel."))
       .finally(() => setLoading(false));
@@ -1709,6 +1733,33 @@ export function DetalhesImovel() {
             }
           </Button>
 
+          {/* Notificar validador — para membros do órgão gestor em PRE_CADASTRO */}
+          {perm.canUpdateImovel && !perm.canValidarImovel &&
+           imovel.statusCadastro === "PRE_CADASTRO" && (() => {
+            const temPendencias = pendenciasChecklist.length > 0;
+            const bloqueado = temPendencias || loadingNotificar || notificadoOk;
+            const tooltip = temPendencias
+              ? `Ainda há pendências: ${pendenciasChecklist[0]}${pendenciasChecklist.length > 1 ? ` (+${pendenciasChecklist.length - 1})` : ""}`
+              : "Notificar o validador que as pendências foram corrigidas";
+            return (
+              <Button
+                size="sm"
+                variant="outline"
+                className={`border-amber-300 ${bloqueado && !notificadoOk ? "opacity-50 cursor-not-allowed text-gray-400" : "text-amber-700 hover:bg-amber-50"}`}
+                onClick={handleNotificarValidador}
+                disabled={bloqueado}
+                title={tooltip}
+              >
+                {loadingNotificar
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Notificando...</>
+                  : notificadoOk
+                  ? <><CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />Validador notificado!</>
+                  : <><Bell className="mr-2 h-4 w-4" />Notificar Validador</>
+                }
+              </Button>
+            );
+          })()}
+
           {/* P → V: botões de aprovação e recusa */}
           {perm.canValidarImovel && imovel.statusCadastro === "PRE_CADASTRO" && (
             <>
@@ -1771,6 +1822,35 @@ export function DetalhesImovel() {
       )}
 
       {/* Erros e pendências de validação */}
+      {erroNotificar && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="flex-1">{erroNotificar}</div>
+          <button onClick={() => setErroNotificar(null)} className="text-red-400 hover:text-red-600">✕</button>
+        </div>
+      )}
+
+      {/* Checklist de validação — mostra o que falta para o responsável corrigir */}
+      {pendenciasChecklist.length > 0 && imovel?.statusCadastro === "PRE_CADASTRO" && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4" />
+            Pendências que impedem a notificação do validador:
+          </p>
+          <ul className="space-y-1">
+            {pendenciasChecklist.map((p, i) => (
+              <li key={i} className="text-sm text-amber-700 flex items-start gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-600 shrink-0" />
+                {p}
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-amber-600 mt-3">
+            Corrija todos os itens acima para poder notificar o Validador Documental.
+          </p>
+        </div>
+      )}
+
       {erroValidacao && (
         <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
