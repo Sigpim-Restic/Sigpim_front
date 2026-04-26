@@ -520,10 +520,10 @@ export function Pendencias() {
           <Input placeholder="Buscar por título, imóvel, destinatário..."
             value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Select value={filtroStatus} onValueChange={(v) => setFiltroStatus(v as StatusPendencia | "")}>
+        <Select value={filtroStatus || "todos"} onValueChange={(v) => setFiltroStatus(v === "todos" ? "" : v as StatusPendencia)}>
           <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Todos os status" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os status</SelectItem>
+            <SelectItem value="todos">Todos os status</SelectItem>
             <SelectItem value="ABERTA">Abertas</SelectItem>
             <SelectItem value="RESOLVIDA">Resolvidas</SelectItem>
           </SelectContent>
