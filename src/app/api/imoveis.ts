@@ -103,8 +103,20 @@ export const imoveisApi = {
   validar(id: number): Promise<ValidacaoResponse> {
     return api.patch(`/imoveis/${id}/validar`);
   },
+  promoverGestaoPlena(id: number): Promise<ValidacaoResponse> {
+    return api.patch(`/imoveis/${id}/promover-gestao-plena`);
+  },
   deletar(id: number): Promise<void> {
     return api.delete(`/imoveis/${id}`);
+  },
+  listarDeletados(): Promise<ImovelResponse[]> {
+    return api.get("/imoveis/deletados");
+  },
+  restaurar(id: number): Promise<ImovelResponse> {
+    return api.patch(`/imoveis/${id}/restaurar`);
+  },
+  excluirPermanentemente(id: number): Promise<void> {
+    return api.delete(`/imoveis/${id}/permanente`);
   },
   /**
    * Verifica se um nome de referência está disponível (não duplicado).
