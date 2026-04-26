@@ -103,6 +103,9 @@ export const imoveisApi = {
   validar(id: number): Promise<ValidacaoResponse> {
     return api.patch(`/imoveis/${id}/validar`);
   },
+  recusarValidacao(id: number, motivo: string): Promise<void> {
+    return api.post(`/imoveis/${id}/recusar-validacao`, { motivo });
+  },
   promoverGestaoPlena(id: number): Promise<ValidacaoResponse> {
     return api.patch(`/imoveis/${id}/promover-gestao-plena`);
   },
