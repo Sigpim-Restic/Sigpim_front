@@ -110,17 +110,24 @@ export function ListaImoveis() {
   const carregar = useCallback(async () => {
     setLoading(true); setErro(null);
     try {
-      const [res, excluidos] = await Promise.all([
-        imoveisApi.listar(page, 20),
-        imoveisApi.listarDeletados(),
-      ]);
+      const res = await imoveisApi.listar(page, 20);
       setImoveis(res.content);
       setTotal(res.totalElements);
-      setDeletados(excluidos);
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao carregar imóveis.");
     } finally { setLoading(false); }
-  }, [page]);
+
+    // Lixeira é carregada separadamente — perfis sem canDeleteImovel
+    // recebem 403 neste endpoint e isso não deve afetar a listagem principal
+    if (perm.canDeleteImovel) {
+      try {
+        const excluidos = await imoveisApi.listarDeletados();
+        setDeletados(excluidos);
+      } catch {
+        setDeletados([]);
+      }
+    }
+  }, [page, perm.canDeleteImovel]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -284,15 +291,17 @@ export function ListaImoveis() {
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="lixeira">
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-            Lixeira
-            {deletados.length > 0 && (
-              <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700">
-                {deletados.length}
-              </span>
-            )}
-          </TabsTrigger>
+          {perm.canDeleteImovel && (
+            <TabsTrigger value="lixeira">
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Lixeira
+              {deletados.length > 0 && (
+                <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700">
+                  {deletados.length}
+                </span>
+              )}
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ── ABA: ATIVOS ─────────────────────────────────────────────────────── */}
