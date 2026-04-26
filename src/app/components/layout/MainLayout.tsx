@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Building2, Users, Map, FileText,
   ClipboardList, History, Menu, X, Bell, RefreshCw,
   ChevronRight, LogOut, User, Settings,
-  BookOpen, List, FolderOpen, PanelLeftClose, PanelLeftOpen,
+  BookOpen, List, FolderOpen, PanelLeftClose, PanelLeftOpen, Shield,
 } from "lucide-react";
 import { Logo } from "../Logo";
 import { Button } from "../ui/button";
@@ -15,24 +15,131 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../api/client";
 
-const menuItems = [
-  { path: "/dashboard",              label: "Painel Geral",     icon: LayoutDashboard },
+// ── Tipos ─────────────────────────────────────────────────────────────────────
+
+type Perfil =
+  | "ADMINISTRADOR_SISTEMA"
+  | "ADMINISTRADOR_PATRIMONIAL"
+  | "CADASTRADOR_SETORIAL"
+  | "VALIDADOR_DOCUMENTAL"
+  | "VISTORIADOR"
+  | "PLANEJAMENTO"
+  | "AUDITOR";
+
+// ── Definição do menu com controle de acesso por perfil ───────────────────────
+//
+// perfisPermitidos: undefined = todos os perfis autenticados têm acesso.
+// perfisPermitidos: Perfil[]  = somente esses perfis enxergam o item.
+//
+// Critérios (Manual SIGPIM §5.1 + Matriz RACI Anexo A + SecurityExpressions.java):
+//
+// Catálogos       — edição restrita a administradores (Manual §9)
+// Relatórios      — gestão, planejamento e auditoria; não faz sentido para
+//                   vistoriador (campo) nem validador (documental)
+// Auditoria       — trilha de logs: apenas Admin. Sistema e Auditor (canReadAuditoria)
+// Usuários/Perfis — gestão de contas: apenas Admin. Sistema (canManageUsuario)
+// Configurações   — parâmetros do sistema: apenas administradores
+
+interface SubItem {
+  path: string;
+  label: string;
+  icon: React.ElementType;
+  perfisPermitidos?: Perfil[];
+}
+
+interface MenuItem {
+  path: string;
+  label: string;
+  icon: React.ElementType;
+  perfisPermitidos?: Perfil[];
+  submenu?: SubItem[];
+}
+
+const TODOS_PERFIS: Perfil[] = [
+  "ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL",
+  "CADASTRADOR_SETORIAL", "VALIDADOR_DOCUMENTAL",
+  "VISTORIADOR", "PLANEJAMENTO", "AUDITOR",
+];
+
+const ADMINS: Perfil[] = ["ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"];
+
+const menuItems: MenuItem[] = [
   {
-    path: "/dashboard/imoveis",
+    path:  "/dashboard",
+    label: "Painel Geral",
+    icon:  LayoutDashboard,
+    // Todos os perfis acessam o painel
+  },
+  {
+    path:  "/dashboard/imoveis",
     label: "Imóveis",
-    icon: Building2,
+    icon:  Building2,
     submenu: [
-      { path: "/dashboard/imoveis",           label: "Listagem",  icon: List },
-      { path: "/dashboard/imoveis/catalogos", label: "Catálogos", icon: BookOpen },
+      {
+        path:  "/dashboard/imoveis",
+        label: "Listagem",
+        icon:  List,
+        // Todos acessam a listagem
+      },
+      {
+        path:  "/dashboard/imoveis/catalogos",
+        label: "Catálogos",
+        icon:  BookOpen,
+        // Apenas administradores gerenciam catálogos (Manual SIGPIM §9)
+        perfisPermitidos: ADMINS,
+      },
     ],
   },
-  { path: "/dashboard/ocupacoes",     label: "Ocupações",        icon: ClipboardList },
-  { path: "/dashboard/documentos",   label: "Documentos",        icon: FolderOpen },
-  { path: "/dashboard/relatorios",   label: "Relatórios",        icon: FileText },
-  { path: "/dashboard/auditoria",    label: "Auditoria",         icon: History },
-  { path: "/dashboard/mapa",         label: "Mapa GIS",          icon: Map },
-  { path: "/dashboard/usuarios",     label: "Usuários e Perfis", icon: Users },
-  { path: "/dashboard/configuracoes",label: "Configurações",     icon: Settings },
+  {
+    path:  "/dashboard/ocupacoes",
+    label: "Ocupações",
+    icon:  ClipboardList,
+    // Todos os perfis precisam consultar ocupações
+  },
+  {
+    path:  "/dashboard/documentos",
+    label: "Documentos",
+    icon:  FolderOpen,
+    // Todos os perfis acessam documentos
+  },
+  {
+    path:  "/dashboard/relatorios",
+    label: "Relatórios",
+    icon:  FileText,
+    // Gestão, planejamento e auditoria — vistoriador e validador não emitem relatórios gerenciais
+    perfisPermitidos: [
+      "ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL",
+      "CADASTRADOR_SETORIAL", "PLANEJAMENTO", "AUDITOR",
+    ],
+  },
+  {
+    path:  "/dashboard/auditoria",
+    label: "Auditoria",
+    icon:  History,
+    // Trilha de logs: apenas Admin. Sistema e Auditor (canReadAuditoria)
+    perfisPermitidos: ["ADMINISTRADOR_SISTEMA", "AUDITOR"],
+  },
+  {
+    path:  "/dashboard/mapa",
+    label: "Mapa GIS",
+    icon:  Map,
+    // Todos os perfis acessam o mapa
+  },
+  {
+    path:  "/dashboard/usuarios",
+    label: "Usuários e Perfis",
+    icon:  Users,
+    // Gestão de contas: apenas Admin. Sistema (canManageUsuario)
+    perfisPermitidos: ["ADMINISTRADOR_SISTEMA"],
+  },
+  {
+    path:  "/dashboard/configuracoes",
+    label: "Configurações",
+    icon:  Settings,
+    // Parâmetros do sistema: apenas Admin. Sistema (SIN/SEMAD — Manual §5.1 Matriz RACI)
+    // Admin. Patrimonial gerencia patrimônio, não infraestrutura/sistema
+    perfisPermitidos: ["ADMINISTRADOR_SISTEMA"],
+  },
 ];
 
 const PERFIL_LABEL: Record<string, string> = {
@@ -55,6 +162,24 @@ interface AlertaItem {
   nomeImovel?: string;
 }
 
+// ── Helper: filtra itens de menu pelo perfil do usuário ───────────────────────
+
+function filtrarMenu(items: MenuItem[], perfil: string): MenuItem[] {
+  return items
+    .filter((item) =>
+      !item.perfisPermitidos || item.perfisPermitidos.includes(perfil as Perfil)
+    )
+    .map((item) => {
+      if (!item.submenu) return item;
+      const submenuFiltrado = item.submenu.filter(
+        (sub) => !sub.perfisPermitidos || sub.perfisPermitidos.includes(perfil as Perfil)
+      );
+      return { ...item, submenu: submenuFiltrado };
+    });
+}
+
+// ── Componente principal ───────────────────────────────────────────────────────
+
 export function MainLayout() {
   const [sidebarOpen,      setSidebarOpen]      = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -66,6 +191,9 @@ export function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
+
+  const perfil = usuario?.perfil ?? "";
+  const itensFiltrados = filtrarMenu(menuItems, perfil);
 
   const handleLogout = () => { logout(); navigate("/login"); };
 
@@ -98,28 +226,18 @@ export function MainLayout() {
     } catch { /* silencia */ }
   };
 
-  // Carrega alertas ao montar e a cada troca de página
   useEffect(() => { carregarAlertas(); }, [carregarAlertas, location.pathname]);
 
-  // Largura da sidebar desktop
-  const sidebarW = sidebarCollapsed ? "w-16" : "w-64";
+  const sidebarW  = sidebarCollapsed ? "w-16" : "w-64";
   const contentPl = sidebarCollapsed ? "lg:pl-16" : "lg:pl-64";
 
-  // ── Sidebar desktop ─────────────────────────────────────────────────────────
-  const DesktopSidebar = () => (
-    <div className="flex h-full flex-col">
+  // ── Nav compartilhada (desktop e mobile) ────────────────────────────────────
 
-      {/* Logo / título */}
-      <div className={`flex h-20 items-center border-b border-white/10 transition-all duration-300 ${
-        sidebarCollapsed ? "justify-center px-0" : "gap-3 px-6"
-      }`}>
-        <Logo size="small" variant={sidebarCollapsed ? "icon-only" : "with-text"} />
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 space-y-0.5 px-2 py-4 overflow-y-auto">
-        {menuItems.map((item) => {
-          const Icon  = item.icon;
+  function NavItems({ collapsed = false, onNavClick }: { collapsed?: boolean; onNavClick?: () => void }) {
+    return (
+      <>
+        {itensFiltrados.map((item) => {
+          const Icon = item.icon;
           const isActive =
             location.pathname === item.path ||
             (item.path !== "/" && location.pathname.startsWith(item.path));
@@ -128,9 +246,10 @@ export function MainLayout() {
             <div key={item.path}>
               <Link
                 to={item.submenu ? item.submenu[0].path : item.path}
-                title={sidebarCollapsed ? item.label : undefined}
+                title={collapsed ? item.label : undefined}
+                onClick={onNavClick}
                 className={`flex items-center rounded-lg px-2 py-2.5 text-sm font-medium transition-all ${
-                  sidebarCollapsed ? "justify-center" : "gap-3"
+                  collapsed ? "justify-center" : "gap-3"
                 } ${
                   isActive
                     ? "bg-white/15 text-white"
@@ -138,21 +257,22 @@ export function MainLayout() {
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                {!sidebarCollapsed && (
+                {!collapsed && (
                   <span className="flex-1 overflow-hidden whitespace-nowrap">{item.label}</span>
                 )}
               </Link>
 
-              {/* Submenu — só quando expandido */}
-              {!sidebarCollapsed && item.submenu && isActive && (
+              {/* Submenu — só quando expandido e ativo */}
+              {!collapsed && item.submenu && isActive && (
                 <div className="ml-7 mt-0.5 space-y-0.5 border-l border-white/15 pl-3">
                   {item.submenu.map((sub) => {
-                    const SubIcon    = sub.icon;
+                    const SubIcon = sub.icon;
                     const isSubActive = location.pathname === sub.path;
                     return (
                       <Link
                         key={sub.path}
                         to={sub.path}
+                        onClick={onNavClick}
                         className={`flex items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-all ${
                           isSubActive ? "bg-white/10 text-white" : "text-white/60 hover:text-white"
                         }`}
@@ -167,82 +287,9 @@ export function MainLayout() {
             </div>
           );
         })}
-      </nav>
-
-      {/* Rodapé */}
-      {!sidebarCollapsed && (
-        <div className="border-t border-white/10 p-4">
-          <p className="text-center text-xs text-white/40">
-            Prefeitura Municipal de São Luís
-            <br />
-            SIGPIM-SLZ • v2.0 • 2026
-          </p>
-        </div>
-      )}
-    </div>
-  );
-
-  // ── Sidebar mobile ───────────────────────────────────────────────────────────
-  const MobileSidebar = () => (
-    <div className="flex h-full flex-col">
-      <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10">
-          <ShieldCheck className="h-6 w-6 text-white" />
-        </div>
-        <div>
-          <h1 className="text-lg font-semibold text-white">SIGPIM-SLZ</h1>
-          <p className="text-xs text-white/60">Fase 2</p>
-        </div>
-      </div>
-      <nav className="flex-1 space-y-0.5 px-3 py-4 overflow-y-auto">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            location.pathname === item.path ||
-            (item.path !== "/" && location.pathname.startsWith(item.path));
-          return (
-            <div key={item.path}>
-              <Link
-                to={item.submenu ? item.submenu[0].path : item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all ${
-                  isActive ? "bg-white/15 text-white" : "text-white/75 hover:bg-white/8 hover:text-white"
-                }`}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="flex-1">{item.label}</span>
-              </Link>
-              {item.submenu && isActive && (
-                <div className="ml-7 mt-0.5 space-y-0.5 border-l border-white/15 pl-3">
-                  {item.submenu.map((sub) => {
-                    const SubIcon = sub.icon;
-                    return (
-                      <Link
-                        key={sub.path}
-                        to={sub.path}
-                        onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-all ${
-                          location.pathname === sub.path ? "bg-white/10 text-white" : "text-white/60 hover:text-white"
-                        }`}
-                      >
-                        <SubIcon className="h-3.5 w-3.5" />
-                        {sub.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-      <div className="border-t border-white/10 p-4">
-        <p className="text-center text-xs text-white/40">
-          Prefeitura Municipal de São Luís<br />SIGPIM-SLZ • v2.0 • 2026
-        </p>
-      </div>
-    </div>
-  );
+      </>
+    );
+  }
 
   const breadcrumbs = getBreadcrumbs(location.pathname);
 
@@ -253,9 +300,29 @@ export function MainLayout() {
       <aside
         className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex lg:flex-col lg:bg-[#1351B4] lg:shadow-xl transition-all duration-300 ${sidebarW}`}
       >
-        <DesktopSidebar />
+        <div className="flex h-full flex-col">
+          <div className={`flex h-20 items-center border-b border-white/10 transition-all duration-300 ${
+            sidebarCollapsed ? "justify-center px-0" : "gap-3 px-6"
+          }`}>
+            <Logo size="small" variant={sidebarCollapsed ? "icon-only" : "with-text"} />
+          </div>
 
-        {/* Botão de recolher — fixado na borda direita da sidebar */}
+          <nav className="flex-1 space-y-0.5 px-2 py-4 overflow-y-auto">
+            <NavItems collapsed={sidebarCollapsed} />
+          </nav>
+
+          {!sidebarCollapsed && (
+            <div className="border-t border-white/10 p-4">
+              <p className="text-center text-xs text-white/40">
+                Prefeitura Municipal de São Luís
+                <br />
+                SIGPIM-SLZ • v2.0 • 2026
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Botão recolher */}
         <button
           onClick={() => setSidebarCollapsed((v) => !v)}
           title={sidebarCollapsed ? "Expandir menu" : "Recolher menu"}
@@ -276,15 +343,29 @@ export function MainLayout() {
             onClick={() => setSidebarOpen(false)}
           />
           <aside className="fixed inset-y-0 left-0 z-50 w-64 overflow-y-auto bg-[#1351B4] shadow-xl lg:hidden">
-            <div className="absolute right-3 top-5">
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="p-2 text-white/70 hover:text-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-white">SIGPIM-SLZ</h1>
+                <p className="text-xs text-white/60">Fase 2</p>
+              </div>
             </div>
-            <MobileSidebar />
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="absolute right-3 top-5 p-2 text-white/70 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <nav className="flex-1 space-y-0.5 px-3 py-4 overflow-y-auto">
+              <NavItems onNavClick={() => setSidebarOpen(false)} />
+            </nav>
+            <div className="border-t border-white/10 p-4">
+              <p className="text-center text-xs text-white/40">
+                Prefeitura Municipal de São Luís<br />SIGPIM-SLZ • v2.0 • 2026
+              </p>
+            </div>
           </aside>
         </>
       )}
@@ -294,7 +375,6 @@ export function MainLayout() {
 
         {/* Header */}
         <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:px-6">
-          {/* Hambúrguer mobile */}
           <button onClick={() => setSidebarOpen(true)} className="text-gray-500 lg:hidden">
             <Menu className="h-5 w-5" />
           </button>
@@ -328,7 +408,6 @@ export function MainLayout() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden">
-                  {/* Cabeçalho */}
                   <div className="flex items-center justify-between border-b px-4 py-3">
                     <div>
                       <p className="text-sm font-semibold text-gray-900">Notificações</p>
@@ -337,16 +416,12 @@ export function MainLayout() {
                       )}
                     </div>
                     {totalNaoLidos > 0 && (
-                      <button
-                        onClick={marcarTodosLidos}
-                        className="text-xs text-[#1351B4] hover:underline"
-                      >
+                      <button onClick={marcarTodosLidos} className="text-xs text-[#1351B4] hover:underline">
                         Marcar todas como lidas
                       </button>
                     )}
                   </div>
 
-                  {/* Lista de alertas */}
                   <div className="max-h-80 overflow-y-auto">
                     {carregandoAlertas && (
                       <div className="flex items-center justify-center py-8 text-gray-400">
@@ -365,9 +440,7 @@ export function MainLayout() {
                         key={alerta.id}
                         onClick={() => { if (!alerta.lido) marcarComoLido(alerta.id); }}
                         className={`flex gap-3 border-b px-4 py-3 cursor-pointer transition-colors ${
-                          alerta.lido
-                            ? "bg-white hover:bg-gray-50"
-                            : "bg-blue-50 hover:bg-blue-100"
+                          alerta.lido ? "bg-white hover:bg-gray-50" : "bg-blue-50 hover:bg-blue-100"
                         }`}
                       >
                         <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${alerta.lido ? "bg-transparent" : "bg-[#1351B4]"}`} />
@@ -387,7 +460,6 @@ export function MainLayout() {
                     ))}
                   </div>
 
-                  {/* Rodapé */}
                   {alertas.length > 0 && (
                     <div className="border-t px-4 py-2 text-center">
                       <p className="text-xs text-gray-400">{alertas.length} notificação(ões) no total</p>
@@ -418,9 +490,11 @@ export function MainLayout() {
                   <DropdownMenuItem onClick={() => navigate("/dashboard/meu-perfil")}>
                     <User className="mr-2 h-4 w-4" />Meu Perfil
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/dashboard/configuracoes")}>
-                    <Settings className="mr-2 h-4 w-4" />Configurações
-                  </DropdownMenuItem>
+                  {perfil === "ADMINISTRADOR_SISTEMA" && (
+                    <DropdownMenuItem onClick={() => navigate("/dashboard/configuracoes")}>
+                      <Settings className="mr-2 h-4 w-4" />Configurações
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />Sair do Sistema
