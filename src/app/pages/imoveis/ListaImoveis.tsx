@@ -22,6 +22,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "../../components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { tiposImovelApi, type TipoImovelResponse } from "../../api/tipos-imovel-alertas";
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
 import { relatoriosApi } from "../../api/relatorios";
 import { usePermissoes } from "../../hooks/usePermissoes";
@@ -90,6 +91,7 @@ export function ListaImoveis() {
 
   const [imoveis,       setImoveis]       = useState<ImovelResponse[]>([]);
   const [deletados,     setDeletados]     = useState<ImovelResponse[]>([]);
+  const [tiposImovel,   setTiposImovel]   = useState<TipoImovelResponse[]>([]);
   const [loading,       setLoading]       = useState(true);
   const [erro,          setErro]          = useState<string | null>(null);
   const [totalElements, setTotal]         = useState(0);
@@ -130,6 +132,11 @@ export function ListaImoveis() {
   }, [page, perm.canDeleteImovel]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  // Carrega tipos uma única vez ao montar — reflete tipos criados pelo admin nos catálogos
+  useEffect(() => {
+    tiposImovelApi.listarAtivos().then(setTiposImovel).catch(() => {});
+  }, []);
 
   const executarAcao = async (idImovel: number, acao: () => Promise<void>) => {
     setAcaoLoading(idImovel);
@@ -192,7 +199,7 @@ export function ListaImoveis() {
       [im.codigoSigpim, im.nomeReferencia ?? "", im.tipologia ?? ""]
         .join(" ").toLowerCase().includes(txt);
     const matchStatus = filterStatus === "todos" || im.statusCadastro === filterStatus;
-    const matchTipo   = filterTipo   === "todos" || im.tipoImovel     === filterTipo;
+    const matchTipo   = filterTipo === "todos" || String(im.idTipoImovel) === filterTipo;
     return matchSearch && matchStatus && matchTipo;
   });
 
@@ -334,9 +341,9 @@ export function ListaImoveis() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="PROPRIO">Próprio</SelectItem>
-                <SelectItem value="LOCADO">Locado</SelectItem>
-                <SelectItem value="INCERTO">Incerto</SelectItem>
+                {tiposImovel.map((t) => (
+                  <SelectItem key={t.id} value={String(t.id)}>{t.nome}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button
