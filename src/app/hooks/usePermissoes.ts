@@ -20,18 +20,23 @@ export function usePermissoes() {
   const tem = (...perfis: Perfil[]) => perfis.includes(perfil);
 
   return {
-    // Imóveis
-    canCreateImovel:   tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
-    canUpdateImovel:   tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
-    canDeleteImovel:   tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
-    canValidateImovel: tem("ADMINISTRADOR_PATRIMONIAL", "VALIDADOR_DOCUMENTAL"),
+    // Imóveis — CRUD
+    canCreateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canUpdateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canDeleteImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
+
+    // Imóveis — Ciclo de status
+    // P → V: admins + VALIDADOR_DOCUMENTAL (quem certifica, não quem alimenta)
+    canValidarImovel:      tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VALIDADOR_DOCUMENTAL"),
+    // V → G: apenas admins patrimoniais (ciclo completo exige dominial, fiscal, vistorias)
+    canPromoverGestaoPlena: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // Documentos
     canUploadDocumento: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL", "VALIDADOR_DOCUMENTAL"),
     canDeleteDocumento: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // Ocupações
-    canWriteOcupacao: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canWriteOcupacao:  tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
     canDeleteOcupacao: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // Vistorias (Fase 2)
@@ -54,13 +59,13 @@ export function usePermissoes() {
     // Catálogos
     canManageCatalogo: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
-    // Fase 3 — Dados Fiscais (Owner: SEMFAZ → VALIDADOR_DOCUMENTAL + admins)
+    // Dados Fiscais — Fase 3 (Owner: SEMFAZ → VALIDADOR_DOCUMENTAL + admins)
     canWriteDadoFiscal: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VALIDADOR_DOCUMENTAL"),
 
-    // Fase 3 — Avaliações Patrimoniais (Owner: PLANEJAMENTO + admins)
+    // Avaliações Patrimoniais — Fase 3 (Owner: PLANEJAMENTO + admins)
     canWriteAvaliacaoPatrimonial: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "PLANEJAMENTO"),
 
-    // Fase 3 — Instrumentos de Uso
+    // Instrumentos de Uso — Fase 3
     canWriteInstrumentoUso: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
 
     // Helpers de perfil
