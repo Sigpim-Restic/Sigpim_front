@@ -500,6 +500,12 @@ export function CriarConta() {
                   Voltar para o login
                 </Button>
               </Link>
+              <Link to="/">
+                <Button variant="ghost" className="w-full text-sm text-slate-400 hover:text-[#1351B4]">
+                  <ArrowLeft className="mr-2 h-3.5 w-3.5" />
+                  Voltar ao início
+                </Button>
+              </Link>
             </div>
           </div>
 
