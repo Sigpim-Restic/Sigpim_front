@@ -34,6 +34,23 @@ function formatarCPF(valor: string) {
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 }
 
+function validarCPF(cpf: string) {
+  const digits = cpf.replace(/\D/g, "");
+  if (digits.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+
+  const calcularDigito = (base: number) => {
+    let soma = 0;
+    for (let i = 0; i < base; i++) {
+      soma += Number(digits[i]) * (base + 1 - i);
+    }
+    const resto = (soma * 10) % 11;
+    return resto === 10 ? 0 : resto;
+  };
+
+  return calcularDigito(9) === Number(digits[9]) && calcularDigito(10) === Number(digits[10]);
+}
+
 function formatarCelular(valor: string) {
   const n = valor.replace(/\D/g, "").slice(0, 11);
   if (n.length <= 10) return n.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
@@ -62,6 +79,11 @@ export function CriarConta() {
   const [loadingUnidades,     setLoadingUnidades]     = useState(false);
   const [enviado,             setEnviado]             = useState(false);
 
+  const cpfDigits = formData.cpf.replace(/\D/g, "");
+  const cpfCompleto = cpfDigits.length === 11;
+  const cpfValido = cpfCompleto && validarCPF(formData.cpf);
+  const cpfInvalido = cpfCompleto && !cpfValido;
+
   useEffect(() => {
     orgaosApi.listarAtivos()
       .then(setOrgaos)
@@ -82,6 +104,11 @@ export function CriarConta() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro(null);
+
+    if (!cpfValido) {
+      setErro("Informe um CPF válido para continuar.");
+      return;
+    }
 
     if (formData.senha !== formData.confirmarSenha) {
       setErro("As senhas não coincidem."); return;
@@ -216,8 +243,11 @@ export function CriarConta() {
                     <Input id="cpf" type="text" placeholder="000.000.000-00"
                       value={formData.cpf}
                       onChange={(e) => setFormData({ ...formData, cpf: formatarCPF(e.target.value) })}
-                      className="pl-10" maxLength={14} required />
+                      className={`pl-10 ${cpfInvalido ? "border-red-400 focus-visible:ring-red-400" : ""}`} maxLength={14} required />
                   </div>
+                  {cpfInvalido && (
+                    <p className="text-xs text-red-600">CPF inválido. Informe um CPF válido para criar a conta.</p>
+                  )}
                 </div>
               </div>
 
@@ -342,7 +372,7 @@ export function CriarConta() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={loading}
+              <Button type="submit" disabled={loading || !cpfValido}
                 className="w-full bg-[#1351B4] hover:bg-[#0c3b8d] h-11 text-base font-medium mt-2">
                 {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</> : "Solicitar Acesso"}
               </Button>
