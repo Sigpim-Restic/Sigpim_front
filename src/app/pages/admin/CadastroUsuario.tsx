@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Save, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -12,6 +12,30 @@ import { AlertBox } from "../../components/layout/States";
 import { orgaosApi, type OrgaoResponse } from "../../api/orgaos";
 import { unidadesApi, type UnidadeOrganizacionalResponse } from "../../api/unidades";
 import { usuariosApi, type PerfilUsuario } from "../../api/usuarios";
+
+// ── Validação de CPF (algoritmo dos dígitos verificadores) ────────────────────
+function validarCpf(cpf: string): boolean {
+  const digits = cpf.replace(/\D/g, "");
+  if (digits.length !== 11) return false;
+  // Rejeita sequências repetidas (111.111.111-11, etc.)
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+
+  const calc = (len: number) => {
+    let sum = 0;
+    for (let i = 0; i < len; i++) sum += parseInt(digits[i]) * (len + 1 - i);
+    const rem = (sum * 10) % 11;
+    return rem === 10 || rem === 11 ? 0 : rem;
+  };
+  return calc(9) === parseInt(digits[9]) && calc(10) === parseInt(digits[10]);
+}
+
+function formatarCpf(valor: string): string {
+  const d = valor.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
 
 // Os 7 perfis do Manual SIGPIM §1 — Usuários, Perfis e Auditoria
 const PERFIS: { value: PerfilUsuario; label: string; descricao: string }[] = [
@@ -63,8 +87,9 @@ export function CadastroUsuario() {
   const validar = () => {
     const e: Record<string, string> = {};
     if (!form.nomeCompleto.trim()) e.nomeCompleto = "Nome completo é obrigatório.";
-    if (!form.cpf.replace(/\D/g, "") || form.cpf.replace(/\D/g, "").length !== 11)
-      e.cpf = "CPF deve conter 11 dígitos.";
+    const cpfDigits = form.cpf.replace(/\D/g, "");
+    if (!cpfDigits || cpfDigits.length !== 11) e.cpf = "CPF deve conter 11 dígitos.";
+    else if (!validarCpf(form.cpf)) e.cpf = "CPF inválido. Verifique os dígitos informados.";
     if (!form.email.trim()) e.email = "E-mail é obrigatório.";
     else if (!form.email.includes(".gov.br")) e.email = "Utilize e-mail institucional com domínio .gov.br.";
     if (!form.nomeUsuario.trim()) e.nomeUsuario = "Nome de usuário é obrigatório.";
@@ -158,7 +183,52 @@ export function CadastroUsuario() {
           <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Dados Pessoais</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             {campo("nomeCompleto", "Nome Completo", { required: true, placeholder: "Ex: Maria Silva Santos" })}
-            {campo("cpf", "CPF", { required: true, placeholder: "000.000.000-00", hint: "Somente números" })}
+
+            {/* CPF com validação em tempo real */}
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF <span className="text-red-600">*</span></Label>
+              <div className="relative">
+                <Input
+                  id="cpf"
+                  value={form.cpf}
+                  onChange={(e) => {
+                    const formatado = formatarCpf(e.target.value);
+                    set("cpf", formatado);
+                    // Limpa erro ao editar
+                    if (erros.cpf) setErros(prev => ({ ...prev, cpf: "" }));
+                  }}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  inputMode="numeric"
+                  className={`pr-8 ${erros.cpf ? "border-red-400" : form.cpf.replace(/\D/g, "").length === 11 ? validarCpf(form.cpf) ? "border-green-400" : "border-red-400" : ""}`}
+                />
+                {/* Ícone de feedback */}
+                {form.cpf.replace(/\D/g, "").length === 11 && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {validarCpf(form.cpf)
+                      ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      : <AlertCircle className="h-4 w-4 text-red-500" />
+                    }
+                  </span>
+                )}
+              </div>
+              {/* Feedback em tempo real */}
+              {form.cpf.replace(/\D/g, "").length === 11 && !validarCpf(form.cpf) && !erros.cpf && (
+                <p className="flex items-center gap-1 text-xs text-red-600">
+                  <AlertCircle className="h-3 w-3" />CPF inválido. Verifique os dígitos.
+                </p>
+              )}
+              {form.cpf.replace(/\D/g, "").length === 11 && validarCpf(form.cpf) && (
+                <p className="flex items-center gap-1 text-xs text-green-600">
+                  <CheckCircle2 className="h-3 w-3" />CPF válido.
+                </p>
+              )}
+              {erros.cpf && (
+                <p className="flex items-center gap-1 text-xs text-red-600">
+                  <AlertCircle className="h-3 w-3" />{erros.cpf}
+                </p>
+              )}
+            </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {campo("email", "E-mail Institucional", { required: true, placeholder: "usuario@orgao.slz.ma.gov.br", hint: "Domínio .gov.br obrigatório" })}
