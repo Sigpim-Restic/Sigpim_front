@@ -21,7 +21,7 @@ export function Logo({ size = "medium", variant = "icon-only", className = "" }:
       <div className={`flex shrink-0 items-center justify-center rounded-xl ${sizeClass} bg-white/10 backdrop-blur-sm`}>
         {!imageNotFound && (
           <img
-            src="/assets/logo.png"
+            src="/assets/brasao-sao-luis.png"
             alt="Brasão de São Luís"
             className="h-full w-full object-contain p-1"
             onError={() => setImageNotFound(true)}
