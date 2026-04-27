@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis,
-  Tooltip, ResponsiveContainer, LineChart, Line,
+  Tooltip, ResponsiveContainer,
 } from "recharts";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -23,13 +23,6 @@ const LARANJA  = "#ea580c";
 const VERMELHO = "#dc2626";
 const CINZA    = "#9ca3af";
 
-const COR_RISCO: Record<string, string> = {
-  BAIXO:   VERDE,
-  MEDIO:   AMARELO,
-  ALTO:    LARANJA,
-  CRITICO: VERMELHO,
-};
-
 const COR_CONSERVACAO: Record<string, string> = {
   OTIMO:   VERDE,
   BOM:     "#4ade80",
@@ -42,11 +35,6 @@ const LABEL_CONSERVACAO: Record<string, string> = {
   OTIMO: "Ótimo", BOM: "Bom", REGULAR: "Regular",
   RUIM: "Ruim",  PESSIMO: "Péssimo",
 };
-
-function pct(valor: number, total: number): string {
-  if (!total) return "0%";
-  return `${Math.round((valor / total) * 100)}%`;
-}
 
 function fmt(n: number | undefined | null): string {
   if (n == null) return "—";
@@ -63,25 +51,25 @@ function KpiCard({
   link?: string;
 }) {
   const inner = (
-    <Card className="p-5 hover:shadow-md transition-shadow cursor-default">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 transition hover:shadow-md hover:border-slate-300">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs text-gray-500">{label}</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
-          {sub && <p className="mt-0.5 text-xs text-gray-400">{sub}</p>}
+          <p className="text-xs font-medium text-slate-500">{label}</p>
+          <p className="mt-1.5 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
+          {sub && <p className="mt-0.5 text-xs text-slate-400">{sub}</p>}
         </div>
         <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${bg}`}>
           <Icon className={`h-5 w-5 ${color}`} />
         </div>
       </div>
-    </Card>
+    </div>
   );
   return link ? <Link to={link} className="block">{inner}</Link> : inner;
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-sm font-semibold text-gray-700 border-l-4 border-[#1351B4] pl-3">
+    <h2 className="text-sm font-semibold text-slate-700 border-l-[3px] border-[#1351B4] pl-3 leading-tight">
       {children}
     </h2>
   );
@@ -92,13 +80,13 @@ function Semaforo({ label, valor, total, cor }: {
 }) {
   const p = total > 0 ? (valor / total) * 100 : 0;
   return (
-    <div className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
-      <span className="text-xs text-gray-600">{label}</span>
+    <div className="flex items-center justify-between py-1.5 border-b border-slate-100 last:border-0">
+      <span className="text-xs text-slate-500">{label}</span>
       <div className="flex items-center gap-2">
-        <div className="w-24 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+        <div className="w-24 h-1.5 rounded-full bg-slate-100 overflow-hidden">
           <div className="h-full rounded-full transition-all" style={{ width: `${p}%`, backgroundColor: cor }} />
         </div>
-        <span className="text-xs font-semibold text-gray-800 w-8 text-right">{fmt(valor)}</span>
+        <span className="text-xs font-semibold text-slate-700 w-8 text-right">{fmt(valor)}</span>
       </div>
     </div>
   );
@@ -107,10 +95,10 @@ function Semaforo({ label, valor, total, cor }: {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function Dashboard() {
-  const [dados,    setDados]    = useState<DashboardIndicadores | null>(null);
-  const [loading,  setLoading]  = useState(true);
-  const [erro,     setErro]     = useState<string | null>(null);
-  const [periodo,  setPeriodo]  = useState<1 | 3 | 6>(1);
+  const [dados,   setDados]   = useState<DashboardIndicadores | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [erro,    setErro]    = useState<string | null>(null);
+  const [periodo, setPeriodo] = useState<1 | 3 | 6>(1);
 
   const carregar = async () => {
     setLoading(true); setErro(null);
@@ -130,7 +118,7 @@ export function Dashboard() {
   );
 
   if (erro) return (
-    <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="flex-1">{erro}</div>
       <Button variant="ghost" size="sm" className="text-red-600" onClick={carregar}>
@@ -142,26 +130,18 @@ export function Dashboard() {
   const d = dados!;
   const total = d.totalImoveis;
 
-  // Dados para gráficos
   const dadosStatus = [
-    { name: "Pré-cadastro", value: d.imoveisPreCadastro,   fill: AMARELO },
-    { name: "Validado",     value: d.imoveisValidados,     fill: AZUL },
-    { name: "Gestão Plena", value: d.imoveisGestaoplena,   fill: VERDE },
-  ].filter((e) => e.value > 0);
-
-  const dadosGis = [
-    { name: "Validado",     value: d.imoveisGisValidado,   fill: VERDE },
-    { name: "Conflito",     value: d.imoveisGisConflito,   fill: LARANJA },
-    { name: "Não validado", value: d.imoveisGisNaoValidado, fill: AMARELO },
-    { name: "Sem GIS",      value: d.imoveisSemGis,         fill: CINZA },
+    { name: "Pré-cadastro", value: d.imoveisPreCadastro, fill: AMARELO },
+    { name: "Validado",     value: d.imoveisValidados,   fill: AZUL },
+    { name: "Gestão Plena", value: d.imoveisGestaoplena, fill: VERDE },
   ].filter((e) => e.value > 0);
 
   const dadosRisco = [
-    { name: "Baixo",   value: d.imoveisRiscoBaixo,   fill: VERDE },
-    { name: "Médio",   value: d.imoveisRiscoMedio,   fill: AMARELO },
-    { name: "Alto",    value: d.imoveisRiscoAlto,    fill: LARANJA },
-    { name: "Crítico", value: d.imoveisRiscoCritico, fill: VERMELHO },
-    { name: "Sem vistoria", value: d.imoveisSemVistoria, fill: CINZA },
+    { name: "Baixo",        value: d.imoveisRiscoBaixo,   fill: VERDE },
+    { name: "Médio",        value: d.imoveisRiscoMedio,   fill: AMARELO },
+    { name: "Alto",         value: d.imoveisRiscoAlto,    fill: LARANJA },
+    { name: "Crítico",      value: d.imoveisRiscoCritico, fill: VERMELHO },
+    { name: "Sem vistoria", value: d.imoveisSemVistoria,  fill: CINZA },
   ].filter((e) => e.value > 0);
 
   const dadosIntervencoes = [
@@ -182,11 +162,17 @@ export function Dashboard() {
   return (
     <div className="space-y-6">
 
-      {/* Botão atualizar */}
+      {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">Indicadores calculados em tempo real</p>
-        <Button variant="outline" size="sm" onClick={carregar} disabled={loading}>
-          <RefreshCw className={`mr-2 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+        <p className="text-sm text-slate-500">Indicadores calculados em tempo real</p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={carregar}
+          disabled={loading}
+          className="gap-1.5 border-slate-200 text-slate-600 hover:text-[#1351B4]"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
           Atualizar
         </Button>
       </div>
@@ -204,15 +190,15 @@ export function Dashboard() {
           color="text-orange-600" bg="bg-orange-50" link="/dashboard/documentos" />
         <KpiCard label="Alertas não lidos" value={fmt(d.alertasNaoLidos)}
           sub={`de ${fmt(d.totalAlertas)} total`} icon={AlertTriangle}
-          color={d.alertasNaoLidos > 0 ? "text-red-600" : "text-green-600"}
-          bg={d.alertasNaoLidos > 0 ? "bg-red-50" : "bg-green-50"} />
+          color={d.alertasNaoLidos > 0 ? "text-red-600" : "text-emerald-600"}
+          bg={d.alertasNaoLidos > 0 ? "bg-red-50" : "bg-emerald-50"} />
       </div>
 
-      {/* ── Status de cadastro + Tendência ────────────────────────────────── */}
+      {/* ── Status + Tendência ────────────────────────────────────────────── */}
       <div className="grid gap-5 lg:grid-cols-3">
 
-        {/* Pizza — status */}
-        <Card className="p-5">
+        {/* Donut — status */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <SectionTitle>Status de Cadastro</SectionTitle>
           <div className="mt-4 flex items-center justify-center">
             <ResponsiveContainer width="100%" height={160}>
@@ -230,21 +216,21 @@ export function Dashboard() {
             <Semaforo label="Validado"     valor={d.imoveisValidados}   total={total} cor={AZUL} />
             <Semaforo label="Gestão Plena" valor={d.imoveisGestaoplena} total={total} cor={VERDE} />
           </div>
-        </Card>
+        </div>
 
-        {/* Cadastros por período — com filtro */}
-        <Card className="p-5 lg:col-span-2">
+        {/* Cadastros por período */}
+        <div className="rounded-xl border border-slate-200 bg-white p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <SectionTitle>Cadastros por Período</SectionTitle>
-            <div className="flex items-center gap-1 rounded-lg border border-gray-200 p-0.5">
+            <div className="flex items-center gap-0.5 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
               {([1, 3, 6] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriodo(p)}
                   className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                     periodo === p
-                      ? "bg-[#1351B4] text-white"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-[#1351B4] text-white shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
                   {p === 1 ? "Mês atual" : `${p} meses`}
@@ -253,51 +239,43 @@ export function Dashboard() {
             </div>
           </div>
           {(() => {
-            // Gera N meses consecutivos terminando no mês atual, preenchendo com 0 os sem dados
             const hoje = new Date();
-            
+
             const fatia = Array.from({ length: periodo }, (_, i) => {
-              // Calcula corretamente o mês: para periodo=1, i=0 deve ser mês atual
               const mesesAtrás = periodo - 1 - i;
               const dt = new Date(hoje.getFullYear(), hoje.getMonth() - mesesAtrás, 1);
               const mesAno = `${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
-              
-              // Procura nos dados da API
               const entrada = d.cadastrosPorMes.find((c) => c.mesAno === mesAno);
-              
               return { mesAno, quantidade: entrada?.quantidade ?? 0 };
             });
 
             if (periodo === 1) {
               const dtAnt = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
               const mesAntKey = `${String(dtAnt.getMonth() + 1).padStart(2, "0")}/${dtAnt.getFullYear()}`;
-
               const anterior = d.cadastrosPorMes.find((c) => c.mesAno === mesAntKey);
               const cadastrosPorDiaMesAtual = d.cadastrosPorDiaMesAtual ?? [];
               const porDiaMap = new globalThis.Map(
                 cadastrosPorDiaMesAtual.map((item) => [item.dia, item.quantidade])
               );
-
               const diasAteHoje = Array.from({ length: hoje.getDate() }, (_, idx) => {
                 const dia = idx + 1;
                 const key = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
                 const label = `${String(dia).padStart(2, "0")}/${String(hoje.getMonth() + 1).padStart(2, "0")}`;
                 return { dia: key, label, quantidade: porDiaMap.get(key) ?? 0 };
               });
-
               const qtd = diasAteHoje.reduce((acc, item) => acc + item.quantidade, 0);
               const qtdAnt = anterior?.quantidade ?? 0;
               const delta = qtdAnt > 0 ? qtd - qtdAnt : null;
               const mesAtualLabel = `${String(hoje.getMonth() + 1).padStart(2, "0")}/${hoje.getFullYear()}`;
-              
+
               return (
                 <div className="flex flex-col gap-2 mt-2">
                   <div className="flex items-end gap-3">
-                    <p className="text-4xl font-bold text-[#1351B4]">{fmt(qtd)}</p>
+                    <p className="text-4xl font-bold tracking-tight text-[#1351B4]">{fmt(qtd)}</p>
                     <div className="mb-1">
-                      <p className="text-xs text-gray-500">imóvel(is) em {mesAtualLabel}</p>
+                      <p className="text-xs text-slate-500">imóvel(is) em {mesAtualLabel}</p>
                       {delta !== null && (
-                        <span className={`inline-block mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${delta >= 0 ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                        <span className={`inline-block mt-0.5 text-xs font-medium px-2 py-0.5 rounded-full ${delta >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
                           {delta >= 0 ? "+" : ""}{delta} vs mês anterior
                         </span>
                       )}
@@ -310,6 +288,7 @@ export function Dashboard() {
                       <Tooltip
                         formatter={(v: number) => [fmt(v), "Cadastros"]}
                         labelFormatter={(label: string) => `Dia ${label}`}
+                        contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }}
                       />
                       <Bar dataKey="quantidade" fill={AZUL} radius={[3, 3, 0, 0]} />
                     </BarChart>
@@ -318,93 +297,96 @@ export function Dashboard() {
               );
             }
 
-            const total = fatia.reduce((acc, m) => acc + m.quantidade, 0);
+            const totalFatia = fatia.reduce((acc, m) => acc + m.quantidade, 0);
             return (
               <div className="flex flex-col gap-2 mt-2">
-                <p className="text-xs text-gray-400">
-                  Total no período: <span className="font-semibold text-gray-700">{fmt(total)}</span> cadastro(s)
+                <p className="text-xs text-slate-400">
+                  Total no período: <span className="font-semibold text-slate-700">{fmt(totalFatia)}</span> cadastro(s)
                 </p>
                 <ResponsiveContainer width="100%" height={130}>
                   <BarChart data={fatia} margin={{ top: 4, right: 0, left: -28, bottom: 0 }}>
                     <XAxis dataKey="mesAno" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                    <Tooltip formatter={(v: number) => [fmt(v), "Cadastros"]} />
+                    <Tooltip
+                      formatter={(v: number) => [fmt(v), "Cadastros"]}
+                      contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }}
+                    />
                     <Bar dataKey="quantidade" fill={AZUL} radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             );
           })()}
-        </Card>
+        </div>
       </div>
 
-      {/* ── Indicadores do manual ─────────────────────────────────────────── */}
+      {/* ── GIS + Dominial + Ocupação ─────────────────────────────────────── */}
       <div className="grid gap-5 lg:grid-cols-3">
 
         {/* GIS */}
-        <Card className="p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center justify-between mb-1">
             <SectionTitle>GIS / Localização</SectionTitle>
-            <MapPin className="h-4 w-4 text-gray-400" />
+            <MapPin className="h-4 w-4 text-slate-400" />
           </div>
           <div className="mt-3 flex items-center gap-3 mb-4">
-            <div className="text-3xl font-bold text-[#1351B4]">
+            <div className="text-3xl font-bold tracking-tight text-[#1351B4]">
               {Math.round(d.percentualGisValidado)}%
             </div>
             <div>
-              <p className="text-xs text-gray-500">com GIS Validado</p>
-              <p className="text-xs text-gray-400">{fmt(d.imoveisGisValidado)} de {fmt(total)} imóveis</p>
+              <p className="text-xs text-slate-500">com GIS Validado</p>
+              <p className="text-xs text-slate-400">{fmt(d.imoveisGisValidado)} de {fmt(total)} imóveis</p>
             </div>
           </div>
           <div className="space-y-1">
-            <Semaforo label="✓ Validado"     valor={d.imoveisGisValidado}   total={total} cor={VERDE} />
-            <Semaforo label="⚠ Conflito"     valor={d.imoveisGisConflito}   total={total} cor={LARANJA} />
+            <Semaforo label="✓ Validado"     valor={d.imoveisGisValidado}    total={total} cor={VERDE} />
+            <Semaforo label="⚠ Conflito"     valor={d.imoveisGisConflito}    total={total} cor={LARANJA} />
             <Semaforo label="○ Não validado" valor={d.imoveisGisNaoValidado} total={total} cor={AMARELO} />
-            <Semaforo label="— Sem GIS"      valor={d.imoveisSemGis}        total={total} cor={CINZA} />
+            <Semaforo label="— Sem GIS"      valor={d.imoveisSemGis}         total={total} cor={CINZA} />
           </div>
-        </Card>
+        </div>
 
         {/* Dominial */}
-        <Card className="p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center justify-between mb-1">
             <SectionTitle>Situação Dominial</SectionTitle>
-            <ShieldCheck className="h-4 w-4 text-gray-400" />
+            <ShieldCheck className="h-4 w-4 text-slate-400" />
           </div>
           <div className="mt-3 flex items-center gap-3 mb-4">
-            <div className="text-3xl font-bold text-[#1351B4]">
+            <div className="text-3xl font-bold tracking-tight text-[#1351B4]">
               {Math.round(d.percentualDominialDefinido)}%
             </div>
             <div>
-              <p className="text-xs text-gray-500">com dominial definida</p>
-              <p className="text-xs text-gray-400">{fmt(total - d.imoveisSemDominial)} de {fmt(total)} imóveis</p>
+              <p className="text-xs text-slate-500">com dominial definida</p>
+              <p className="text-xs text-slate-400">{fmt(total - d.imoveisSemDominial)} de {fmt(total)} imóveis</p>
             </div>
           </div>
           <div className="space-y-1">
-            <Semaforo label="Regular"     valor={d.imoveisRegular}    total={total} cor={VERDE} />
-            <Semaforo label="Irregular"   valor={d.imoveisIrregular}  total={total} cor={VERMELHO} />
-            <Semaforo label="Em apuração" valor={d.imoveisEmApuracao} total={total} cor={AMARELO} />
+            <Semaforo label="Regular"     valor={d.imoveisRegular}     total={total} cor={VERDE} />
+            <Semaforo label="Irregular"   valor={d.imoveisIrregular}   total={total} cor={VERMELHO} />
+            <Semaforo label="Em apuração" valor={d.imoveisEmApuracao}  total={total} cor={AMARELO} />
             <Semaforo label="Indefinida"  valor={d.imoveisSemDominial} total={total} cor={CINZA} />
           </div>
-        </Card>
+        </div>
 
         {/* Ocupação */}
-        <Card className="p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center justify-between mb-1">
             <SectionTitle>Ocupação</SectionTitle>
-            <ClipboardList className="h-4 w-4 text-gray-400" />
+            <ClipboardList className="h-4 w-4 text-slate-400" />
           </div>
           <div className="mt-3 mb-4 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg bg-blue-50 p-3">
               <p className="text-lg font-bold text-[#1351B4]">{fmt(d.imoveisOcupados)}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Ocupados</p>
+              <p className="text-xs text-slate-500 mt-0.5">Ocupados</p>
             </div>
-            <div className="rounded-lg bg-gray-50 p-3">
-              <p className="text-lg font-bold text-gray-600">{fmt(d.imoveisDesocupados)}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Desocupados</p>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-lg font-bold text-slate-600">{fmt(d.imoveisDesocupados)}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Desocupados</p>
             </div>
-            <div className="rounded-lg bg-yellow-50 p-3">
-              <p className="text-lg font-bold text-yellow-600">{fmt(d.imoveisSemOcupacao)}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Sem registro</p>
+            <div className="rounded-lg bg-amber-50 p-3">
+              <p className="text-lg font-bold text-amber-600">{fmt(d.imoveisSemOcupacao)}</p>
+              <p className="text-xs text-slate-500 mt-0.5">Sem registro</p>
             </div>
           </div>
           <div className="space-y-1">
@@ -412,20 +394,20 @@ export function Dashboard() {
             <Semaforo label="Desocupados" valor={d.imoveisDesocupados} total={total} cor={CINZA} />
             <Semaforo label="Sem dado"    valor={d.imoveisSemOcupacao} total={total} cor={AMARELO} />
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* ── Risco + Conservação + Intervenções ───────────────────────────── */}
       <div className="grid gap-5 lg:grid-cols-3">
 
         {/* Risco */}
-        <Card className="p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
             <SectionTitle>Criticidade / Risco</SectionTitle>
-            <AlertTriangle className="h-4 w-4 text-gray-400" />
+            <AlertTriangle className="h-4 w-4 text-slate-400" />
           </div>
           {dadosRisco.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">Nenhuma vistoria registrada</p>
+            <p className="text-sm text-slate-400 text-center py-8">Nenhuma vistoria registrada</p>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={130}>
@@ -434,7 +416,10 @@ export function Dashboard() {
                     outerRadius={55} paddingAngle={2} dataKey="value">
                     {dadosRisco.map((e, i) => <Cell key={i} fill={e.fill} />)}
                   </Pie>
-                  <Tooltip formatter={(v: number) => [fmt(v), ""]} />
+                  <Tooltip
+                    formatter={(v: number) => [fmt(v), ""]}
+                    contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-1 mt-2">
@@ -442,56 +427,59 @@ export function Dashboard() {
                   <div key={r.name} className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       <span className="h-2 w-2 rounded-full" style={{ backgroundColor: r.fill }} />
-                      <span className="text-gray-600">{r.name}</span>
+                      <span className="text-slate-600">{r.name}</span>
                     </div>
-                    <span className="font-semibold text-gray-800">{fmt(r.value)}</span>
+                    <span className="font-semibold text-slate-800">{fmt(r.value)}</span>
                   </div>
                 ))}
               </div>
             </>
           )}
           {d.imoveisSemVistoria > 0 && (
-            <div className="mt-3 rounded-lg bg-yellow-50 border border-yellow-200 px-3 py-2 text-xs text-yellow-800">
+            <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
               ⚠ {fmt(d.imoveisSemVistoria)} imóvel(is) sem vistoria registrada
             </div>
           )}
-        </Card>
+        </div>
 
         {/* Conservação */}
-        <Card className="p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
             <SectionTitle>Estado de Conservação</SectionTitle>
           </div>
           {dadosConservacao.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">Sem dados de conservação</p>
+            <p className="text-sm text-slate-400 text-center py-8">Sem dados de conservação</p>
           ) : (
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={dadosConservacao} layout="vertical" margin={{ left: 8 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={56} />
-                <Tooltip formatter={(v: number) => [fmt(v), "Imóveis"]} />
+                <Tooltip
+                  formatter={(v: number) => [fmt(v), "Imóveis"]}
+                  contentStyle={{ borderRadius: "8px", border: "1px solid #e2e8f0", fontSize: "12px" }}
+                />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {dadosConservacao.map((e, i) => <Cell key={i} fill={e.fill} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
-        </Card>
+        </div>
 
         {/* Intervenções */}
-        <Card className="p-5">
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
             <SectionTitle>Intervenções</SectionTitle>
-            <Wrench className="h-4 w-4 text-gray-400" />
+            <Wrench className="h-4 w-4 text-slate-400" />
           </div>
-          <div className="mb-3 text-center">
-            <span className="text-3xl font-bold text-[#1351B4]">{fmt(d.totalIntervencoes)}</span>
-            <p className="text-xs text-gray-400">total registradas</p>
+          <div className="mb-4 text-center">
+            <span className="text-3xl font-bold tracking-tight text-[#1351B4]">{fmt(d.totalIntervencoes)}</span>
+            <p className="text-xs text-slate-400 mt-0.5">total registradas</p>
           </div>
           <div className="space-y-1.5">
             {dadosIntervencoes.map((iv) => (
               <div key={iv.name} className="flex items-center justify-between text-xs">
-                <span className="text-gray-600">{iv.name}</span>
+                <span className="text-slate-600">{iv.name}</span>
                 <Badge variant="secondary" className="text-xs">{fmt(iv.value)}</Badge>
               </div>
             ))}
@@ -501,7 +489,7 @@ export function Dashboard() {
               🏛 {fmt(d.historicosAguardandoParecerFumph)} aguardando parecer FUMPH
             </div>
           )}
-        </Card>
+        </div>
       </div>
 
       {/* ── Patrimônio histórico + Ações rápidas ─────────────────────────── */}
@@ -509,9 +497,9 @@ export function Dashboard() {
 
         {/* Patrimônio histórico */}
         {d.imoveisHistoricos > 0 && (
-          <Card className="p-5">
+          <div className="rounded-xl border border-slate-200 bg-white p-5">
             <SectionTitle>Patrimônio Histórico (FUMPH)</SectionTitle>
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-2.5">
               <div className="flex items-center justify-between rounded-lg bg-purple-50 px-4 py-3">
                 <p className="text-xs text-purple-700">Imóveis históricos</p>
                 <p className="text-xl font-bold text-purple-800">{fmt(d.imoveisHistoricos)}</p>
@@ -525,45 +513,45 @@ export function Dashboard() {
                 <p className="text-xl font-bold text-red-800">{fmt(d.historicosAguardandoParecerFumph)}</p>
               </div>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Ações rápidas */}
-        <Card className={`p-5 ${d.imoveisHistoricos > 0 ? "lg:col-span-2" : "lg:col-span-3"}`}>
+        <div className={`rounded-xl border border-slate-200 bg-white p-5 ${d.imoveisHistoricos > 0 ? "lg:col-span-2" : "lg:col-span-3"}`}>
           <SectionTitle>Ações Rápidas</SectionTitle>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
             <Link to="/dashboard/imoveis/novo/etapa-1">
-              <Button className="w-full justify-start bg-[#1351B4] hover:bg-[#0c3b8d] text-sm">
-                <Building2 className="mr-2 h-4 w-4" />Novo Imóvel
+              <Button className="w-full justify-start bg-[#1351B4] hover:bg-[#0c3b8d] text-sm gap-2">
+                <Building2 className="h-4 w-4" />Novo Imóvel
               </Button>
             </Link>
             <Link to="/dashboard/ocupacoes">
-              <Button variant="outline" className="w-full justify-start text-sm">
-                <ClipboardList className="mr-2 h-4 w-4" />Ocupações
+              <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
+                <ClipboardList className="h-4 w-4" />Ocupações
               </Button>
             </Link>
             <Link to="/dashboard/documentos">
-              <Button variant="outline" className="w-full justify-start text-sm">
-                <FolderOpen className="mr-2 h-4 w-4" />Documentos
+              <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
+                <FolderOpen className="h-4 w-4" />Documentos
               </Button>
             </Link>
             <Link to="/dashboard/relatorios">
-              <Button variant="outline" className="w-full justify-start text-sm">
-                <FileText className="mr-2 h-4 w-4" />Relatórios
+              <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
+                <FileText className="h-4 w-4" />Relatórios
               </Button>
             </Link>
             <Link to="/dashboard/mapa">
-              <Button variant="outline" className="w-full justify-start text-sm">
-                <Map className="mr-2 h-4 w-4" />Mapa GIS
+              <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
+                <Map className="h-4 w-4" />Mapa GIS
               </Button>
             </Link>
             <Link to="/dashboard/auditoria">
-              <Button variant="outline" className="w-full justify-start text-sm">
-                <ShieldCheck className="mr-2 h-4 w-4" />Auditoria
+              <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
+                <ShieldCheck className="h-4 w-4" />Auditoria
               </Button>
             </Link>
           </div>
-        </Card>
+        </div>
       </div>
 
     </div>
