@@ -106,6 +106,11 @@ export function CadastroUsuario() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validar()) return;
+    // Proteção extra — garante que CPF inválido nunca chega ao backend
+    if (!validarCpf(form.cpf)) {
+      setErros(prev => ({ ...prev, cpf: "CPF inválido. Verifique os dígitos informados." }));
+      return;
+    }
     setSalvando(true);
     setErroApi(null);
     try {
@@ -194,8 +199,16 @@ export function CadastroUsuario() {
                   onChange={(e) => {
                     const formatado = formatarCpf(e.target.value);
                     set("cpf", formatado);
-                    // Limpa erro ao editar
-                    if (erros.cpf) setErros(prev => ({ ...prev, cpf: "" }));
+                    // Revalida em tempo real após 11 dígitos em vez de só limpar o erro
+                    const digits = formatado.replace(/\D/g, "");
+                    if (digits.length === 11) {
+                      setErros(prev => ({
+                        ...prev,
+                        cpf: validarCpf(formatado) ? "" : "CPF inválido. Verifique os dígitos informados.",
+                      }));
+                    } else {
+                      setErros(prev => ({ ...prev, cpf: "" }));
+                    }
                   }}
                   placeholder="000.000.000-00"
                   maxLength={14}
