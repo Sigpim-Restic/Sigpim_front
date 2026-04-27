@@ -15,7 +15,7 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    email: "",
+    identificador: "",
     senha: "",
     rememberMe: false,
   });
@@ -24,7 +24,7 @@ export function Login() {
     e.preventDefault();
     setErro(null);
     try {
-      const resultado = await login({ email: formData.email, senha: formData.senha });
+      const resultado = await login({ identificador: formData.identificador, senha: formData.senha });
       if (resultado.mfaRequired && resultado.mfaToken) {
         // Segundo fator necessário — redireciona com o token temporário
         navigate("/mfa", { state: { mfaToken: resultado.mfaToken } });
@@ -72,17 +72,17 @@ export function Login() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email */}
+              {/* Identificador */}
               <div className="space-y-2">
-                <Label htmlFor="email">E-mail Institucional</Label>
+                <Label htmlFor="identificador">CPF ou E-mail Institucional</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu.email@slz.ma.gov.br"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    id="identificador"
+                    type="text"
+                    placeholder="CPF (só dígitos) ou e-mail institucional"
+                    value={formData.identificador}
+                    onChange={(e) => setFormData({ ...formData, identificador: e.target.value })}
                     className="pl-10"
                     required
                     disabled={loading}

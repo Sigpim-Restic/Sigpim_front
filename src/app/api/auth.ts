@@ -3,7 +3,8 @@ import { ApiError } from "./client";
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
 export interface LoginRequest {
-  email: string;
+  /** E-mail institucional ou CPF (apenas dígitos). */
+  identificador: string;
   senha: string;
 }
 
@@ -43,7 +44,7 @@ export const authApi = {
     try { body = text ? JSON.parse(text) : {}; } catch { /* ignore */ }
 
     if (!res.ok) {
-      const msg = (body?.message as string) ?? "Email ou senha inválidos.";
+      const msg = (body?.message as string) ?? "Credenciais inválidas.";
       throw new ApiError(res.status, msg, body);
     }
 

@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Building2, MapPin, Shield, FileText, Users, TrendingUp,
-  Menu, X, ChevronRight, CheckCircle, Mail, Phone, ExternalLink,
+  Menu, X, ArrowRight, Check, CheckCircle, Mail, Phone, ExternalLink,
+  Lock, Info, Layers, History, Zap, Eye, AlertCircle, Loader2,
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Card, CardContent,
 } from "../components/ui/card";
+import { useAuth } from "../contexts/AuthContext";
 
 // ── Leaflet ──────────────────────────────────────────────────────────────────
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -23,7 +25,7 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl });
 
 const markerIcon = new L.DivIcon({
   className: "",
-  html: `<div style="width:18px;height:18px;border-radius:50%;background:#1351B4;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,
+  html: `<div style="width:18px;height:18px;border-radius:50%;background:#1351B4;border:2px solid white;box-shadow:0 2px 8px rgba(8,38,110,.45)"></div>`,
   iconSize: [18, 18],
   iconAnchor: [9, 9],
 });
@@ -52,65 +54,96 @@ async function fetchImoveisPublicos(): Promise<ImovelPublico[]> {
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function Home() {
   const navigate = useNavigate();
+  const { login, loading } = useAuth();
   const [menuMobileAberto,  setMenuMobileAberto]  = useState(false);
   const [imoveis,           setImoveis]           = useState<ImovelPublico[]>([]);
+  const [identificador,     setIdentificador]     = useState("");
+  const [senha,             setSenha]             = useState("");
+  const [erro,              setErro]              = useState<string | null>(null);
 
   useEffect(() => {
     fetchImoveisPublicos().then(setImoveis);
   }, []);
 
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro(null);
+    try {
+      const resultado = await login({ identificador, senha });
+      if (resultado.mfaRequired && resultado.mfaToken) {
+        navigate("/mfa", { state: { mfaToken: resultado.mfaToken } });
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (err: unknown) {
+      setErro(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível conectar ao servidor."
+      );
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white text-slate-900 antialiased font-sans">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-        <nav className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
+        <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#1351B4]">
-              <img src="/assets/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-[#1351B4]">SIGPIM</h1>
-              <p className="text-xs text-gray-600">São Luís - MA</p>
+            <img src="/assets/brasao-sao-luis.png" alt="Brasão de São Luís" className="h-11 w-auto object-contain" />
+            <div className="leading-tight">
+              <h1 className="text-[15px] font-bold tracking-tight text-[#1351B4]">SIGPIM-SLZ</h1>
+              <p className="text-[11px] font-medium text-slate-500">Prefeitura de São Luís — MA</p>
             </div>
           </div>
 
-          <div className="hidden items-center gap-4 md:flex">
+          <div className="hidden items-center gap-1 md:flex">
+            <a href="#sobre" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1351B4]">Sobre</a>
+            <a href="#funcionalidades" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1351B4]">Funcionalidades</a>
+            <a href="#mapa" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1351B4]">Mapa Público</a>
+            <a href="#objetivos" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1351B4]">Objetivos</a>
+            <div className="mx-2 h-6 w-px bg-slate-200" />
             <Button
               variant="ghost"
-              className="text-gray-700 hover:text-[#1351B4]"
+              className="text-slate-700 hover:text-[#1351B4]"
               onClick={() => navigate("/login")}
             >
               Login
             </Button>
             <Button
-              className="bg-[#1351B4] hover:bg-[#0c3b8d]"
+              className="ml-1 gap-1.5 bg-[#1351B4] hover:bg-[#0c3b8d]"
               onClick={() => navigate("/auth/criar-conta")}
             >
               Criar Conta
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
 
           <button
             onClick={() => setMenuMobileAberto(!menuMobileAberto)}
-            className="text-gray-700 md:hidden"
+            className="text-slate-700 md:hidden"
+            aria-label="menu"
           >
             {menuMobileAberto ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </nav>
 
         {menuMobileAberto && (
-          <div className="border-t border-gray-200 bg-white px-4 py-4 md:hidden">
-            <div className="flex flex-col gap-3">
+          <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden">
+            <div className="flex flex-col gap-1">
+              <a href="#sobre"            className="rounded px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={() => setMenuMobileAberto(false)}>Sobre</a>
+              <a href="#funcionalidades"  className="rounded px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={() => setMenuMobileAberto(false)}>Funcionalidades</a>
+              <a href="#mapa"             className="rounded px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={() => setMenuMobileAberto(false)}>Mapa Público</a>
+              <a href="#objetivos"        className="rounded px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={() => setMenuMobileAberto(false)}>Objetivos</a>
+              <div className="my-2 h-px bg-slate-200" />
               <Button
                 variant="ghost"
-                className="w-full justify-start text-gray-700"
+                className="w-full justify-start text-slate-700"
                 onClick={() => { navigate("/login"); setMenuMobileAberto(false); }}
               >
                 Login
@@ -126,82 +159,183 @@ export function Home() {
         )}
       </header>
 
-      {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-[#1351B4] via-[#155bcb] to-[#0c3b8d] py-20 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm backdrop-blur">
-                <Shield className="h-4 w-4" />
-                <span>Sistema Oficial da Prefeitura de São Luís</span>
-              </div>
-              <h2 className="text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-                Sistema Integrado de Gestão do Patrimônio Imobiliário
-              </h2>
-              <p className="text-lg text-blue-100 sm:text-xl">
-                Plataforma digital para cadastro, gestão e fiscalização de imóveis
-                públicos municipais com transparência, segurança e eficiência.
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Button
-                  size="lg"
-                  className="w-full gap-2 bg-white text-[#1351B4] hover:bg-gray-100 sm:w-auto"
-                  onClick={() => navigate("/auth/criar-conta")}
-                >
-                  Começar Agora
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="w-full gap-2 border-white/30 bg-white/10 text-white hover:bg-white/20 sm:w-auto"
-                  onClick={() => navigate("/login")}
-                >
-                  Acessar Sistema
-                </Button>
-              </div>
+      {/* ── Hero — Login Card ───────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-[#1351B4] text-white">
+        {/* grid pattern */}
+        <div
+          className="absolute inset-0 opacity-60"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+          }}
+        />
+        <div className="absolute -right-24 top-1/2 h-[520px] w-[520px] -translate-y-1/2 rounded-full bg-cyan-300/[0.08] blur-3xl" />
+        <div className="absolute -left-32 -top-24 h-[420px] w-[420px] rounded-full bg-white/[0.05] blur-3xl" />
+
+        <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-14 sm:px-6 md:py-20 lg:grid-cols-12 lg:items-center lg:gap-10 lg:px-8">
+          <div className="lg:col-span-7">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-blue-100">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+              v1.0.0 · em produção
+            </span>
+
+            <h2 className="mt-5 text-[40px] font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-[58px]">
+              Bem-vindo,<br/>
+              <span className="text-cyan-200">servidor público</span>.
+            </h2>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-blue-100 sm:text-lg">
+              O sistema oficial de gestão do patrimônio imobiliário de São Luís — cadastre, atualize e fiscalize imóveis públicos com segurança e rastreabilidade.
+            </p>
+
+            <ul className="mt-8 grid max-w-md gap-3 sm:grid-cols-2">
+              {[
+                "Wizard de cadastro guiado",
+                "Mapeamento GIS integrado",
+                "Trilhas de auditoria",
+                "Relatórios gerenciais",
+              ].map((l) => (
+                <li key={l} className="flex items-center gap-2 text-sm text-blue-50">
+                  <Check className="h-4 w-4 text-cyan-200" />
+                  {l}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-8 flex items-center gap-2 text-xs text-blue-100/80">
+              <Info className="h-4 w-4" />
+              <span>Cidadão? <a href="#mapa" className="font-semibold text-white underline-offset-4 hover:underline">Consulte o mapa público de imóveis →</a></span>
             </div>
-            <div className="relative">
-              <div className="aspect-square overflow-hidden rounded-2xl bg-white/10 p-8 backdrop-blur">
-                <div className="flex h-full items-center justify-center">
-                  <Building2 className="h-64 w-64 text-white/20" />
-                </div>
+          </div>
+
+          {/* Login card */}
+          <div className="lg:col-span-5">
+            <div
+              className="relative rounded-2xl border border-slate-200 bg-white p-7 text-slate-900"
+              style={{ boxShadow: "0 30px 60px -20px rgba(8, 38, 110, 0.45), 0 12px 24px -12px rgba(8, 38, 110, 0.30)" }}
+            >
+              <div className="absolute -top-3 left-7 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Acesso de servidor
               </div>
+
+              <h3 className="text-xl font-bold tracking-tight">Acessar o sistema</h3>
+              <p className="mt-1 text-sm text-slate-500">Entre com seu CPF ou e-mail e senha institucional.</p>
+
+              <form onSubmit={handleLogin} className="mt-6 space-y-4">
+
+                {erro && (
+                  <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                    <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                    <span>{erro}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700">CPF ou E-mail</label>
+                  <div className="mt-1.5 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                    <Mail className="h-4 w-4 text-slate-400" />
+                    <input
+                      value={identificador}
+                      onChange={(e) => setIdentificador(e.target.value)}
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="CPF (só dígitos) ou e-mail institucional"
+                      autoComplete="username"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-baseline justify-between">
+                    <label className="text-xs font-semibold text-slate-700">Senha</label>
+                    <Link to="/auth/recuperar-senha" className="text-[11px] font-medium text-[#1351B4] hover:underline">
+                      Esqueci minha senha
+                    </Link>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                    <Lock className="h-4 w-4 text-slate-400" />
+                    <input
+                      type="password"
+                      value={senha}
+                      onChange={(e) => setSenha(e.target.value)}
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="inline-flex w-full items-center justify-center gap-2 bg-[#1351B4] py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#0c3b8d] disabled:opacity-70"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    <>
+                      Entrar
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+
+                <p className="pt-1 text-center text-xs text-slate-500">
+                  Ainda não tem conta?{" "}
+                  <Link to="/auth/criar-conta" className="font-semibold text-[#1351B4] hover:underline">
+                    Solicitar acesso
+                  </Link>
+                </p>
+              </form>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── O que é o SIGPIM ────────────────────────────────────────────────── */}
-      <section className="py-20">
+      <section id="sobre" className="bg-white py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h3 className="text-3xl font-bold text-gray-900 sm:text-4xl">O que é o SIGPIM?</h3>
-            <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
-              O SIGPIM-SLZ é a plataforma oficial da Prefeitura Municipal de São Luís
-              para gerenciamento centralizado de todo o patrimônio imobiliário público.
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#1351B4]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1351B4]">
+              <span className="h-1 w-1 rounded-full bg-[#1351B4]" />
+              Sobre o sistema
+            </span>
+            <h3 className="mt-4 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">O que é o SIGPIM?</h3>
+            <p className="mx-auto mt-4 max-w-3xl text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
+              Plataforma oficial da Prefeitura Municipal de São Luís para gerenciamento centralizado de todo o patrimônio imobiliário público.
             </p>
           </div>
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+
+          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { color: "#1351B4", icon: FileText, titulo: "Cadastro Centralizado",
                 desc: "Registro completo de todos os imóveis públicos municipais em uma base única, padronizada e integrada." },
-              { color: "#168821", icon: MapPin, titulo: "Georreferenciamento",
+              { color: "#168821", icon: MapPin,   titulo: "Georreferenciamento",
                 desc: "Localização precisa com coordenadas geográficas e visualização em mapas interativos para gestão territorial." },
-              { color: "#1351B4", icon: Shield, titulo: "Transparência Pública",
-                desc: "Acesso controlado à informação com rastreabilidade completa de alterações e conformidade com a Lei de Acesso à Informação." },
+              { color: "#1351B4", icon: Shield,   titulo: "Transparência Pública",
+                desc: "Acesso controlado à informação com rastreabilidade completa e conformidade com a Lei de Acesso à Informação." },
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <Card key={item.titulo} style={{ borderLeftColor: item.color }} className="border-l-4">
-                  <CardHeader>
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg" style={{ backgroundColor: `${item.color}1A` }}>
-                      <Icon className="h-6 w-6" style={{ color: item.color }} />
-                    </div>
-                    <CardTitle>{item.titulo}</CardTitle>
-                  </CardHeader>
-                  <CardContent><CardDescription>{item.desc}</CardDescription></CardContent>
-                </Card>
+                <div
+                  key={item.titulo}
+                  className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-7 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60"
+                >
+                  <span className="absolute left-0 top-0 h-full w-[3px]" style={{ backgroundColor: item.color }} />
+                  <div className="flex h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: `${item.color}14`, color: item.color }}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h4 className="mt-5 text-lg font-semibold tracking-tight text-slate-900">{item.titulo}</h4>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.desc}</p>
+                </div>
               );
             })}
           </div>
@@ -209,32 +343,37 @@ export function Home() {
       </section>
 
       {/* ── O que o Sistema Faz ─────────────────────────────────────────────── */}
-      <section className="bg-gray-50 py-20">
+      <section id="funcionalidades" className="bg-slate-50/70 py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h3 className="text-3xl font-bold text-gray-900 sm:text-4xl">O que o Sistema Faz?</h3>
-            <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
-              Funcionalidades completas para gestão eficiente do patrimônio imobiliário municipal
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#1351B4]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1351B4]">
+              <span className="h-1 w-1 rounded-full bg-[#1351B4]" />
+              Funcionalidades
+            </span>
+            <h3 className="mt-4 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">O que o Sistema Faz?</h3>
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
+              Funcionalidades completas para gestão eficiente do patrimônio imobiliário municipal.
             </p>
           </div>
-          <div className="mt-16 grid gap-6 md:grid-cols-2">
+
+          <div className="mt-14 grid gap-4 md:grid-cols-2">
             {[
-              { icon: Building2, titulo: "Cadastro de Imóveis", descricao: "Wizard guiado em etapas para registro detalhado de imóveis com validação de dados e anexo de documentos." },
-              { icon: Users, titulo: "Gestão de Usuários", descricao: "Controle de acesso por perfis e permissões granulares para secretarias e departamentos municipais." },
-              { icon: MapPin, titulo: "Mapeamento GIS", descricao: "Visualização georreferenciada de imóveis com camadas temáticas e análises territoriais integradas." },
-              { icon: FileText, titulo: "Relatórios e Auditorias", descricao: "Geração de relatórios gerenciais, estatísticas e trilhas de auditoria para conformidade legal." },
-              { icon: TrendingUp, titulo: "Planejamento Territorial", descricao: "Ferramentas para apoio à tomada de decisões estratégicas sobre uso e destinação de imóveis públicos." },
-              { icon: CheckCircle, titulo: "Fiscalização", descricao: "Registro de vistorias, ocorrências e manutenções com histórico completo por imóvel." },
+              { icon: Building2,   titulo: "Cadastro de Imóveis",      descricao: "Wizard guiado em etapas para registro detalhado de imóveis com validação de dados e anexo de documentos." },
+              { icon: Users,       titulo: "Gestão de Usuários",       descricao: "Controle de acesso por perfis e permissões granulares para secretarias e departamentos municipais." },
+              { icon: MapPin,      titulo: "Mapeamento GIS",           descricao: "Visualização georreferenciada de imóveis com camadas temáticas e análises territoriais integradas." },
+              { icon: FileText,    titulo: "Relatórios e Auditorias",  descricao: "Geração de relatórios gerenciais, estatísticas e trilhas de auditoria para conformidade legal." },
+              { icon: TrendingUp,  titulo: "Planejamento Territorial", descricao: "Ferramentas para apoio à tomada de decisões estratégicas sobre uso e destinação de imóveis públicos." },
+              { icon: CheckCircle, titulo: "Fiscalização",             descricao: "Registro de vistorias, ocorrências e manutenções com histórico completo por imóvel." },
             ].map((item) => {
               const Icon = item.icon;
               return (
-                <div key={item.titulo} className="flex gap-4 rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-[#1351B4]/10">
-                    <Icon className="h-6 w-6 text-[#1351B4]" />
+                <div key={item.titulo} className="group flex gap-4 rounded-xl border border-slate-200 bg-white p-6 transition hover:border-[#1351B4]/30 hover:shadow-md hover:shadow-slate-200/60">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg bg-[#1351B4]/10 text-[#1351B4] transition group-hover:bg-[#1351B4] group-hover:text-white">
+                    <Icon className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-900">{item.titulo}</h4>
-                    <p className="mt-2 text-sm text-gray-600">{item.descricao}</p>
+                  <div className="min-w-0">
+                    <h4 className="text-[15px] font-semibold tracking-tight text-slate-900">{item.titulo}</h4>
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{item.descricao}</p>
                   </div>
                 </div>
               );
@@ -244,19 +383,38 @@ export function Home() {
       </section>
 
       {/* ── Mapa de Imóveis Públicos Validados ──────────────────────────────── */}
-      <section className="py-20">
+      <section id="mapa" className="bg-white py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h3 className="text-3xl font-bold text-gray-900 sm:text-4xl">Mapa de Imóveis Públicos</h3>
-            <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
-              Visualize a localização dos imóveis públicos <strong>validados</strong> de São Luís
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#1351B4]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1351B4]">
+              <span className="h-1 w-1 rounded-full bg-[#1351B4]" />
+              Consulta pública
+            </span>
+            <h3 className="mt-4 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Mapa de Imóveis Públicos</h3>
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
+              Visualize a localização dos imóveis públicos <strong className="text-slate-900">validados</strong> de São Luís.
             </p>
           </div>
 
           <div className="mt-12">
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden rounded-2xl border-slate-200 shadow-sm">
               <CardContent className="p-0">
-                <div className="relative rounded-lg overflow-hidden" style={{ height: "450px" }}>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium text-slate-600">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#1351B4]" />
+                      Imóvel validado
+                    </span>
+                    <span className="hidden h-3 w-px bg-slate-300 sm:inline-block" />
+                    <span className="hidden text-slate-500 sm:inline">{imoveis.length} pontos exibidos</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 text-slate-500">
+                    <Lock className="h-3.5 w-3.5" />
+                    <span>Dados sensíveis ocultos</span>
+                  </div>
+                </div>
+
+                <div className="relative" style={{ height: "460px" }}>
                   <MapContainer
                     center={SLZ}
                     zoom={12}
@@ -292,89 +450,146 @@ export function Home() {
                 </div>
               </CardContent>
             </Card>
-            <p className="mt-4 text-center text-sm text-gray-500">
-              <Shield className="mr-1 inline h-4 w-4" />
-              Informações detalhadas disponíveis apenas para usuários autenticados
+
+            <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-sm text-slate-500">
+              <Shield className="h-4 w-4" />
+              Informações detalhadas disponíveis apenas para usuários autenticados.
             </p>
           </div>
         </div>
       </section>
 
       {/* ── Objetivos ───────────────────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-gray-900 to-gray-800 py-20 text-white">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h3 className="text-3xl font-bold sm:text-4xl">Principais Objetivos</h3>
-            <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-300">
-              Modernização da gestão patrimonial pública com eficiência e transparência
+      <section id="objetivos" className="relative overflow-hidden bg-slate-950 py-20 text-white">
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)",
+            backgroundSize: "56px 56px",
+          }}
+        />
+        <div className="absolute -left-40 top-0 h-[420px] w-[420px] rounded-full bg-[#1351B4]/30 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100">
+              <span className="h-1 w-1 rounded-full bg-cyan-300" />
+              Objetivos
+            </span>
+            <h3 className="mt-4 text-balance text-3xl font-bold tracking-tight sm:text-4xl">Principais Objetivos</h3>
+            <p className="mx-auto mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-300 sm:text-lg">
+              Modernização da gestão patrimonial pública com eficiência e transparência.
             </p>
           </div>
-          <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+
+          <div className="mt-14 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { numero: "01", titulo: "Centralização", descricao: "Unificar informações de imóveis dispersas em diferentes secretarias" },
-              { numero: "02", titulo: "Rastreabilidade", descricao: "Garantir histórico completo e auditável de todas as operações" },
-              { numero: "03", titulo: "Eficiência", descricao: "Automatizar processos e reduzir tempo de gestão patrimonial" },
-              { numero: "04", titulo: "Transparência", descricao: "Facilitar acesso público à informação dentro dos limites legais" },
-            ].map((objetivo) => (
-              <div key={objetivo.numero} className="relative">
-                <div className="text-6xl font-bold text-white/10">{objetivo.numero}</div>
-                <h4 className="mt-4 text-xl font-semibold">{objetivo.titulo}</h4>
-                <p className="mt-2 text-sm text-gray-300">{objetivo.descricao}</p>
-              </div>
-            ))}
+              { numero: "01", icon: Layers,  titulo: "Centralização",   descricao: "Unificar informações de imóveis dispersas em diferentes secretarias." },
+              { numero: "02", icon: History, titulo: "Rastreabilidade", descricao: "Garantir histórico completo e auditável de todas as operações." },
+              { numero: "03", icon: Zap,     titulo: "Eficiência",      descricao: "Automatizar processos e reduzir tempo de gestão patrimonial." },
+              { numero: "04", icon: Eye,     titulo: "Transparência",   descricao: "Facilitar acesso público à informação dentro dos limites legais." },
+            ].map((o) => {
+              const Icon = o.icon;
+              return (
+                <div key={o.numero} className="relative">
+                  <div className="flex items-center justify-between">
+                    <div
+                      className="text-[64px] font-extrabold leading-none tracking-tight"
+                      style={{
+                        WebkitTextStroke: "1.5px rgba(255,255,255,0.18)",
+                        color: "transparent",
+                      }}
+                    >
+                      {o.numero}
+                    </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-cyan-200">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-5 h-px w-10 bg-cyan-300/60" />
+                  <h4 className="mt-4 text-lg font-semibold tracking-tight">{o.titulo}</h4>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-300">{o.descricao}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-gray-200 bg-white py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1351B4]">
-                  <img src="/assets/logo.png" alt="Logo" className="h-6 w-6 object-contain" />
+      <footer className="border-t border-slate-200 bg-slate-50/70">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <div className="flex items-center gap-3">
+                <img src="/assets/brasao-sao-luis.png" alt="Brasão de São Luís" className="h-11 w-auto object-contain" />
+                <div className="leading-tight">
+                  <h4 className="text-sm font-bold tracking-tight text-[#1351B4]">SIGPIM-SLZ</h4>
+                  <p className="text-[11px] font-medium text-slate-500">Prefeitura de São Luís — MA</p>
                 </div>
-                <h4 className="font-semibold text-gray-900">SIGPIM-SLZ</h4>
               </div>
-              <p className="mt-4 text-sm text-gray-600">
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600">
                 Sistema Integrado de Gestão do Patrimônio Imobiliário Municipal de São Luís do Maranhão.
               </p>
             </div>
-            <div>
-              <h4 className="font-semibold text-gray-900">Links Úteis</h4>
-              <ul className="mt-4 space-y-2 text-sm">
+
+            <div className="lg:col-span-3">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Links Úteis</h4>
+              <ul className="mt-4 space-y-2.5 text-sm">
                 {["Termos de Uso", "Política de Privacidade", "Lei de Acesso à Informação", "Portal da Transparência"].map((l) => (
-                  <li key={l}><a href="#" className="text-gray-600 transition-colors hover:text-[#1351B4]">{l}</a></li>
+                  <li key={l}>
+                    <a href="#" className="text-slate-700 transition-colors hover:text-[#1351B4]">{l}</a>
+                  </li>
                 ))}
               </ul>
             </div>
-            <div>
-              <h4 className="font-semibold text-gray-900">Contato</h4>
-              <ul className="mt-4 space-y-3 text-sm text-gray-600">
-                <li className="flex items-start gap-2"><Mail className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1351B4]" /><span>sin.semadslz@gmail.com</span></li>
-                <li className="flex items-start gap-2"><Phone className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1351B4]" /><span>(98) 98410-6091</span></li>
-                <li className="flex items-start gap-2"><Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1351B4]" /><span>SEMAD — Av. Sen. Vitorino Freire, s/n — Centro, São Luís/MA</span></li>
+
+            <div className="lg:col-span-3">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Contato</h4>
+              <ul className="mt-4 space-y-3 text-sm text-slate-700">
+                <li className="flex items-start gap-2">
+                  <Mail className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1351B4]" />
+                  <span>sin.semadslz@gmail.com</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Phone className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1351B4]" />
+                  <span>(98) 98410-6091</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1351B4]" />
+                  <span>SEMAD — Av. Sen. Vitorino Freire, s/n — Centro, São Luís/MA</span>
+                </li>
               </ul>
             </div>
-            <div>
-              <h4 className="font-semibold text-gray-900">Institucional</h4>
-              <ul className="mt-4 space-y-2 text-sm">
+
+            <div className="lg:col-span-2">
+              <h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Institucional</h4>
+              <ul className="mt-4 space-y-2.5 text-sm">
                 <li>
-                  <a href="https://www.saoluis.ma.gov.br" target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-gray-600 transition-colors hover:text-[#1351B4]">
+                  <a
+                    href="https://www.saoluis.ma.gov.br"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-slate-700 transition-colors hover:text-[#1351B4]"
+                  >
                     Portal da Prefeitura <ExternalLink className="h-3 w-3" />
                   </a>
                 </li>
                 {["SEMAD", "Ouvidoria"].map((l) => (
-                  <li key={l}><a href="#" className="text-gray-600 transition-colors hover:text-[#1351B4]">{l}</a></li>
+                  <li key={l}>
+                    <a href="#" className="text-slate-700 transition-colors hover:text-[#1351B4]">{l}</a>
+                  </li>
                 ))}
               </ul>
             </div>
           </div>
-          <div className="mt-12 border-t border-gray-200 pt-8 text-center">
-            <p className="text-sm text-gray-600">© {new Date().getFullYear()} Prefeitura Municipal de São Luís. Todos os direitos reservados.</p>
-            <p className="mt-1 text-xs text-gray-500">SIGPIM-SLZ v1.0.0 | Desenvolvido pela SEMAD/SIN</p>
+
+          <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-slate-200 pt-6 text-center sm:flex-row sm:text-left">
+            <p className="text-xs text-slate-500">
+              © {new Date().getFullYear()} Prefeitura Municipal de São Luís. Todos os direitos reservados.
+            </p>
+            <p className="text-xs text-slate-400">SIGPIM-SLZ v1.0.0 · Desenvolvido pela SEMAD/SIN</p>
           </div>
         </div>
       </footer>
