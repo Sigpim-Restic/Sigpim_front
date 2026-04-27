@@ -32,6 +32,7 @@ import { EditarStep6 } from "./pages/imoveis/wizard-editar/EditarStep6";
 import { ListaOcupacoes } from "./pages/ocupacoes/ListaOcupacoes";
 import { ListaDocumentos } from "./pages/documentos/ListaDocumentos";
 import { Relatorios } from "./pages/relatorios/Relatorios";
+import { VerificarMfa } from "./pages/auth/VerificarMfa";
 import { Auditoria } from "./pages/auditoria/Auditoria";
 import { Pendencias } from "./pages/pendencias/Pendencias";
 import { MapaGIS } from "./pages/MapaGIS";
@@ -56,6 +57,7 @@ function WizardCriarLayout() {
 export const router = createBrowserRouter([
   { path: "/",                     Component: Home },
   { path: "/login",                Component: Login },
+  { path: "/mfa",                  Component: VerificarMfa },
   { path: "/auth/recuperar-senha", Component: RecuperarSenha },
   { path: "/auth/criar-conta",     Component: CriarConta },
   { path: "/auth/redefinir-senha", Component: RedefinirSenha },

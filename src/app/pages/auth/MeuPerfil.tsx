@@ -3,6 +3,7 @@ import { User, Mail, Phone, BadgeCheck, Building2, Lock, Eye, EyeOff, RefreshCw,
 import { useAuth } from "../../contexts/AuthContext";
 import { usuariosApi, type UsuarioResponse } from "../../api/usuarios";
 import { Button } from "../../components/ui/button";
+import { ConfigurarMfa } from "./ConfigurarMfa";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 
@@ -254,6 +255,9 @@ export function MeuPerfil() {
           </Button>
         </form>
       </div>
+
+      {/* Seção MFA */}
+      <ConfigurarMfa />
 
     </div>
   );

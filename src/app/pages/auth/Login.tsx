@@ -24,8 +24,13 @@ export function Login() {
     e.preventDefault();
     setErro(null);
     try {
-      await login({ email: formData.email, senha: formData.senha });
-      navigate("/dashboard");
+      const resultado = await login({ email: formData.email, senha: formData.senha });
+      if (resultado.mfaRequired && resultado.mfaToken) {
+        // Segundo fator necessário — redireciona com o token temporário
+        navigate("/mfa", { state: { mfaToken: resultado.mfaToken } });
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err: unknown) {
       setErro(
         err instanceof Error
