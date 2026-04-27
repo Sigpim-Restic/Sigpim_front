@@ -1,19 +1,20 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, UserPlus } from "lucide-react";
+import {
+  Menu, X, ArrowRight, Mail, Lock, Eye, EyeOff,
+  AlertCircle, Loader2,
+} from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
 import { Checkbox } from "../../components/ui/checkbox";
 import { useAuth } from "../../contexts/AuthContext";
-import { Logo } from "../../components/Logo";
 
 export function Login() {
   const navigate = useNavigate();
   const { login, loading } = useAuth();
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  const [menuMobileAberto, setMenuMobileAberto] = useState(false);
+  const [showPassword,     setShowPassword]     = useState(false);
+  const [erro,             setErro]             = useState<string | null>(null);
   const [formData, setFormData] = useState({
     identificador: "",
     senha: "",
@@ -26,7 +27,6 @@ export function Login() {
     try {
       const resultado = await login({ identificador: formData.identificador, senha: formData.senha });
       if (resultado.mfaRequired && resultado.mfaToken) {
-        // Segundo fator necessário — redireciona com o token temporário
         navigate("/mfa", { state: { mfaToken: resultado.mfaToken } });
       } else {
         navigate("/dashboard");
@@ -41,49 +41,128 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+    <div className="min-h-screen bg-slate-100 text-slate-900 antialiased font-sans">
 
-          {/* Header */}
-          <div className="bg-[#1351B4] px-8 py-6 text-center">
-            <div className="flex justify-center mb-4">
-              <Logo size="medium" />
+      {/* ── Header (mesmo padrão da Home) ───────────────────────────────────── */}
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
+        <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="flex items-center gap-3">
+            <img src="/assets/logo.png" alt="Brasão de São Luís" className="h-11 w-auto object-contain" />
+            <div className="leading-tight">
+              <p className="text-[15px] font-bold tracking-tight text-[#1351B4]">SIGPIM-SLZ</p>
+              <p className="text-[11px] font-medium text-slate-500">Prefeitura de São Luís — MA</p>
             </div>
-            <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
-            <p className="text-sm text-white/80 mt-1">
-              Sistema Integrado de Gestão do Patrimônio Imobiliário
-            </p>
+          </Link>
+
+          {/* Nav links */}
+          <div className="hidden items-center gap-1 md:flex">
+            <Link to="/#sobre"           className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1351B4]">Sobre</Link>
+            <Link to="/#funcionalidades" className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1351B4]">Funcionalidades</Link>
+            <Link to="/#mapa"            className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1351B4]">Mapa Público</Link>
+            <Link to="/#objetivos"       className="px-3 py-2 text-sm font-medium text-slate-600 hover:text-[#1351B4]">Objetivos</Link>
+            <div className="mx-2 h-6 w-px bg-slate-200" />
+            <Button
+              variant="ghost"
+              className="text-slate-700 hover:text-[#1351B4]"
+              onClick={() => navigate("/login")}
+            >
+              Login
+            </Button>
+            <Button
+              className="ml-1 gap-1.5 bg-[#1351B4] hover:bg-[#0c3b8d]"
+              onClick={() => navigate("/auth/criar-conta")}
+            >
+              Criar Conta
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
 
-          {/* Form */}
-          <div className="px-8 py-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900">Acesse sua conta</h2>
-              <p className="text-sm text-gray-600 mt-2">Entre com suas credenciais para continuar</p>
+          {/* Mobile toggle */}
+          <button
+            onClick={() => setMenuMobileAberto(!menuMobileAberto)}
+            className="text-slate-700 md:hidden"
+            aria-label="menu"
+          >
+            {menuMobileAberto ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </nav>
+
+        {menuMobileAberto && (
+          <div className="border-t border-slate-200 bg-white px-4 py-4 md:hidden">
+            <div className="flex flex-col gap-1">
+              <Link to="/#sobre"           className="rounded px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={() => setMenuMobileAberto(false)}>Sobre</Link>
+              <Link to="/#funcionalidades" className="rounded px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={() => setMenuMobileAberto(false)}>Funcionalidades</Link>
+              <Link to="/#mapa"            className="rounded px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={() => setMenuMobileAberto(false)}>Mapa Público</Link>
+              <Link to="/#objetivos"       className="rounded px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100" onClick={() => setMenuMobileAberto(false)}>Objetivos</Link>
+              <div className="my-2 h-px bg-slate-200" />
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-slate-700"
+                onClick={() => { navigate("/login"); setMenuMobileAberto(false); }}
+              >
+                Login
+              </Button>
+              <Button
+                className="w-full bg-[#1351B4] hover:bg-[#0c3b8d]"
+                onClick={() => { navigate("/auth/criar-conta"); setMenuMobileAberto(false); }}
+              >
+                Criar Conta
+              </Button>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* ── Conteúdo central ────────────────────────────────────────────────── */}
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+
+          {/* Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm">
+
+            {/* Logo + badge */}
+            <div className="mb-6 flex flex-col items-center gap-3">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <img src="/assets/logo.png" alt="Brasão de São Luís" className="h-12 w-12 object-contain" />
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Acesso de servidor
+              </span>
             </div>
 
-            {/* Erro da API */}
+            <h1 className="text-center text-2xl font-bold tracking-tight text-slate-900">
+              Acessar o sistema
+            </h1>
+            <p className="mt-1 text-center text-sm text-slate-500">
+              Entre com seu CPF ou e-mail e senha institucional.
+            </p>
+
+            {/* Erro */}
             {erro && (
-              <div className="mb-5 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="mt-5 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                 <span>{erro}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+
               {/* Identificador */}
-              <div className="space-y-2">
-                <Label htmlFor="identificador">CPF ou E-mail Institucional</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
+              <div>
+                <label htmlFor="identificador" className="text-sm font-medium text-slate-700">
+                  CPF ou E-mail
+                </label>
+                <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                  <Mail className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                  <input
                     id="identificador"
                     type="text"
-                    placeholder="CPF (só dígitos) ou e-mail institucional"
                     value={formData.identificador}
                     onChange={(e) => setFormData({ ...formData, identificador: e.target.value })}
-                    className="pl-10"
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                    placeholder="CPF (só dígitos) ou e-mail institucional"
+                    autoComplete="username"
                     required
                     disabled={loading}
                   />
@@ -91,121 +170,90 @@ export function Login() {
               </div>
 
               {/* Senha */}
-              <div className="space-y-2">
-                <Label htmlFor="senha">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
+              <div>
+                <div className="flex items-baseline justify-between">
+                  <label htmlFor="senha" className="text-sm font-medium text-slate-700">Senha</label>
+                  <Link
+                    to="/auth/recuperar-senha"
+                    className="text-xs font-medium text-[#1351B4] hover:underline"
+                  >
+                    Esqueci minha senha
+                  </Link>
+                </div>
+                <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                  <Lock className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                  <input
                     id="senha"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Digite sua senha"
                     value={formData.senha}
                     onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                    className="pl-10 pr-10"
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
                     required
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="flex-shrink-0 text-slate-400 hover:text-slate-600"
+                    tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
-              {/* Lembrar-me */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="rememberMe"
-                    checked={formData.rememberMe}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, rememberMe: checked as boolean })
-                    }
-                  />
-                  <label htmlFor="rememberMe" className="text-sm text-gray-700 cursor-pointer">
-                    Lembrar-me
-                  </label>
-                </div>
-                <Link
-                  to="/auth/recuperar-senha"
-                  className="text-sm font-medium text-[#1351B4] hover:text-[#0c3b8d] hover:underline"
-                >
-                  Esqueceu a senha?
-                </Link>
+              {/* Manter conectado */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="rememberMe"
+                  checked={formData.rememberMe}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, rememberMe: checked as boolean })
+                  }
+                  disabled={loading}
+                />
+                <label htmlFor="rememberMe" className="cursor-pointer text-sm text-slate-700">
+                  Manter conectado neste dispositivo
+                </label>
               </div>
 
+              {/* Botão Entrar */}
               <Button
                 type="submit"
-                className="w-full bg-[#1351B4] hover:bg-[#0c3b8d] h-11 text-base font-medium"
+                className="mt-2 inline-flex w-full items-center justify-center gap-2 bg-[#1351B4] py-3 text-sm font-semibold text-white hover:bg-[#0c3b8d] disabled:opacity-70"
                 disabled={loading}
               >
                 {loading ? (
-                  <span className="flex items-center gap-2">
+                  <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Entrando...
-                  </span>
+                  </>
                 ) : (
-                  "Entrar no Sistema"
+                  <>
+                    Entrar
+                    <ArrowRight className="h-4 w-4" />
+                  </>
                 )}
               </Button>
+
+              <p className="pt-1 text-center text-sm text-slate-500">
+                Ainda não tem conta?{" "}
+                <Link to="/auth/criar-conta" className="font-semibold text-[#1351B4] hover:underline">
+                  Solicitar acesso
+                </Link>
+              </p>
+
             </form>
-
-            {/* Divisor */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-xs text-gray-400 bg-white px-2">
-                <span className="bg-white px-2">ou</span>
-              </div>
-            </div>
-
-            {/* Link Criar Conta */}
-            <Link to="/auth/criar-conta">
-              <Button
-                variant="outline"
-                className="w-full h-11 text-base font-medium border-[#1351B4] text-[#1351B4] hover:bg-[#1351B4] hover:text-white"
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                Criar nova conta
-              </Button>
-            </Link>
-
-            {/* Voltar à home pública */}
-            <Link to="/">
-              <Button
-                variant="ghost"
-                className="w-full h-10 text-sm text-gray-500 hover:text-[#1351B4]"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar ao início
-              </Button>
-            </Link>
           </div>
 
-          {/* Footer */}
-          <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
-            <p className="text-xs text-center text-gray-600">
-              Prefeitura Municipal de São Luís — SEMAD
-              <br />
-              Sistema de gestão patrimonial municipal. Seus dados estão protegidos.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 text-center">
-          <p className="text-sm text-white/90">Versão 1.0.0 — 2026</p>
-          <p className="text-xs text-white/70 mt-2">
-            Suporte:{" "}
-            <a href="mailto:suporte.sigpim@slz.ma.gov.br" className="hover:underline font-medium">
-              suporte.sigpim@slz.ma.gov.br
-            </a>
+          {/* Rodapé discreto */}
+          <p className="mt-6 text-center text-xs text-slate-400">
+            © {new Date().getFullYear()} Prefeitura Municipal de São Luís — SEMAD/SIN
           </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
