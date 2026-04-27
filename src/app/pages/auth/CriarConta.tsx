@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import {
-  User, Mail, Lock, Eye, EyeOff, ArrowLeft,
+  User, Mail, Lock, Eye, EyeOff, ArrowLeft, ArrowRight,
   CheckCircle2, CreditCard, Briefcase, Phone, Hash, AtSign, Loader2, AlertCircle,
 } from "lucide-react";
-import { Logo } from "../../components/Logo";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -131,7 +130,6 @@ export function CriarConta() {
         cargo:        formData.cargo || undefined,
         idOrgao:      formData.idOrgao  ? Number(formData.idOrgao)  : null,
         idUnidade:    formData.idUnidade ? Number(formData.idUnidade) : null,
-        // perfil intentionally omitted — admin assigns it later
       });
       setEnviado(true);
     } catch (err) {
@@ -143,62 +141,81 @@ export function CriarConta() {
 
   if (enviado) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-[#1351B4] px-8 py-6 text-center">
-            <div className="flex justify-center mb-4">
-              <Logo size="medium" />
-            </div>
-            <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
-          </div>
-          <div className="px-8 py-8 text-center">
-            <div className="flex justify-center mb-6">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-yellow-100">
-                <CheckCircle2 className="h-12 w-12 text-yellow-600" />
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm text-center">
+            <div className="mb-6 flex flex-col items-center gap-3">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <img src="/assets/brasao-sao-luis.png" alt="Brasão de São Luís" className="h-12 w-12 object-contain" />
               </div>
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-3">Cadastro enviado!</h2>
-            <p className="text-gray-600 mb-2">
-              Sua conta foi criada e está <span className="font-semibold text-yellow-700">aguardando ativação</span>.
+
+            <div className="flex justify-center mb-6">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
+                <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 mb-3">Solicitação enviada!</h2>
+            
+            <p className="text-slate-600 mb-2">
+              Sua conta foi criada e está <span className="font-semibold text-yellow-600">aguardando ativação</span>.
             </p>
-            <p className="text-sm text-gray-500 mb-8">
+            
+            <p className="text-sm text-slate-500 mb-8">
               Um administrador do sistema irá revisar seu cadastro, definir seu perfil de acesso e ativar sua conta. Você receberá acesso em breve.
             </p>
+
             <Button
               onClick={() => navigate("/login")}
-              className="w-full bg-[#1351B4] hover:bg-[#0c3b8d] h-11 text-base font-medium"
+              className="w-full inline-flex items-center justify-center gap-2 bg-[#1351B4] hover:bg-[#0c3b8d] py-3 text-sm font-semibold text-white"
             >
               Ir para o Login
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
+          
+          <p className="mt-6 text-center text-xs text-slate-400">
+            © {new Date().getFullYear()} Prefeitura Municipal de São Luís — SEMAD/SIN
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center p-4 py-8">
-      <div className="w-full max-w-2xl">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-
-          <div className="bg-[#1351B4] px-8 py-6 text-center">
-            <div className="flex justify-center mb-4">
-              <Logo size="medium" />
+    <div className="min-h-screen bg-slate-100 py-8">
+      <div className="mx-auto max-w-4xl px-4">
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          
+          {/* Header */}
+          <div className="border-b border-slate-200 px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm">
+                <img src="/assets/brasao-sao-luis.png" alt="Brasão de São Luís" className="h-8 w-8 object-contain" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight text-[#1351B4]">SIGPIM-SLZ</h1>
+                <p className="text-xs text-slate-500">Prefeitura de São Luís — MA</p>
+              </div>
             </div>
-            <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
-            <p className="text-sm text-white/80 mt-1">Sistema Integrado de Gestão do Patrimônio Imobiliário</p>
           </div>
 
+          {/* Content */}
           <div className="px-8 py-8">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-semibold text-gray-900">Criar Conta</h2>
-              <p className="text-sm text-gray-600 mt-2">
+            <div className="text-center mb-8">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200 mb-3">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Novo cadastro
+              </span>
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900">Criar Conta</h2>
+              <p className="mt-1 text-sm text-slate-500">
                 Preencha os dados para solicitar acesso ao sistema
               </p>
             </div>
 
-            {/* Info box — explains that account starts inactive */}
-            <div className="mb-6 flex items-start gap-3 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-800">
+            {/* Info box */}
+            <div className="mb-6 flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
               <AlertCircle className="h-4 w-4 mt-0.5 shrink-0 text-blue-500" />
               <span>
                 Sua conta será criada como <strong>inativa</strong>. Um administrador irá definir seu perfil de acesso e ativar sua conta.
@@ -206,148 +223,231 @@ export function CriarConta() {
             </div>
 
             {erro && (
-              <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                 <span>{erro}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
-
-              <div className="space-y-2">
-                <Label htmlFor="nomeCompleto">Nome Completo *</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input id="nomeCompleto" type="text" placeholder="Digite seu nome completo"
+              {/* Nome Completo */}
+              <div>
+                <Label htmlFor="nomeCompleto" className="text-sm font-medium text-slate-700">
+                  Nome Completo <span className="text-red-500">*</span>
+                </Label>
+                <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                  <User className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                  <input
+                    id="nomeCompleto"
+                    type="text"
                     value={formData.nomeCompleto}
                     onChange={(e) => setFormData({ ...formData, nomeCompleto: e.target.value })}
-                    className="pl-10" required />
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                    placeholder="Digite seu nome completo"
+                    required
+                  />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail Institucional *</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="email" type="email" placeholder="seu.email@slz.ma.gov.br"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* E-mail */}
+                <div>
+                  <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                    E-mail Institucional <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                    <Mail className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                    <input
+                      id="email"
+                      type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="pl-10" required />
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="seu.email@slz.ma.gov.br"
+                      required
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF *</Label>
-                  <div className="relative">
-                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="cpf" type="text" placeholder="000.000.000-00"
+
+                {/* CPF */}
+                <div>
+                  <Label htmlFor="cpf" className="text-sm font-medium text-slate-700">
+                    CPF <span className="text-red-500">*</span>
+                  </Label>
+                  <div className={`mt-1.5 flex items-center gap-2 rounded-lg border bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20 ${
+                    cpfInvalido ? "border-red-300" : "border-slate-300"
+                  }`}>
+                    <CreditCard className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                    <input
+                      id="cpf"
+                      type="text"
                       value={formData.cpf}
                       onChange={(e) => setFormData({ ...formData, cpf: formatarCPF(e.target.value) })}
-                      className={`pl-10 ${cpfInvalido ? "border-red-400 focus-visible:ring-red-400" : ""}`} maxLength={14} required />
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="000.000.000-00"
+                      maxLength={14}
+                      required
+                    />
                   </div>
                   {cpfInvalido && (
-                    <p className="text-xs text-red-600">CPF inválido. Informe um CPF válido para criar a conta.</p>
+                    <p className="mt-1 text-xs text-red-600">CPF inválido. Informe um CPF válido.</p>
                   )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <Label htmlFor="nomeUsuario">Nome de Usuário *</Label>
-                  <div className="relative">
-                    <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="nomeUsuario" type="text" placeholder="letras, números, . _ -"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Nome de Usuário */}
+                <div>
+                  <Label htmlFor="nomeUsuario" className="text-sm font-medium text-slate-700">
+                    Nome de Usuário <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                    <AtSign className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                    <input
+                      id="nomeUsuario"
+                      type="text"
                       value={formData.nomeUsuario}
                       onChange={(e) => setFormData({ ...formData, nomeUsuario: e.target.value })}
-                      className="pl-10" required />
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="letras, números, . _ -"
+                      required
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="celular">Celular</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="celular" type="text" placeholder="(98) 99999-0000"
+
+                {/* Celular */}
+                <div>
+                  <Label htmlFor="celular" className="text-sm font-medium text-slate-700">Celular</Label>
+                  <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                    <Phone className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                    <input
+                      id="celular"
+                      type="text"
                       value={formData.celular}
                       onChange={(e) => setFormData({ ...formData, celular: formatarCelular(e.target.value) })}
-                      className="pl-10" maxLength={15} />
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="(98) 99999-0000"
+                      maxLength={15}
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <Label htmlFor="matricula">Matrícula</Label>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="matricula" type="text" placeholder="Número de matrícula"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Matrícula */}
+                <div>
+                  <Label htmlFor="matricula" className="text-sm font-medium text-slate-700">Matrícula</Label>
+                  <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                    <Hash className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                    <input
+                      id="matricula"
+                      type="text"
                       value={formData.matricula}
                       onChange={(e) => setFormData({ ...formData, matricula: e.target.value })}
-                      className="pl-10" />
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="Número de matrícula"
+                    />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cargo">Cargo</Label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="cargo" type="text" placeholder="Ex: Analista Patrimonial"
+
+                {/* Cargo */}
+                <div>
+                  <Label htmlFor="cargo" className="text-sm font-medium text-slate-700">Cargo</Label>
+                  <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                    <Briefcase className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                    <input
+                      id="cargo"
+                      type="text"
                       value={formData.cargo}
                       onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
-                      className="pl-10" />
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="Ex: Analista Patrimonial"
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <Label htmlFor="senha">Senha *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="senha" type={showPassword ? "text" : "password"} placeholder="Mínimo 8 caracteres"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Senha */}
+                <div>
+                  <Label htmlFor="senha" className="text-sm font-medium text-slate-700">
+                    Senha <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20">
+                    <Lock className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                    <input
+                      id="senha"
+                      type={showPassword ? "text" : "password"}
                       value={formData.senha}
                       onChange={(e) => { setFormData({ ...formData, senha: e.target.value }); setSenhaDetalhes(validarSenha(e.target.value)); }}
-                      className="pl-10 pr-10" required />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="Mínimo 8 caracteres"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="flex-shrink-0 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   {formData.senha && (
-                    <div className="space-y-1 text-xs">
-                      {[
-                        { ok: senhaDetalhes.tamanho,   label: "Mínimo 8 caracteres" },
-                        { ok: senhaDetalhes.numero,    label: "Pelo menos um número" },
-                        { ok: senhaDetalhes.maiuscula, label: "Pelo menos uma maiúscula" },
-                        { ok: senhaDetalhes.especial,  label: "Pelo menos um caractere especial" },
-                      ].map(({ ok, label }) => (
-                        <p key={label} className={ok ? "text-green-600" : "text-gray-400"}>{ok ? "✓" : "○"} {label}</p>
-                      ))}
+                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      <p className={senhaDetalhes.tamanho ? "text-emerald-600" : "text-slate-400"}>
+                        {senhaDetalhes.tamanho ? "✓" : "○"} Mínimo 8 caracteres
+                      </p>
+                      <p className={senhaDetalhes.numero ? "text-emerald-600" : "text-slate-400"}>
+                        {senhaDetalhes.numero ? "✓" : "○"} Pelo menos um número
+                      </p>
+                      <p className={senhaDetalhes.maiuscula ? "text-emerald-600" : "text-slate-400"}>
+                        {senhaDetalhes.maiuscula ? "✓" : "○"} Pelo menos uma maiúscula
+                      </p>
+                      <p className={senhaDetalhes.especial ? "text-emerald-600" : "text-slate-400"}>
+                        {senhaDetalhes.especial ? "✓" : "○"} Pelo menos um caractere especial
+                      </p>
                     </div>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmarSenha">Confirmar Senha *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input id="confirmarSenha" type={showConfirmPassword ? "text" : "password"} placeholder="Repita a senha"
+
+                {/* Confirmar Senha */}
+                <div>
+                  <Label htmlFor="confirmarSenha" className="text-sm font-medium text-slate-700">
+                    Confirmar Senha <span className="text-red-500">*</span>
+                  </Label>
+                  <div className={`mt-1.5 flex items-center gap-2 rounded-lg border bg-white px-3 py-2.5 focus-within:border-[#1351B4] focus-within:ring-2 focus-within:ring-[#1351B4]/20 ${
+                    formData.confirmarSenha && formData.senha !== formData.confirmarSenha ? "border-red-300" : "border-slate-300"
+                  }`}>
+                    <Lock className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                    <input
+                      id="confirmarSenha"
+                      type={showConfirmPassword ? "text" : "password"}
                       value={formData.confirmarSenha}
                       onChange={(e) => setFormData({ ...formData, confirmarSenha: e.target.value })}
-                      className="pl-10 pr-10" required />
-                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                      placeholder="Repita a senha"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="flex-shrink-0 text-slate-400 hover:text-slate-600"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                   {formData.confirmarSenha && formData.senha !== formData.confirmarSenha && (
-                    <p className="text-xs text-red-600">As senhas não coincidem</p>
+                    <p className="mt-1 text-xs text-red-600">As senhas não coincidem</p>
                   )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <Label>Órgão</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Órgão */}
+                <div>
+                  <Label className="text-sm font-medium text-slate-700">Órgão</Label>
                   <Select value={formData.idOrgao} onValueChange={(v) => setFormData({ ...formData, idOrgao: v })} disabled={loadingOrgaos}>
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1.5">
                       <SelectValue placeholder={loadingOrgaos ? "Carregando..." : "Selecione o órgão"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -357,10 +457,12 @@ export function CriarConta() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Unidade Organizacional</Label>
+
+                {/* Unidade */}
+                <div>
+                  <Label className="text-sm font-medium text-slate-700">Unidade Organizacional</Label>
                   <Select value={formData.idUnidade} onValueChange={(v) => setFormData({ ...formData, idUnidade: v })} disabled={!formData.idOrgao || loadingUnidades}>
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1.5">
                       <SelectValue placeholder={!formData.idOrgao ? "Selecione primeiro o órgão" : loadingUnidades ? "Carregando..." : "Selecione a unidade"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -372,33 +474,48 @@ export function CriarConta() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={loading || !cpfValido}
-                className="w-full bg-[#1351B4] hover:bg-[#0c3b8d] h-11 text-base font-medium mt-2">
-                {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</> : "Solicitar Acesso"}
+              <Button
+                type="submit"
+                disabled={loading || !cpfValido}
+                className="mt-6 w-full inline-flex items-center justify-center gap-2 bg-[#1351B4] hover:bg-[#0c3b8d] py-3 text-sm font-semibold text-white disabled:opacity-70"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    Solicitar Acesso
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
             </form>
 
-            <div className="mt-6">
+            <div className="mt-6 pt-4 border-t border-slate-100">
               <Link to="/login">
-                <Button variant="ghost" className="w-full h-11 text-base font-medium text-gray-700 hover:text-[#1351B4]">
-                  <ArrowLeft className="mr-2 h-4 w-4" />Voltar para o login
-                </Button>
-              </Link>
-              <Link to="/">
-                <Button variant="ghost" className="w-full h-10 text-sm text-gray-400 hover:text-[#1351B4]">
-                  <ArrowLeft className="mr-2 h-3.5 w-3.5" />Voltar ao início
+                <Button variant="ghost" className="w-full text-slate-600 hover:text-[#1351B4]">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Voltar para o login
                 </Button>
               </Link>
             </div>
           </div>
 
-          <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
-            <p className="text-xs text-center text-gray-600">
-              Prefeitura Municipal de São Luís — SEMAD<br />
+          {/* Footer */}
+          <div className="border-t border-slate-100 bg-slate-50 px-8 py-4">
+            <p className="text-center text-xs text-slate-500">
+              Prefeitura Municipal de São Luís — SEMAD/SIN
+              <br />
               Sistema de gestão patrimonial municipal. Seus dados estão protegidos.
             </p>
           </div>
         </div>
+        
+        <p className="mt-6 text-center text-xs text-slate-400">
+          © {new Date().getFullYear()} Prefeitura Municipal de São Luís — SEMAD/SIN
+        </p>
       </div>
     </div>
   );
