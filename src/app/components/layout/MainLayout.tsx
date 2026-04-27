@@ -7,7 +7,6 @@ import {
   BookOpen, List, FolderOpen, PanelLeftClose, PanelLeftOpen, Shield,
   AlertTriangle,
 } from "lucide-react";
-import { Logo } from "../Logo";
 import { Button } from "../ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -27,20 +26,6 @@ type Perfil =
   | "PLANEJAMENTO"
   | "AUDITOR";
 
-// ── Definição do menu com controle de acesso por perfil ───────────────────────
-//
-// perfisPermitidos: undefined = todos os perfis autenticados têm acesso.
-// perfisPermitidos: Perfil[]  = somente esses perfis enxergam o item.
-//
-// Critérios (Manual SIGPIM §5.1 + Matriz RACI Anexo A + SecurityExpressions.java):
-//
-// Catálogos       — edição restrita a administradores (Manual §9)
-// Relatórios      — gestão, planejamento e auditoria; não faz sentido para
-//                   vistoriador (campo) nem validador (documental)
-// Auditoria       — trilha de logs: apenas Admin. Sistema e Auditor (canReadAuditoria)
-// Usuários/Perfis — gestão de contas: apenas Admin. Sistema (canManageUsuario)
-// Configurações   — parâmetros do sistema: apenas administradores
-
 interface SubItem {
   path: string;
   label: string;
@@ -56,12 +41,6 @@ interface MenuItem {
   submenu?: SubItem[];
 }
 
-const TODOS_PERFIS: Perfil[] = [
-  "ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL",
-  "CADASTRADOR_SETORIAL", "VALIDADOR_DOCUMENTAL",
-  "VISTORIADOR", "PLANEJAMENTO", "AUDITOR",
-];
-
 const ADMINS: Perfil[] = ["ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"];
 
 const menuItems: MenuItem[] = [
@@ -69,51 +48,35 @@ const menuItems: MenuItem[] = [
     path:  "/dashboard",
     label: "Painel Geral",
     icon:  LayoutDashboard,
-    // Todos os perfis acessam o painel
   },
   {
     path:  "/dashboard/imoveis",
     label: "Imóveis",
     icon:  Building2,
     submenu: [
-      {
-        path:  "/dashboard/imoveis",
-        label: "Listagem",
-        icon:  List,
-        // Todos acessam a listagem
-      },
-      {
-        path:  "/dashboard/imoveis/catalogos",
-        label: "Catálogos",
-        icon:  BookOpen,
-        // Apenas administradores gerenciam catálogos (Manual SIGPIM §9)
-        perfisPermitidos: ADMINS,
-      },
+      { path: "/dashboard/imoveis",          label: "Listagem",  icon: List },
+      { path: "/dashboard/imoveis/catalogos", label: "Catálogos", icon: BookOpen, perfisPermitidos: ADMINS },
     ],
   },
   {
     path:  "/dashboard/ocupacoes",
     label: "Ocupações",
     icon:  ClipboardList,
-    // Todos os perfis precisam consultar ocupações
   },
   {
     path:  "/dashboard/pendencias",
     label: "Pendências",
     icon:  AlertTriangle,
-    // Todos os perfis — cada um vê as pendências do seu órgão
   },
   {
     path:  "/dashboard/documentos",
     label: "Documentos",
     icon:  FolderOpen,
-    // Todos os perfis acessam documentos
   },
   {
     path:  "/dashboard/relatorios",
     label: "Relatórios",
     icon:  FileText,
-    // Gestão, planejamento e auditoria — vistoriador e validador não emitem relatórios gerenciais
     perfisPermitidos: [
       "ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL",
       "CADASTRADOR_SETORIAL", "PLANEJAMENTO", "AUDITOR",
@@ -123,28 +86,23 @@ const menuItems: MenuItem[] = [
     path:  "/dashboard/auditoria",
     label: "Auditoria",
     icon:  History,
-    // Trilha de logs: apenas Admin. Sistema e Auditor (canReadAuditoria)
     perfisPermitidos: ["ADMINISTRADOR_SISTEMA", "AUDITOR"],
   },
   {
     path:  "/dashboard/mapa",
     label: "Mapa GIS",
     icon:  Map,
-    // Todos os perfis acessam o mapa
   },
   {
     path:  "/dashboard/usuarios",
     label: "Usuários e Perfis",
     icon:  Users,
-    // Gestão de contas: apenas Admin. Sistema (canManageUsuario)
     perfisPermitidos: ["ADMINISTRADOR_SISTEMA"],
   },
   {
     path:  "/dashboard/configuracoes",
     label: "Configurações",
     icon:  Settings,
-    // Parâmetros do sistema: apenas Admin. Sistema (SIN/SEMAD — Manual §5.1 Matriz RACI)
-    // Admin. Patrimonial gerencia patrimônio, não infraestrutura/sistema
     perfisPermitidos: ["ADMINISTRADOR_SISTEMA"],
   },
 ];
@@ -169,37 +127,35 @@ interface AlertaItem {
   nomeImovel?: string;
 }
 
-// ── Helper: filtra itens de menu pelo perfil do usuário ───────────────────────
-
 function filtrarMenu(items: MenuItem[], perfil: string): MenuItem[] {
   return items
-    .filter((item) =>
-      !item.perfisPermitidos || item.perfisPermitidos.includes(perfil as Perfil)
-    )
+    .filter((item) => !item.perfisPermitidos || item.perfisPermitidos.includes(perfil as Perfil))
     .map((item) => {
       if (!item.submenu) return item;
-      const submenuFiltrado = item.submenu.filter(
-        (sub) => !sub.perfisPermitidos || sub.perfisPermitidos.includes(perfil as Perfil)
-      );
-      return { ...item, submenu: submenuFiltrado };
+      return {
+        ...item,
+        submenu: item.submenu.filter(
+          (sub) => !sub.perfisPermitidos || sub.perfisPermitidos.includes(perfil as Perfil)
+        ),
+      };
     });
 }
 
 // ── Componente principal ───────────────────────────────────────────────────────
 
 export function MainLayout() {
-  const [sidebarOpen,      setSidebarOpen]      = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [alertas,          setAlertas]          = useState<AlertaItem[]>([]);
-  const [totalNaoLidos,    setTotalNaoLidos]    = useState(0);
-  const [painelAberto,     setPainelAberto]     = useState(false);
+  const [sidebarOpen,       setSidebarOpen]       = useState(false);
+  const [sidebarCollapsed,  setSidebarCollapsed]  = useState(false);
+  const [alertas,           setAlertas]           = useState<AlertaItem[]>([]);
+  const [totalNaoLidos,     setTotalNaoLidos]     = useState(0);
+  const [painelAberto,      setPainelAberto]      = useState(false);
   const [carregandoAlertas, setCarregandoAlertas] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
   const { usuario, logout } = useAuth();
 
-  const perfil = usuario?.perfil ?? "";
+  const perfil         = usuario?.perfil ?? "";
   const itensFiltrados = filtrarMenu(menuItems, perfil);
 
   const handleLogout = () => { logout(); navigate("/login"); };
@@ -210,9 +166,7 @@ export function MainLayout() {
       const dados = await api.get<AlertaItem[]>("/alertas");
       setAlertas(dados);
       setTotalNaoLidos(dados.filter((a) => !a.lido).length);
-    } catch {
-      // silencia — alertas são secundários
-    } finally {
+    } catch { /* silencia */ } finally {
       setCarregandoAlertas(false);
     }
   }, []);
@@ -235,10 +189,10 @@ export function MainLayout() {
 
   useEffect(() => { carregarAlertas(); }, [carregarAlertas, location.pathname]);
 
-  const sidebarW  = sidebarCollapsed ? "w-16" : "w-64";
-  const contentPl = sidebarCollapsed ? "lg:pl-16" : "lg:pl-64";
+  const sidebarW  = sidebarCollapsed ? "w-[68px]" : "w-60";
+  const contentPl = sidebarCollapsed ? "lg:pl-[68px]" : "lg:pl-60";
 
-  // ── Nav compartilhada (desktop e mobile) ────────────────────────────────────
+  // ── Nav items ───────────────────────────────────────────────────────────────
 
   function NavItems({ collapsed = false, onNavClick }: { collapsed?: boolean; onNavClick?: () => void }) {
     return (
@@ -255,23 +209,26 @@ export function MainLayout() {
                 to={item.submenu ? item.submenu[0].path : item.path}
                 title={collapsed ? item.label : undefined}
                 onClick={onNavClick}
-                className={`flex items-center rounded-lg px-2 py-2.5 text-sm font-medium transition-all ${
+                className={`flex items-center rounded-lg px-2.5 py-2 text-sm font-medium transition-all ${
                   collapsed ? "justify-center" : "gap-3"
                 } ${
                   isActive
-                    ? "bg-white/15 text-white"
-                    : "text-white/75 hover:bg-white/8 hover:text-white"
+                    ? "bg-[#1351B4]/10 text-[#1351B4]"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-[#1351B4]" : "text-slate-400"}`} />
                 {!collapsed && (
                   <span className="flex-1 overflow-hidden whitespace-nowrap">{item.label}</span>
                 )}
+                {!collapsed && isActive && item.submenu && (
+                  <ChevronRight className="h-3.5 w-3.5 text-[#1351B4]/60" />
+                )}
               </Link>
 
-              {/* Submenu — só quando expandido e ativo */}
+              {/* Submenu */}
               {!collapsed && item.submenu && isActive && (
-                <div className="ml-7 mt-0.5 space-y-0.5 border-l border-white/15 pl-3">
+                <div className="ml-7 mt-0.5 space-y-0.5 border-l-2 border-[#1351B4]/15 pl-3">
                   {item.submenu.map((sub) => {
                     const SubIcon = sub.icon;
                     const isSubActive = location.pathname === sub.path;
@@ -280,8 +237,10 @@ export function MainLayout() {
                         key={sub.path}
                         to={sub.path}
                         onClick={onNavClick}
-                        className={`flex items-center gap-2 rounded-md px-2 py-2 text-xs font-medium transition-all ${
-                          isSubActive ? "bg-white/10 text-white" : "text-white/60 hover:text-white"
+                        className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium transition-all ${
+                          isSubActive
+                            ? "bg-[#1351B4]/10 text-[#1351B4]"
+                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                         }`}
                       >
                         <SubIcon className="h-3.5 w-3.5" />
@@ -301,29 +260,43 @@ export function MainLayout() {
   const breadcrumbs = getBreadcrumbs(location.pathname);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
 
-      {/* ── Desktop sidebar ── */}
+      {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
       <aside
-        className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex lg:flex-col lg:bg-[#1351B4] lg:shadow-xl transition-all duration-300 ${sidebarW}`}
+        className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:flex lg:flex-col border-r border-slate-200 bg-white transition-all duration-300 ${sidebarW}`}
       >
         <div className="flex h-full flex-col">
-          <div className={`flex h-20 items-center border-b border-white/10 transition-all duration-300 ${
-            sidebarCollapsed ? "justify-center px-0" : "gap-3 px-6"
+
+          {/* Logo */}
+          <div className={`flex h-16 items-center border-b border-slate-100 transition-all duration-300 ${
+            sidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
           }`}>
-            <Logo size="small" variant={sidebarCollapsed ? "icon-only" : "with-text"} />
+            {sidebarCollapsed ? (
+              <img src="/assets/brasao-sao-luis.png" alt="SIGPIM" className="h-8 w-8 object-contain" />
+            ) : (
+              <>
+                <img src="/assets/brasao-sao-luis.png" alt="Brasão" className="h-9 w-auto object-contain shrink-0" />
+                <div className="leading-tight overflow-hidden">
+                  <p className="text-[14px] font-bold tracking-tight text-[#1351B4] whitespace-nowrap">SIGPIM-SLZ</p>
+                  <p className="text-[11px] text-slate-400 whitespace-nowrap">Prefeitura de São Luís</p>
+                </div>
+              </>
+            )}
           </div>
 
-          <nav className="flex-1 space-y-0.5 px-2 py-4 overflow-y-auto">
+          {/* Nav */}
+          <nav className="flex-1 space-y-0.5 px-2 py-3 overflow-y-auto">
             <NavItems collapsed={sidebarCollapsed} />
           </nav>
 
+          {/* Rodapé */}
           {!sidebarCollapsed && (
-            <div className="border-t border-white/10 p-4">
-              <p className="text-center text-xs text-white/40">
+            <div className="border-t border-slate-100 px-4 py-3">
+              <p className="text-[10px] text-slate-400 leading-relaxed">
                 Prefeitura Municipal de São Luís
                 <br />
-                SIGPIM-SLZ • v2.0 • 2026
+                SIGPIM-SLZ · v2.0 · 2026
               </p>
             </div>
           )}
@@ -333,7 +306,7 @@ export function MainLayout() {
         <button
           onClick={() => setSidebarCollapsed((v) => !v)}
           title={sidebarCollapsed ? "Expandir menu" : "Recolher menu"}
-          className="absolute -right-3 top-[4.5rem] flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white shadow-md text-gray-500 hover:text-[#1351B4] hover:border-[#1351B4] transition-colors z-10"
+          className="absolute -right-3 top-[4.25rem] flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm text-slate-400 hover:text-[#1351B4] hover:border-[#1351B4]/40 transition-colors z-10"
         >
           {sidebarCollapsed
             ? <PanelLeftOpen  className="h-3.5 w-3.5" />
@@ -342,71 +315,71 @@ export function MainLayout() {
         </button>
       </aside>
 
-      {/* ── Mobile overlay ── */}
+      {/* ── Mobile overlay ──────────────────────────────────────────────────── */}
       {sidebarOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-gray-900/80 lg:hidden"
+            className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="fixed inset-y-0 left-0 z-50 w-64 overflow-y-auto bg-[#1351B4] shadow-xl lg:hidden">
-            <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10">
-                <Shield className="h-6 w-6 text-white" />
+          <aside className="fixed inset-y-0 left-0 z-50 w-60 flex flex-col border-r border-slate-200 bg-white shadow-xl lg:hidden">
+            <div className="flex h-16 items-center justify-between border-b border-slate-100 px-4">
+              <div className="flex items-center gap-3">
+                <img src="/assets/brasao-sao-luis.png" alt="Brasão" className="h-9 w-auto object-contain" />
+                <div className="leading-tight">
+                  <p className="text-[14px] font-bold tracking-tight text-[#1351B4]">SIGPIM-SLZ</p>
+                  <p className="text-[11px] text-slate-400">Prefeitura de São Luís</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-lg font-semibold text-white">SIGPIM-SLZ</h1>
-                <p className="text-xs text-white/60">Fase 2</p>
-              </div>
+              <button onClick={() => setSidebarOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-700">
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="absolute right-3 top-5 p-2 text-white/70 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            <nav className="flex-1 space-y-0.5 px-3 py-4 overflow-y-auto">
+            <nav className="flex-1 space-y-0.5 px-2 py-3 overflow-y-auto">
               <NavItems onNavClick={() => setSidebarOpen(false)} />
             </nav>
-            <div className="border-t border-white/10 p-4">
-              <p className="text-center text-xs text-white/40">
-                Prefeitura Municipal de São Luís<br />SIGPIM-SLZ • v2.0 • 2026
+            <div className="border-t border-slate-100 px-4 py-3">
+              <p className="text-[10px] text-slate-400">
+                Prefeitura Municipal de São Luís · SIGPIM-SLZ · v2.0 · 2026
               </p>
             </div>
           </aside>
         </>
       )}
 
-      {/* ── Conteúdo principal ── */}
+      {/* ── Conteúdo principal ──────────────────────────────────────────────── */}
       <div className={`transition-all duration-300 ${contentPl}`}>
 
         {/* Header */}
-        <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:px-6">
-          <button onClick={() => setSidebarOpen(true)} className="text-gray-500 lg:hidden">
+        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75 px-4 sm:px-6">
+          <button onClick={() => setSidebarOpen(true)} className="text-slate-500 hover:text-slate-700 lg:hidden">
             <Menu className="h-5 w-5" />
           </button>
 
           <div className="flex flex-1 items-center justify-between gap-4">
+
             {/* Breadcrumb */}
-            <nav className="hidden items-center gap-1.5 text-sm text-gray-500 md:flex">
+            <nav className="hidden items-center gap-1 text-sm text-slate-500 md:flex">
               {breadcrumbs.map((crumb, i) => (
-                <div key={i} className="flex items-center gap-1.5">
-                  {i > 0 && <ChevronRight className="h-3.5 w-3.5" />}
+                <div key={i} className="flex items-center gap-1">
+                  {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-slate-300" />}
                   {i === breadcrumbs.length - 1 ? (
-                    <span className="font-medium text-gray-900">{crumb.label}</span>
+                    <span className="font-medium text-slate-900">{crumb.label}</span>
                   ) : (
-                    <Link to={crumb.path} className="hover:text-gray-900">{crumb.label}</Link>
+                    <Link to={crumb.path} className="hover:text-slate-700 transition-colors">{crumb.label}</Link>
                   )}
                 </div>
               ))}
             </nav>
 
             {/* Notificações + usuário */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+
+              {/* Sino */}
               <DropdownMenu open={painelAberto} onOpenChange={(v) => { setPainelAberto(v); if (v) carregarAlertas(); }}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-4.5 w-4.5" />
+                  <Button variant="ghost" size="icon" className="relative text-slate-500 hover:text-slate-700">
+                    <Bell className="h-[18px] w-[18px]" />
                     {totalNaoLidos > 0 && (
                       <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
                         {totalNaoLidos > 9 ? "9+" : totalNaoLidos}
@@ -414,12 +387,12 @@ export function MainLayout() {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden">
-                  <div className="flex items-center justify-between border-b px-4 py-3">
+                <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden rounded-xl border-slate-200 shadow-lg">
+                  <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">Notificações</p>
+                      <p className="text-sm font-semibold text-slate-900">Notificações</p>
                       {totalNaoLidos > 0 && (
-                        <p className="text-xs text-gray-500">{totalNaoLidos} não lida(s)</p>
+                        <p className="text-xs text-slate-500">{totalNaoLidos} não lida(s)</p>
                       )}
                     </div>
                     {totalNaoLidos > 0 && (
@@ -431,14 +404,14 @@ export function MainLayout() {
 
                   <div className="max-h-80 overflow-y-auto">
                     {carregandoAlertas && (
-                      <div className="flex items-center justify-center py-8 text-gray-400">
+                      <div className="flex items-center justify-center py-8 text-slate-400">
                         <RefreshCw className="h-4 w-4 animate-spin mr-2" />
                         <span className="text-xs">Carregando...</span>
                       </div>
                     )}
                     {!carregandoAlertas && alertas.length === 0 && (
-                      <div className="py-8 text-center text-xs text-gray-400">
-                        <Bell className="mx-auto mb-2 h-6 w-6 text-gray-300" />
+                      <div className="py-8 text-center text-xs text-slate-400">
+                        <Bell className="mx-auto mb-2 h-6 w-6 text-slate-300" />
                         Nenhuma notificação.
                       </div>
                     )}
@@ -446,20 +419,20 @@ export function MainLayout() {
                       <div
                         key={alerta.id}
                         onClick={() => { if (!alerta.lido) marcarComoLido(alerta.id); }}
-                        className={`flex gap-3 border-b px-4 py-3 cursor-pointer transition-colors ${
-                          alerta.lido ? "bg-white hover:bg-gray-50" : "bg-blue-50 hover:bg-blue-100"
+                        className={`flex gap-3 border-b border-slate-100 px-4 py-3 cursor-pointer transition-colors ${
+                          alerta.lido ? "bg-white hover:bg-slate-50" : "bg-blue-50/60 hover:bg-blue-50"
                         }`}
                       >
-                        <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${alerta.lido ? "bg-transparent" : "bg-[#1351B4]"}`} />
+                        <div className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${alerta.lido ? "bg-transparent" : "bg-[#1351B4]"}`} />
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs font-medium truncate ${alerta.lido ? "text-gray-700" : "text-gray-900"}`}>
+                          <p className={`text-xs font-medium truncate ${alerta.lido ? "text-slate-600" : "text-slate-900"}`}>
                             {alerta.titulo}
                           </p>
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{alerta.descricao}</p>
+                          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{alerta.descricao}</p>
                           {alerta.codigoSigpim && (
                             <p className="text-xs text-[#1351B4] font-mono mt-0.5">{alerta.codigoSigpim}</p>
                           )}
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p className="text-xs text-slate-400 mt-1">
                             {new Date(alerta.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                           </p>
                         </div>
@@ -468,43 +441,44 @@ export function MainLayout() {
                   </div>
 
                   {alertas.length > 0 && (
-                    <div className="border-t px-4 py-2 text-center">
-                      <p className="text-xs text-gray-400">{alertas.length} notificação(ões) no total</p>
+                    <div className="border-t border-slate-100 px-4 py-2 text-center">
+                      <p className="text-xs text-slate-400">{alertas.length} notificação(ões) no total</p>
                     </div>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {/* Usuário */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="gap-2 px-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#1351B4] text-white">
-                      <User className="h-3.5 w-3.5" />
+                  <Button variant="ghost" className="gap-2 px-2 hover:bg-slate-100">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1351B4]/10 text-[#1351B4] ring-2 ring-[#1351B4]/20">
+                      <User className="h-4 w-4" />
                     </div>
                     <div className="hidden text-left sm:block">
-                      <p className="text-xs font-semibold leading-tight">
+                      <p className="text-xs font-semibold leading-tight text-slate-900">
                         {usuario?.nomeCompleto ?? usuario?.email ?? "—"}
                       </p>
-                      <p className="text-xs text-gray-500 leading-tight">
+                      <p className="text-[11px] text-slate-500 leading-tight">
                         {PERFIL_LABEL[usuario?.perfil ?? ""] ?? usuario?.perfil ?? "—"}
                       </p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel className="text-xs text-gray-500">Minha Conta</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/dashboard/meu-perfil")}>
-                    <User className="mr-2 h-4 w-4" />Meu Perfil
+                <DropdownMenuContent align="end" className="w-52 rounded-xl border-slate-200 shadow-lg">
+                  <DropdownMenuLabel className="text-xs text-slate-500">Minha Conta</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-slate-100" />
+                  <DropdownMenuItem onClick={() => navigate("/dashboard/meu-perfil")} className="gap-2">
+                    <User className="h-4 w-4" />Meu Perfil
                   </DropdownMenuItem>
                   {perfil === "ADMINISTRADOR_SISTEMA" && (
-                    <DropdownMenuItem onClick={() => navigate("/dashboard/configuracoes")}>
-                      <Settings className="mr-2 h-4 w-4" />Configurações
+                    <DropdownMenuItem onClick={() => navigate("/dashboard/configuracoes")} className="gap-2">
+                      <Settings className="h-4 w-4" />Configurações
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-600" onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />Sair do Sistema
+                  <DropdownMenuSeparator className="bg-slate-100" />
+                  <DropdownMenuItem className="gap-2 text-red-600 focus:text-red-600" onClick={handleLogout}>
+                    <LogOut className="h-4 w-4" />Sair do Sistema
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
