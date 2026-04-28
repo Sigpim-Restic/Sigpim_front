@@ -1,44 +1,50 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router";
+import { useNavigate, useSearchParams, useLocation, Link } from "react-router";
 import {
   Lock, Eye, EyeOff, CheckCircle2,
-  AlertCircle, Loader2, ArrowLeft
+  AlertCircle, Loader2, ArrowLeft,
 } from "lucide-react";
 import { Logo } from "../../components/Logo";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { api } from "../../api/client";
-import { ApiError } from "../../api/client";
+import { api, ApiError } from "../../api/client";
 
 function validarSenha(senha: string) {
   return {
-    tamanho: senha.length >= 8,
-    numero: /\d/.test(senha),
+    tamanho:  senha.length >= 8,
+    numero:   /\d/.test(senha),
     maiuscula: /[A-Z]/.test(senha),
     especial: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(senha),
   };
 }
 
 export function RedefinirSenha() {
-  const navigate = useNavigate();
+  const navigate      = useNavigate();
+  const location      = useLocation();
   const [searchParams] = useSearchParams();
+
+  // Fluxo forçado: usuário já autenticado, vindo do Login.tsx com state { forcado: true }
+  const forcado = (location.state as { forcado?: boolean } | null)?.forcado === true;
+  // Fluxo normal: token via URL (link de e-mail)
   const token = searchParams.get("token") ?? "";
 
-  const [novaSenha, setNovaSenha] = useState("");
+  const [novaSenha,      setNovaSenha]      = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
-  const [showSenha, setShowSenha] = useState(false);
-  const [showConfirmar, setShowConfirmar] = useState(false);
-  const [senhaDetalhes, setSenhaDetalhes] = useState(validarSenha(""));
+  const [showSenha,      setShowSenha]      = useState(false);
+  const [showConfirmar,  setShowConfirmar]  = useState(false);
+  const [senhaDetalhes,  setSenhaDetalhes]  = useState(validarSenha(""));
 
-  const [tokenValido, setTokenValido] = useState<boolean | null>(null);
-  const [tokenErro, setTokenErro] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [sucesso, setSucesso] = useState(false);
+  const [tokenValido, setTokenValido] = useState<boolean | null>(forcado ? true : null);
+  const [tokenErro,   setTokenErro]   = useState<string | null>(null);
+  const [loading,     setLoading]     = useState(false);
+  const [erro,        setErro]        = useState<string | null>(null);
+  const [sucesso,     setSucesso]     = useState(false);
 
-  // Valida o token ao montar a página
+  // Valida o token apenas no fluxo normal (link de e-mail)
   useEffect(() => {
+    if (forcado) return;
+
     if (!token) {
       setTokenValido(false);
       setTokenErro("Token não informado. Solicite um novo link de recuperação.");
@@ -49,11 +55,9 @@ export function RedefinirSenha() {
       .then(() => setTokenValido(true))
       .catch((e) => {
         setTokenValido(false);
-        setTokenErro(
-          e instanceof ApiError ? e.message : "Token inválido ou expirado."
-        );
+        setTokenErro(e instanceof ApiError ? e.message : "Token inválido ou expirado.");
       });
-  }, [token]);
+  }, [token, forcado]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +76,13 @@ export function RedefinirSenha() {
 
     setLoading(true);
     try {
-      await api.post("/auth/redefinir-senha", { token, novaSenha });
+      if (forcado) {
+        // Fluxo forçado — usa JWT da sessão, endpoint de self-service
+        await api.patch("/usuarios/minha-senha", { novaSenha });
+      } else {
+        // Fluxo normal — usa token do e-mail
+        await api.post("/auth/redefinir-senha", { token, novaSenha });
+      }
       setSucesso(true);
     } catch (e) {
       setErro(e instanceof ApiError ? e.message : "Erro ao redefinir senha. Tente novamente.");
@@ -81,15 +91,13 @@ export function RedefinirSenha() {
     }
   };
 
-  // Token inválido
+  // Token inválido (fluxo normal)
   if (tokenValido === false) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-[#1351B4] px-8 py-6 text-center">
-            <div className="flex justify-center mb-4">
-              <Logo size="medium" />
-            </div>
+            <div className="flex justify-center mb-4"><Logo size="medium" /></div>
             <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
           </div>
           <div className="px-8 py-8 text-center">
@@ -117,9 +125,7 @@ export function RedefinirSenha() {
       <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-[#1351B4] px-8 py-6 text-center">
-            <div className="flex justify-center mb-4">
-              <Logo size="medium" />
-            </div>
+            <div className="flex justify-center mb-4"><Logo size="medium" /></div>
             <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
           </div>
           <div className="px-8 py-8 text-center">
@@ -130,13 +136,16 @@ export function RedefinirSenha() {
             </div>
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">Senha redefinida!</h2>
             <p className="text-gray-600 mb-8">
-              Sua senha foi alterada com sucesso. Faça login com a nova senha.
+              {forcado
+                ? "Sua senha foi definida com sucesso. Você já pode usar o sistema."
+                : "Sua senha foi alterada com sucesso. Faça login com a nova senha."
+              }
             </p>
             <Button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate(forcado ? "/dashboard" : "/login")}
               className="w-full bg-[#1351B4] hover:bg-[#0c3b8d] h-11 text-base font-medium"
             >
-              Ir para o Login
+              {forcado ? "Ir para o sistema" : "Ir para o Login"}
             </Button>
           </div>
         </div>
@@ -144,7 +153,7 @@ export function RedefinirSenha() {
     );
   }
 
-  // Carregando validação do token
+  // Carregando validação do token (fluxo normal)
   if (tokenValido === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center">
@@ -158,9 +167,7 @@ export function RedefinirSenha() {
     <div className="min-h-screen bg-gradient-to-br from-[#1351B4] to-[#0c3b8d] flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="bg-[#1351B4] px-8 py-6 text-center">
-          <div className="flex justify-center mb-4">
-            <Logo size="medium" />
-          </div>
+          <div className="flex justify-center mb-4"><Logo size="medium" /></div>
           <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
           <p className="text-sm text-white/80 mt-1">
             Sistema Integrado de Gestão do Patrimônio Imobiliário
@@ -168,10 +175,25 @@ export function RedefinirSenha() {
         </div>
 
         <div className="px-8 py-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-gray-900">Nova senha</h2>
-            <p className="text-sm text-gray-600 mt-2">Defina uma nova senha para sua conta</p>
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              {forcado ? "Defina sua senha" : "Nova senha"}
+            </h2>
+            <p className="text-sm text-gray-600 mt-2">
+              {forcado
+                ? "O administrador exige que você defina uma senha pessoal antes de continuar."
+                : "Defina uma nova senha para sua conta"
+              }
+            </p>
           </div>
+
+          {/* Banner de aviso no fluxo forçado */}
+          {forcado && (
+            <div className="mb-5 flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 p-3 text-sm text-orange-800">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Esta etapa é obrigatória. Não é possível acessar o sistema sem definir uma senha pessoal.</span>
+            </div>
+          )}
 
           {erro && (
             <div className="mb-5 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -209,8 +231,8 @@ export function RedefinirSenha() {
               {novaSenha && (
                 <div className="space-y-1 text-xs">
                   {[
-                    { ok: senhaDetalhes.tamanho, label: "Mínimo 8 caracteres" },
-                    { ok: senhaDetalhes.numero, label: "Pelo menos um número" },
+                    { ok: senhaDetalhes.tamanho,  label: "Mínimo 8 caracteres" },
+                    { ok: senhaDetalhes.numero,   label: "Pelo menos um número" },
                     { ok: senhaDetalhes.maiuscula, label: "Pelo menos uma maiúscula" },
                     { ok: senhaDetalhes.especial, label: "Pelo menos um caractere especial" },
                   ].map(({ ok, label }) => (
@@ -260,22 +282,25 @@ export function RedefinirSenha() {
                   Salvando...
                 </span>
               ) : (
-                "Redefinir Senha"
+                forcado ? "Definir Senha e Continuar" : "Redefinir Senha"
               )}
             </Button>
           </form>
 
-          <div className="mt-6">
-            <Link to="/login">
-              <Button
-                variant="ghost"
-                className="w-full h-11 text-base font-medium text-gray-700 hover:text-[#1351B4]"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para o login
-              </Button>
-            </Link>
-          </div>
+          {/* Botão de voltar — oculto no fluxo forçado */}
+          {!forcado && (
+            <div className="mt-6">
+              <Link to="/login">
+                <Button
+                  variant="ghost"
+                  className="w-full h-11 text-base font-medium text-gray-700 hover:text-[#1351B4]"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Voltar para o login
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
 
         <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">

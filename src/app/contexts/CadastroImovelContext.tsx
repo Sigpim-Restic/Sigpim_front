@@ -8,7 +8,7 @@ import { documentosApi, type DocumentoUploadParams } from "../api/documentos";
 
 export interface DadosEtapa1 {
   nomeReferencia: string;
-  origemCadastro: string;   // obrigatório no pré-cadastro (§4.2 Manual SIGPIM)
+  idOrigemCadastro: string;  // FK — obrigatório no pré-cadastro (§4.2 Manual SIGPIM)
   idOrgaoGestorPatrimonial: string;
   idUnidadeGestora: string;
   observacoesGerais: string;
@@ -93,7 +93,7 @@ interface Ctx {
 
 const Ctx = createContext<Ctx | null>(null);
 
-const e1: DadosEtapa1 = { nomeReferencia: "", origemCadastro: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" };
+const e1: DadosEtapa1 = { nomeReferencia: "", idOrigemCadastro: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" };
 const e2: DadosEtapa2 = {
   logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "",
   latitude: "", longitude: "",
@@ -107,7 +107,6 @@ const e7: DadosEtapa7 = { situacaoDominial: "", matriculaRegistro: "", cartorio:
 const e8: DadosEtapa8 = { imovelHistorico: "", observacoes: "" };
 
 // ── Utilitário: converte lista de pontos em WKT POLYGON ──────────────────────
-// Exige ao menos 3 pontos válidos. Fecha o anel automaticamente (repete o 1º no fim).
 function pontosParaWkt(pontos: PontoPoligono[]): string | undefined {
   const validos = pontos.filter(
     (p) =>
@@ -121,7 +120,6 @@ function pontosParaWkt(pontos: PontoPoligono[]): string | undefined {
   const coords = validos
     .map((p) => `${parseFloat(p.longitude)} ${parseFloat(p.latitude)}`)
     .join(", ");
-  // Fecha o anel: repete o primeiro ponto
   const primeiro = `${parseFloat(validos[0].longitude)} ${parseFloat(validos[0].latitude)}`;
   return `POLYGON((${coords}, ${primeiro}))`;
 }
@@ -173,7 +171,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
 
       const req: ImovelRequest = {
         nomeReferencia:           etapa1.nomeReferencia         || undefined,
-        origemCadastro:           etapa1.origemCadastro         || undefined,
+        idOrigemCadastro:         etapa1.idOrigemCadastro       ? Number(etapa1.idOrigemCadastro) : undefined,
         idTipoImovel,
         descricao:                etapa3.descricaoUso ? etapa3.descricaoUso.slice(0, 500) : undefined,
         tipologia:                etapa3.tipologia              || undefined,
@@ -208,7 +206,6 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         etapa2.pontos.length > 0;
 
       if (temLocalizacao) {
-        // Gera WKT a partir dos pontos; usa campo bruto apenas como fallback (não há mais textarea WKT)
         const geometriaWkt = pontosParaWkt(etapa2.pontos);
 
         await localizacoesApi.criar({
@@ -256,7 +253,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         await documentosApi.upload(arq.file, params);
       }
 
-      resetar(); // also clears localStorage
+      resetar();
       onSuccess();
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao salvar imóvel.");

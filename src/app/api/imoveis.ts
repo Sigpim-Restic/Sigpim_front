@@ -14,7 +14,9 @@ export interface ImovelResponse {
   statusCadastro: StatusCadastro;
   idSituacaoDominial: number | null;
   nomeSituacaoDominial: string | null;
-  origemCadastro: string | null;
+  // Replaced free-text origemCadastro with FK fields (V25)
+  idOrigemCadastro: number | null;
+  nomeOrigemCadastro: string | null;
   inscricaoImobiliaria: string | null;
   matriculaRegistro: string | null;
   cartorio: string | null;
@@ -53,7 +55,8 @@ export interface ImovelRequest {
   // All fields optional — no field is mandatory for pre-registration
   idTipoImovel?: number;
   idSituacaoDominial?: number;
-  origemCadastro?: string;
+  // Replaced free-text origemCadastro with FK (V25)
+  idOrigemCadastro?: number;
   inscricaoImobiliaria?: string;
   matriculaRegistro?: string;
   cartorio?: string;
@@ -129,11 +132,6 @@ export const imoveisApi = {
   excluirPermanentemente(id: number): Promise<void> {
     return api.delete(`/imoveis/${id}/permanente`);
   },
-  /**
-   * Verifica se um nome de referência está disponível (não duplicado).
-   * @param nome      Nome a verificar.
-   * @param excluirId ID do imóvel sendo editado — omitir em criações.
-   */
   verificarNome(nome: string, excluirId?: number): Promise<VerificarNomeResponse> {
     const params = new URLSearchParams({ nome });
     if (excluirId !== undefined) params.append("excluirId", String(excluirId));

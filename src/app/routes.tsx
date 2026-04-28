@@ -42,6 +42,7 @@ import { MeuPerfil } from "./pages/auth/MeuPerfil";
 import { VerificarDocumento } from "./pages/relatorios/VerificarDocumento";
 import { GerenciarTiposImovel } from "./pages/admin/GerenciarTiposImovel";
 import { GerenciarSituacoesDominiais } from "./pages/admin/GerenciarSituacoesDominiais";
+import { GerenciarOrigensCadastro } from "./pages/admin/GerenciarOrigensCadastro";
 import { ProtectedRoute } from "./contexts/ProtectedRoute";
 import { CadastroImovelProvider } from "./contexts/CadastroImovelContext";
 import { RedefinirSenha } from "./pages/auth/RedefinirSenha";
@@ -106,7 +107,6 @@ export const router = createBrowserRouter([
         path: "imoveis/:id/editar",
         Component: EditarImovel,
         children: [
-          // Redireciona /imoveis/:id/editar → etapa-1
           { index: true, element: <Navigate to="etapa-1" replace /> },
           { path: "etapa-1", Component: EditarStep1 },
           { path: "etapa-2", Component: EditarStep2 },
@@ -128,9 +128,10 @@ export const router = createBrowserRouter([
       { path: "usuarios/novo",           Component: CadastroUsuario },
       { path: "usuarios/:id/permissoes", Component: Permissoes },
       { path: "usuarios/sucesso",        Component: SucessoUsuario },
-      { path: "configuracoes",                    Component: Configuracoes },
-      { path: "configuracoes/tipos-imovel",        Component: GerenciarTiposImovel },
-      { path: "configuracoes/situacoes-dominiais", Component: GerenciarSituacoesDominiais },
+      { path: "configuracoes",                       Component: Configuracoes },
+      { path: "configuracoes/tipos-imovel",          Component: GerenciarTiposImovel },
+      { path: "configuracoes/situacoes-dominiais",   Component: GerenciarSituacoesDominiais },
+      { path: "configuracoes/origens-cadastro",      Component: GerenciarOrigensCadastro },
     ],
   },
 ]);

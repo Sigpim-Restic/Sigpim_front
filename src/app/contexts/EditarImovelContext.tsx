@@ -5,9 +5,9 @@ import { localizacoesApi } from "../api/localizacoes";
 import type { ImovelRequest, ImovelResponse } from "../api/imoveis";
 import type { OcupacaoRequest } from "../api/ocupacoes";
 
-// Reutiliza os mesmos tipos de dados de cada etapa do wizard de criação
 export interface DadosEtapa1 {
   nomeReferencia: string;
+  idOrigemCadastro: string;  // FK — extensível via origens_cadastro (V25)
   idOrgaoGestorPatrimonial: string;
   idUnidadeGestora: string;
   observacoesGerais: string;
@@ -59,7 +59,7 @@ interface Ctx {
 const Ctx = createContext<Ctx | null>(null);
 
 const vazios = {
-  e1: (): DadosEtapa1 => ({ nomeReferencia: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" }),
+  e1: (): DadosEtapa1 => ({ nomeReferencia: "", idOrigemCadastro: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" }),
   e2: (): DadosEtapa2 => ({ logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "", latitude: "", longitude: "", geometriaWkt: "" }),
   e3: (): DadosEtapa3 => ({ tipoImovel: "", idTipoImovel: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" }),
   e4: (): DadosEtapa4 => ({ areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "" }),
@@ -87,7 +87,6 @@ export function EditarImovelProvider({
   const [salvando, setSalvando] = useState(false);
   const [erro,     setErro]     = useState<string | null>(null);
 
-  // Carrega o imóvel e pré-preenche todos os formulários
   useEffect(() => {
     setCarregando(true);
     setErroCarregamento(null);
@@ -103,6 +102,7 @@ export function EditarImovelProvider({
         // Etapa 1 — Identificação
         setEtapa1({
           nomeReferencia:           im.nomeReferencia ?? "",
+          idOrigemCadastro:         im.idOrigemCadastro != null ? String(im.idOrigemCadastro) : "",
           idOrgaoGestorPatrimonial: im.idOrgaoGestorPatrimonial ? String(im.idOrgaoGestorPatrimonial) : "",
           idUnidadeGestora:         im.idUnidadeGestora ? String(im.idUnidadeGestora) : "",
           observacoesGerais:        im.observacoesGerais ?? "",
@@ -123,7 +123,7 @@ export function EditarImovelProvider({
           });
         }
 
-        // Etapa 3 — Classificação (sem situação dominial — vai para etapa6)
+        // Etapa 3 — Classificação
         setEtapa3({
           tipoImovel:       im.tipoImovel       ?? "",
           tipologia:        im.tipologia        ?? "",
@@ -134,22 +134,23 @@ export function EditarImovelProvider({
 
         // Etapa 4 — Dados físicos
         setEtapa4({
-          areaTerrenoM2:        im.areaTerrenoM2       != null ? String(im.areaTerrenoM2)       : "",
-          areaConstruidaM2:     im.areaConstruidaM2    != null ? String(im.areaConstruidaM2)    : "",
-          numeroPavimentos:     im.numeroPavimentos    != null ? String(im.numeroPavimentos)    : "",
+          areaTerrenoM2:          im.areaTerrenoM2       != null ? String(im.areaTerrenoM2)       : "",
+          areaConstruidaM2:       im.areaConstruidaM2    != null ? String(im.areaConstruidaM2)    : "",
+          numeroPavimentos:       im.numeroPavimentos    != null ? String(im.numeroPavimentos)    : "",
           estadoConservacaoAtual: im.estadoConservacaoAtual ?? "",
-          anoConstrucao:        im.anoConstrucao       != null ? String(im.anoConstrucao)       : "",
+          anoConstrucao:          im.anoConstrucao       != null ? String(im.anoConstrucao)       : "",
         });
 
         // Etapa 6 — Dominial
         setEtapa6({
-          idSituacaoDominial:  im.idSituacaoDominial != null ? String(im.idSituacaoDominial) : "",
-          matriculaRegistro:   im.matriculaRegistro  ?? "",
-          cartorio:            im.cartorio           ?? "",
+          idSituacaoDominial:   im.idSituacaoDominial != null ? String(im.idSituacaoDominial) : "",
+          matriculaRegistro:    im.matriculaRegistro  ?? "",
+          cartorio:             im.cartorio           ?? "",
           inscricaoImobiliaria: im.inscricaoImobiliaria ?? "",
-          observacoesDominial: "",
-          imovelHistorico:     im.imovelHistorico ?? null,
+          observacoesDominial:  "",
+          imovelHistorico:      im.imovelHistorico ?? null,
         });
+
         const ocup = ocupPage?.content?.[0];
         if (ocup && ocup.vigente) {
           setEtapa5({
@@ -179,9 +180,10 @@ export function EditarImovelProvider({
       const idOrgao   = etapa1.idOrgaoGestorPatrimonial ? Number(etapa1.idOrgaoGestorPatrimonial) : imovel.idOrgaoGestorPatrimonial ?? undefined;
 
       const req: ImovelRequest = {
-        nomeReferencia:           etapa1.nomeReferencia  || undefined,
+        nomeReferencia:           etapa1.nomeReferencia    || undefined,
+        idOrigemCadastro:         etapa1.idOrigemCadastro  ? Number(etapa1.idOrigemCadastro) : undefined,
         idTipoImovel:             etapa3.idTipoImovel ? Number(etapa3.idTipoImovel) : undefined,
-        tipologia:                etapa3.tipologia       || undefined,
+        tipologia:                etapa3.tipologia         || undefined,
         idSituacaoDominial:       etapa6.idSituacaoDominial ? Number(etapa6.idSituacaoDominial) : undefined,
         inscricaoImobiliaria:     etapa6.inscricaoImobiliaria || undefined,
         matriculaRegistro:        etapa6.matriculaRegistro   || undefined,
@@ -200,7 +202,6 @@ export function EditarImovelProvider({
 
       await imoveisApi.atualizar(imovel.id, req);
 
-      // Atualiza localização se coordenadas foram preenchidas
       if (etapa2.latitude || etapa2.longitude || etapa2.logradouro) {
         const locReq = {
           idImovel:     imovel.id,
@@ -213,12 +214,10 @@ export function EditarImovelProvider({
           longitude:    etapa2.longitude   ? parseFloat(etapa2.longitude) : undefined,
           geometriaWkt: etapa2.geometriaWkt || undefined,
         };
-        // Tenta buscar localização existente para decidir entre POST e PUT
         try {
           const locExistente = await localizacoesApi.buscarPorImovel(imovel.id);
           await localizacoesApi.atualizar(locExistente.id, locReq);
         } catch {
-          // Não existe — cria
           await localizacoesApi.criar(locReq);
         }
       }

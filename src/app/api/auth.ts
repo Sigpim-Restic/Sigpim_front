@@ -3,13 +3,11 @@ import { ApiError } from "./client";
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
 export interface LoginRequest {
-  /** E-mail institucional ou CPF (apenas dígitos). */
   identificador: string;
   senha: string;
 }
 
 export interface LoginResponse {
-  // JWT final — null quando mfaRequired = true
   accessToken: string | null;
   tokenType: string | null;
   expiresIn: number | null;
@@ -19,16 +17,14 @@ export interface LoginResponse {
   perfil: string | null;
   idOrgao: number | null;
   idUnidade: number | null;
+  // Força troca de senha no primeiro login
+  trocarSenhaNoProximoLogin: boolean;
   // MFA
   mfaRequired: boolean;
   mfaToken: string | null;
 }
 
 export const authApi = {
-  /**
-   * Login sem Authorization header.
-   * Limpa token expirado antes de enviar para evitar 401 no filtro JWT.
-   */
   async login(data: LoginRequest): Promise<LoginResponse> {
     localStorage.removeItem("sigpim_token");
     localStorage.removeItem("sigpim_usuario");

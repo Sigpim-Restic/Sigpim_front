@@ -16,16 +16,7 @@ import { useNavigate } from "react-router";
 import { orgaosApi, type OrgaoResponse } from "../../../api/orgaos";
 import { unidadesApi, type UnidadeOrganizacionalResponse } from "../../../api/unidades";
 import { imoveisApi } from "../../../api/imoveis";
-
-// Opções de origem do cadastro — Manual SIGPIM §4.2 / campo origem_cadastro
-const ORIGENS = [
-  { value: "LEVANTAMENTO_CAMPO",      label: "Levantamento em campo" },
-  { value: "DEMANDA_SECRETARIA",      label: "Demanda de secretaria" },
-  { value: "PROCESSO_ADMINISTRATIVO", label: "Processo administrativo" },
-  { value: "IMPORTACAO_PLANILHA",     label: "Importação de planilha" },
-  { value: "DENUNCIA",                label: "Denúncia / ocorrência" },
-  { value: "OUTRO",                   label: "Outro" },
-];
+import { origensCadastroApi, type OrigemCadastroResponse } from "../../../api/origens-cadastro";
 
 export function CadastroImovelStep1() {
   const { etapa1, setEtapa1 } = useCadastroImovel();
@@ -34,8 +25,10 @@ export function CadastroImovelStep1() {
   const [erros, setErros] = useState<Record<string, string>>({});
   const [orgaos, setOrgaos] = useState<OrgaoResponse[]>([]);
   const [unidades, setUnidades] = useState<UnidadeOrganizacionalResponse[]>([]);
+  const [origens, setOrigens] = useState<OrigemCadastroResponse[]>([]);
   const [carregandoOrgaos, setCarregandoOrgaos] = useState(true);
   const [carregandoUnidades, setCarregandoUnidades] = useState(false);
+  const [carregandoOrigens, setCarregandoOrigens] = useState(true);
   const [erroCarregamento, setErroCarregamento] = useState<string | null>(null);
   const [verificandoNome, setVerificandoNome] = useState(false);
 
@@ -45,6 +38,14 @@ export function CadastroImovelStep1() {
       .then(setOrgaos)
       .catch(() => setErroCarregamento("Não foi possível carregar os órgãos. Tente recarregar a página."))
       .finally(() => setCarregandoOrgaos(false));
+  }, []);
+
+  useEffect(() => {
+    origensCadastroApi
+      .listarAtivas()
+      .then(setOrigens)
+      .catch(() => setErroCarregamento("Não foi possível carregar as origens de cadastro. Tente recarregar a página."))
+      .finally(() => setCarregandoOrigens(false));
   }, []);
 
   useEffect(() => {
@@ -66,8 +67,8 @@ export function CadastroImovelStep1() {
     const novosErros: Record<string, string> = {};
 
     // Origem do cadastro — obrigatória no pré-cadastro (Manual SIGPIM §4.2)
-    if (!etapa1.origemCadastro) {
-      novosErros.origemCadastro = "Informe a origem do cadastro. Este campo é obrigatório no pré-cadastro.";
+    if (!etapa1.idOrigemCadastro) {
+      novosErros.idOrigemCadastro = "Informe a origem do cadastro. Este campo é obrigatório no pré-cadastro.";
     }
 
     // Nome: se preenchido, verificar duplicidade antes de avançar
@@ -120,27 +121,28 @@ export function CadastroImovelStep1() {
 
           {/* ── Origem do cadastro — OBRIGATÓRIA ──────────────────────────── */}
           <div className="space-y-2">
-            <Label htmlFor="origemCadastro">
+            <Label htmlFor="idOrigemCadastro">
               Origem do Cadastro <span className="text-red-500">*</span>
             </Label>
             <Select
-              value={etapa1.origemCadastro}
+              value={etapa1.idOrigemCadastro}
               onValueChange={(v) => {
-                setEtapa1({ ...etapa1, origemCadastro: v });
-                if (erros.origemCadastro) setErros((prev) => ({ ...prev, origemCadastro: "" }));
+                setEtapa1({ ...etapa1, idOrigemCadastro: v });
+                if (erros.idOrigemCadastro) setErros((prev) => ({ ...prev, idOrigemCadastro: "" }));
               }}
+              disabled={carregandoOrigens}
             >
-              <SelectTrigger className={erros.origemCadastro ? "border-red-400" : ""}>
-                <SelectValue placeholder="Como este imóvel foi identificado?" />
+              <SelectTrigger className={erros.idOrigemCadastro ? "border-red-400" : ""}>
+                <SelectValue placeholder={carregandoOrigens ? "Carregando..." : "Como este imóvel foi identificado?"} />
               </SelectTrigger>
               <SelectContent>
-                {ORIGENS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                {origens.map((o) => (
+                  <SelectItem key={o.id} value={String(o.id)}>{o.nome}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {erros.origemCadastro && (
-              <p className="text-xs text-red-500">{erros.origemCadastro}</p>
+            {erros.idOrigemCadastro && (
+              <p className="text-xs text-red-500">{erros.idOrigemCadastro}</p>
             )}
           </div>
 

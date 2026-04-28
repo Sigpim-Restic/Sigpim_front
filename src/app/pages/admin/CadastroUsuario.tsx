@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Save, AlertCircle, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, AlertCircle, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -17,7 +17,6 @@ import { usuariosApi, type PerfilUsuario } from "../../api/usuarios";
 function validarCpf(cpf: string): boolean {
   const digits = cpf.replace(/\D/g, "");
   if (digits.length !== 11) return false;
-  // Rejeita sequências repetidas (111.111.111-11, etc.)
   if (/^(\d)\1{10}$/.test(digits)) return false;
 
   const calc = (len: number) => {
@@ -35,6 +34,28 @@ function formatarCpf(valor: string): string {
   if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
   if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+// ── Validação de força de senha ───────────────────────────────────────────────
+interface RequisitosSenh {
+  minimo8: boolean;
+  maiuscula: boolean;
+  numero: boolean;
+  especial: boolean;
+}
+
+function verificarRequisitos(senha: string): RequisitosSenh {
+  return {
+    minimo8:  senha.length >= 8,
+    maiuscula: /[A-Z]/.test(senha),
+    numero:   /[0-9]/.test(senha),
+    especial: /[^A-Za-z0-9]/.test(senha),
+  };
+}
+
+function senhaValida(senha: string): boolean {
+  const r = verificarRequisitos(senha);
+  return r.minimo8 && r.maiuscula && r.numero && r.especial;
 }
 
 // Os 7 perfis do Manual SIGPIM §1 — Usuários, Perfis e Auditoria
@@ -67,13 +88,12 @@ export function CadastroUsuario() {
   const [erroApi,  setErroApi]  = useState<string | null>(null);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
+  const [senhaFocada, setSenhaFocada] = useState(false);
 
-  // Carregar órgãos via API
   useEffect(() => {
     orgaosApi.listarAtivos().then(setOrgaos).catch(() => {});
   }, []);
 
-  // Carregar unidades quando órgão muda
   useEffect(() => {
     if (!form.idOrgao) { setUnidades([]); return; }
     unidadesApi.listarAtivasPorOrgao(Number(form.idOrgao))
@@ -90,14 +110,15 @@ export function CadastroUsuario() {
     const cpfDigits = form.cpf.replace(/\D/g, "");
     if (!cpfDigits || cpfDigits.length !== 11) e.cpf = "CPF deve conter 11 dígitos.";
     else if (!validarCpf(form.cpf)) e.cpf = "CPF inválido. Verifique os dígitos informados.";
+    // FIX: removida validação de domínio .gov.br — e-mail livre
     if (!form.email.trim()) e.email = "E-mail é obrigatório.";
-    else if (!form.email.includes(".gov.br")) e.email = "Utilize e-mail institucional com domínio .gov.br.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Informe um e-mail válido.";
     if (!form.nomeUsuario.trim()) e.nomeUsuario = "Nome de usuário é obrigatório.";
     if (!form.idOrgao) e.idOrgao = "Órgão é obrigatório.";
     if (!form.idUnidade) e.idUnidade = "Unidade é obrigatória.";
     if (!form.perfil) e.perfil = "Perfil de acesso é obrigatório.";
     if (!form.senha) e.senha = "Senha é obrigatória.";
-    else if (form.senha.length < 8) e.senha = "Senha deve ter no mínimo 8 caracteres.";
+    else if (!senhaValida(form.senha)) e.senha = "A senha não atende aos requisitos mínimos.";
     if (form.senha !== form.confirmarSenha) e.confirmarSenha = "As senhas não coincidem.";
     setErros(e);
     return Object.keys(e).length === 0;
@@ -106,7 +127,6 @@ export function CadastroUsuario() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validar()) return;
-    // Proteção extra — garante que CPF inválido nunca chega ao backend
     if (!validarCpf(form.cpf)) {
       setErros(prev => ({ ...prev, cpf: "CPF inválido. Verifique os dígitos informados." }));
       return;
@@ -158,6 +178,19 @@ export function CadastroUsuario() {
     </div>
   );
 
+  const requisitos = verificarRequisitos(form.senha);
+  const mostrarRequisitos = senhaFocada || (form.senha.length > 0 && !senhaValida(form.senha));
+
+  const RequisitoItem = ({ ok, label }: { ok: boolean; label: string }) => (
+    <li className={`flex items-center gap-1.5 text-xs ${ok ? "text-green-600" : "text-gray-500"}`}>
+      {ok
+        ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+        : <XCircle className="h-3.5 w-3.5 shrink-0" />
+      }
+      {label}
+    </li>
+  );
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
@@ -199,7 +232,6 @@ export function CadastroUsuario() {
                   onChange={(e) => {
                     const formatado = formatarCpf(e.target.value);
                     set("cpf", formatado);
-                    // Revalida em tempo real após 11 dígitos em vez de só limpar o erro
                     const digits = formatado.replace(/\D/g, "");
                     if (digits.length === 11) {
                       setErros(prev => ({
@@ -215,7 +247,6 @@ export function CadastroUsuario() {
                   inputMode="numeric"
                   className={`pr-8 ${erros.cpf ? "border-red-400" : form.cpf.replace(/\D/g, "").length === 11 ? validarCpf(form.cpf) ? "border-green-400" : "border-red-400" : ""}`}
                 />
-                {/* Ícone de feedback */}
                 {form.cpf.replace(/\D/g, "").length === 11 && (
                   <span className="absolute right-3 top-1/2 -translate-y-1/2">
                     {validarCpf(form.cpf)
@@ -225,7 +256,6 @@ export function CadastroUsuario() {
                   </span>
                 )}
               </div>
-              {/* Feedback em tempo real */}
               {form.cpf.replace(/\D/g, "").length === 11 && !validarCpf(form.cpf) && !erros.cpf && (
                 <p className="flex items-center gap-1 text-xs text-red-600">
                   <AlertCircle className="h-3 w-3" />CPF inválido. Verifique os dígitos.
@@ -243,8 +273,10 @@ export function CadastroUsuario() {
               )}
             </div>
           </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
-            {campo("email", "E-mail Institucional", { required: true, placeholder: "usuario@orgao.slz.ma.gov.br", hint: "Domínio .gov.br obrigatório" })}
+            {/* FIX: removido hint de domínio .gov.br e validação simples de formato */}
+            {campo("email", "E-mail Institucional", { required: true, placeholder: "usuario@orgao.slz.ma.gov.br" })}
             {campo("celular", "Celular", { placeholder: "(98) 99999-9999" })}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -268,6 +300,8 @@ export function CadastroUsuario() {
                   type={mostrarSenha ? "text" : "password"}
                   value={form.senha}
                   onChange={e => set("senha", e.target.value)}
+                  onFocus={() => setSenhaFocada(true)}
+                  onBlur={() => setSenhaFocada(false)}
                   placeholder="Mínimo 8 caracteres"
                   className={erros.senha ? "border-red-400 pr-10" : "pr-10"}
                 />
@@ -277,8 +311,20 @@ export function CadastroUsuario() {
                   {mostrarSenha ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+
+              {/* Requisitos de senha — aparecem ao focar ou enquanto inválida */}
+              {mostrarRequisitos && (
+                <ul className="mt-2 space-y-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                  <RequisitoItem ok={requisitos.minimo8}  label="Mínimo 8 caracteres" />
+                  <RequisitoItem ok={requisitos.maiuscula} label="Pelo menos uma letra maiúscula" />
+                  <RequisitoItem ok={requisitos.numero}   label="Pelo menos um número" />
+                  <RequisitoItem ok={requisitos.especial} label="Pelo menos um caractere especial (!@#$...)" />
+                </ul>
+              )}
+
               {erros.senha && <p className="flex items-center gap-1 text-xs text-red-600"><AlertCircle className="h-3 w-3" />{erros.senha}</p>}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="confirmarSenha">Confirmar Senha <span className="text-red-600">*</span></Label>
               <div className="relative">
@@ -322,7 +368,6 @@ export function CadastroUsuario() {
           <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Vínculo Organizacional e Perfil</h3>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            {/* Órgão — via API */}
             <div className="space-y-2">
               <Label>Órgão <span className="text-red-600">*</span></Label>
               <Select value={form.idOrgao} onValueChange={v => { set("idOrgao", v); set("idUnidade", ""); }}>
@@ -340,7 +385,6 @@ export function CadastroUsuario() {
               {erros.idOrgao && <p className="flex items-center gap-1 text-xs text-red-600"><AlertCircle className="h-3 w-3" />{erros.idOrgao}</p>}
             </div>
 
-            {/* Unidade — dropdown encadeado ao órgão */}
             <div className="space-y-2">
               <Label>Unidade <span className="text-red-600">*</span></Label>
               <Select
@@ -363,7 +407,6 @@ export function CadastroUsuario() {
             </div>
           </div>
 
-          {/* Perfil — 7 perfis do Manual SIGPIM */}
           <div className="space-y-2">
             <Label>Perfil de Acesso <span className="text-red-600">*</span></Label>
             <Select value={form.perfil} onValueChange={v => set("perfil", v)}>
@@ -385,7 +428,6 @@ export function CadastroUsuario() {
           </div>
         </Card>
 
-        {/* Actions */}
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" onClick={() => navigate("/dashboard/usuarios")}>
             Cancelar

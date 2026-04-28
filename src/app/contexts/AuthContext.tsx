@@ -16,11 +16,13 @@ interface AuthContextValue {
   token: string | null;
   loading: boolean;
   autenticado: boolean;
-  login: (data: LoginRequest) => Promise<{ mfaRequired: boolean; mfaToken?: string }>;
+  login: (data: LoginRequest) => Promise<{
+    mfaRequired: boolean;
+    mfaToken?: string;
+    trocarSenhaNoProximoLogin?: boolean;
+  }>;
   logout: () => void;
-  /** Salva a sessão após completar o segundo fator MFA. */
   salvarSessao: (res: LoginResponse) => void;
-  /** Atualiza o campo mfaAtivo do usuário logado sem refetch. */
   atualizarMfa: (ativo: boolean) => void;
 }
 
@@ -37,7 +39,7 @@ function resParaUsuario(res: LoginResponse): UsuarioLogado {
     perfil:       res.perfil as string ?? "",
     idOrgao:      res.idOrgao ?? null,
     idUnidade:    res.idUnidade ?? null,
-    mfaAtivo:     false, // atualizado via atualizarMfa após confirmar no setup
+    mfaAtivo:     false,
   };
 }
 
@@ -82,14 +84,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await authApi.login(data);
 
-      // MFA pendente — não salva sessão ainda, devolve o token temporário ao Login.tsx
+      // MFA pendente — não salva sessão ainda
       if (res.mfaRequired && res.mfaToken) {
         return { mfaRequired: true, mfaToken: res.mfaToken };
       }
 
-      // Login direto (sem MFA) — salva sessão normalmente
+      // Login direto — salva sessão
       salvarSessao(res);
-      return { mfaRequired: false };
+      return {
+        mfaRequired: false,
+        trocarSenhaNoProximoLogin: res.trocarSenhaNoProximoLogin,
+      };
     } finally {
       setLoading(false);
     }
