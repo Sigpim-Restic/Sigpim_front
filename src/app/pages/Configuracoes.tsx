@@ -1,14 +1,39 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Shield, Bell, Tag, Scale, Info, MapPin } from "lucide-react";
+import { Shield, Bell, Tag, Scale, Info, MapPin, RefreshCw } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Switch } from "../components/ui/switch";
+import { configuracoesSistemaApi } from "../api/configuracoes-sistema";
 
 export function Configuracoes() {
   const navigate = useNavigate();
+
+  const [mfaForcado,         setMfaForcado]         = useState(false);
+  const [carregandoMfa,      setCarregandoMfa]      = useState(true);
+  const [salvandoMfa,        setSalvandoMfa]        = useState(false);
+
+  useEffect(() => {
+    configuracoesSistemaApi.getMfaForcadoAdministradores()
+      .then((r) => setMfaForcado(r.ativo))
+      .catch(() => {})
+      .finally(() => setCarregandoMfa(false));
+  }, []);
+
+  const handleToggleMfa = async (ativo: boolean) => {
+    setSalvandoMfa(true);
+    try {
+      const res = await configuracoesSistemaApi.setMfaForcadoAdministradores(ativo);
+      setMfaForcado(res.ativo);
+    } catch {
+      // Reverte UI em caso de erro
+      setMfaForcado(!ativo);
+    } finally {
+      setSalvandoMfa(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -67,8 +92,8 @@ export function Configuracoes() {
           {[
             { label: "Versão",             value: "2.0.0 — Fase 2" },
             { label: "Ambiente",           value: "Produção" },
-            { label: "Banco de dados",     value: "PostgreSQL 15 + PostGIS" },
-            { label: "Última atualização", value: "18/04/2026" },
+            { label: "Banco de dados",     value: "PostgreSQL 18 + PostGIS" },
+            { label: "Última atualização", value: "28/04/2026" },
           ].map((i) => (
             <div key={i.label} className="rounded-lg bg-gray-50 px-4 py-3">
               <p className="text-xs text-gray-500">{i.label}</p>
@@ -115,13 +140,26 @@ export function Configuracoes() {
             <Label className="text-xs">Tempo de sessão (minutos)</Label>
             <Input type="number" defaultValue={120} className="max-w-32" />
           </div>
+
+          {/* MFA forçado — agora com lógica real */}
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-900">Forçar MFA para administradores</p>
-              <p className="text-xs text-gray-500">Exige autenticação de dois fatores</p>
+              <p className="text-xs text-gray-500">
+                Exige autenticação de dois fatores para perfis ADMINISTRADOR_SISTEMA e ADMINISTRADOR_PATRIMONIAL
+              </p>
             </div>
-            <Switch />
+            {carregandoMfa ? (
+              <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
+            ) : (
+              <Switch
+                checked={mfaForcado}
+                onCheckedChange={handleToggleMfa}
+                disabled={salvandoMfa}
+              />
+            )}
           </div>
+
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-900">Log de acesso completo</p>

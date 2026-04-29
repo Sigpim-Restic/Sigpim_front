@@ -98,6 +98,13 @@ export const usuariosApi = {
   alterarMinhaSenha(novaSenha: string): Promise<void> {
     return api.patch<void>("/usuarios/minha-senha", { novaSenha });
   },
+
+  // Adicionar dentro do objeto usuariosApi:
+atualizarMinhaFoto(foto: File): Promise<UsuarioResponse> {
+  const form = new FormData();
+  form.append("foto", foto);
+  return api.patch("/usuarios/minha-foto", form);
+},
 };
 
 export const orgaosApi = {

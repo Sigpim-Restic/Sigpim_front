@@ -1,5 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { User, Mail, Phone, BadgeCheck, Building2, Lock, Eye, EyeOff, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router";
+import {
+  User, Mail, Phone, BadgeCheck, Building2, Lock, Eye, EyeOff,
+  RefreshCw, AlertCircle, CheckCircle2, Camera, ShieldAlert,
+} from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { usuariosApi, type UsuarioResponse } from "../../api/usuarios";
 import { Button } from "../../components/ui/button";
@@ -17,11 +21,7 @@ const PERFIL_LABEL: Record<string, string> = {
   AUDITOR:                   "Auditor",
 };
 
-function Campo({ icone, label, valor }: {
-  icone: React.ReactNode;
-  label: string;
-  valor?: string | null;
-}) {
+function Campo({ icone, label, valor }: { icone: React.ReactNode; label: string; valor?: string | null }) {
   return (
     <div className="flex items-start gap-3">
       <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#1351B4]">
@@ -37,55 +37,98 @@ function Campo({ icone, label, valor }: {
 
 function validarSenha(senha: string) {
   return {
-    tamanho:  senha.length >= 8,
-    numero:   /\d/.test(senha),
+    tamanho:   senha.length >= 8,
+    numero:    /\d/.test(senha),
     maiuscula: /[A-Z]/.test(senha),
-    especial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(senha),
+    especial:  /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(senha),
   };
 }
 
 export function MeuPerfil() {
   const { usuario } = useAuth();
+  const location    = useLocation();
 
-  const [dados,       setDados]       = useState<UsuarioResponse | null>(null);
-  const [carregando,  setCarregando]  = useState(true);
-  const [erroLoad,    setErroLoad]    = useState<string | null>(null);
+  // Quando vindo do Login com MFA forçado pelo admin
+  const mfaSetupObrigatorio = (location.state as { mfaSetupObrigatorio?: boolean } | null)
+    ?.mfaSetupObrigatorio === true;
+
+  const [dados,      setDados]      = useState<UsuarioResponse | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erroLoad,   setErroLoad]   = useState<string | null>(null);
+
+  // Foto de perfil
+  const fotoInputRef                        = useRef<HTMLInputElement>(null);
+  const [uploadandoFoto, setUploadandoFoto] = useState(false);
+  const [erroFoto,       setErroFoto]       = useState<string | null>(null);
+  const [previewFoto,    setPreviewFoto]    = useState<string | null>(null);
 
   // Alteração de senha
-  const [novaSenha,        setNovaSenha]        = useState("");
-  const [confirmarSenha,   setConfirmarSenha]   = useState("");
-  const [showNova,         setShowNova]         = useState(false);
-  const [showConfirmar,    setShowConfirmar]     = useState(false);
-  const [salvandoSenha,    setSalvandoSenha]    = useState(false);
-  const [erroSenha,        setErroSenha]        = useState<string | null>(null);
-  const [sucessoSenha,     setSucessoSenha]     = useState(false);
+  const [novaSenha,      setNovaSenha]      = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [showNova,       setShowNova]       = useState(false);
+  const [showConfirmar,  setShowConfirmar]  = useState(false);
+  const [salvandoSenha,  setSalvandoSenha]  = useState(false);
+  const [erroSenha,      setErroSenha]      = useState<string | null>(null);
+  const [sucessoSenha,   setSucessoSenha]   = useState(false);
 
-  const validacao = validarSenha(novaSenha);
+  const validacao  = validarSenha(novaSenha);
   const senhaValida = Object.values(validacao).every(Boolean);
 
   useEffect(() => {
-    
     setCarregando(true);
     usuariosApi
       .buscarMe()
-      .then(setDados)
+      .then((d) => {
+        setDados(d);
+        if (d.fotoPerfil) setPreviewFoto(d.fotoPerfil);
+      })
       .catch(() => setErroLoad("Não foi possível carregar os dados do perfil."))
       .finally(() => setCarregando(false));
   }, []);
+
+  const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setErroFoto(null);
+
+    if (!file.type.startsWith("image/")) {
+      setErroFoto("Apenas imagens são permitidas (JPEG, PNG, WebP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErroFoto("A foto deve ter no máximo 5 MB.");
+      return;
+    }
+
+    // Preview imediato
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreviewFoto(ev.target?.result as string);
+    reader.readAsDataURL(file);
+
+    setUploadandoFoto(true);
+    try {
+      const atualizado = await usuariosApi.atualizarMinhaFoto(file);
+      setDados(atualizado);
+      if (atualizado.fotoPerfil) setPreviewFoto(atualizado.fotoPerfil);
+    } catch (err: unknown) {
+      setErroFoto(err instanceof Error ? err.message : "Erro ao enviar foto.");
+      // Reverte o preview em caso de erro
+      setPreviewFoto(dados?.fotoPerfil ?? null);
+    } finally {
+      setUploadandoFoto(false);
+      // Limpa o input para permitir selecionar o mesmo arquivo novamente
+      if (fotoInputRef.current) fotoInputRef.current.value = "";
+    }
+  };
 
   const handleAlterarSenha = async (e: React.FormEvent) => {
     e.preventDefault();
     setErroSenha(null);
     setSucessoSenha(false);
 
-    if (!senhaValida) {
-      setErroSenha("A senha não atende aos requisitos mínimos.");
-      return;
-    }
-    if (novaSenha !== confirmarSenha) {
-      setErroSenha("As senhas não coincidem.");
-      return;
-    }
+    if (!senhaValida) { setErroSenha("A senha não atende aos requisitos mínimos."); return; }
+    if (novaSenha !== confirmarSenha) { setErroSenha("As senhas não coincidem."); return; }
 
     setSalvandoSenha(true);
     try {
@@ -120,11 +163,24 @@ export function MeuPerfil() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
 
-      {/* Cabeçalho */}
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Meu Perfil</h1>
         <p className="text-sm text-gray-500 mt-1">Suas informações cadastrais no sistema</p>
       </div>
+
+      {/* Banner MFA obrigatório — aparece quando admin é redirecionado pelo login */}
+      {mfaSetupObrigatorio && (
+        <div className="flex items-start gap-3 rounded-lg border border-orange-300 bg-orange-50 p-4 text-sm text-orange-800">
+          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-orange-500" />
+          <div>
+            <p className="font-semibold">Autenticação de dois fatores obrigatória</p>
+            <p className="mt-0.5 text-orange-700">
+              O administrador do sistema exige que contas com perfil de administrador ativem o MFA antes de acessar o sistema.
+              Configure o autenticador na seção abaixo para continuar.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Card de dados */}
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -133,27 +189,69 @@ export function MeuPerfil() {
           <h2 className="text-sm font-semibold text-gray-700">Dados Pessoais</h2>
         </div>
 
-        {/* Avatar */}
+        {/* Avatar com upload */}
         <div className="flex items-center gap-4 border-b border-gray-100 px-5 py-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1351B4] text-white text-xl font-semibold select-none">
-            {dados.nomeCompleto?.charAt(0).toUpperCase() ?? "?"}
+          <div className="relative group">
+            {previewFoto ? (
+              <img
+                src={previewFoto}
+                alt="Foto de perfil"
+                className="h-14 w-14 rounded-full object-cover ring-2 ring-[#1351B4]/20"
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#1351B4] text-white text-xl font-semibold select-none">
+                {dados.nomeCompleto?.charAt(0).toUpperCase() ?? "?"}
+              </div>
+            )}
+
+            {/* Overlay de upload ao hover */}
+            <button
+              type="button"
+              onClick={() => fotoInputRef.current?.click()}
+              disabled={uploadandoFoto}
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              title="Alterar foto"
+            >
+              {uploadandoFoto
+                ? <RefreshCw className="h-5 w-5 text-white animate-spin" />
+                : <Camera className="h-5 w-5 text-white" />
+              }
+            </button>
+
+            <input
+              ref={fotoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFotoChange}
+            />
           </div>
-          <div>
+
+          <div className="flex-1">
             <p className="text-base font-semibold text-gray-900">{dados.nomeCompleto}</p>
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
               <BadgeCheck className="h-3 w-3" />
-              {PERFIL_LABEL[dados.perfil] ?? dados.perfil}
+              {PERFIL_LABEL[dados.perfil ?? ""] ?? dados.perfil}
             </span>
+            <p className="mt-1 text-xs text-gray-400">
+              Passe o cursor sobre a foto para alterá-la · Máx. 5 MB · JPEG, PNG ou WebP
+            </p>
           </div>
         </div>
 
+        {erroFoto && (
+          <div className="mx-5 mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{erroFoto}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2">
-          <Campo icone={<Mail className="h-4 w-4" />}       label="E-mail"        valor={dados.email} />
+          <Campo icone={<Mail className="h-4 w-4" />}       label="E-mail"         valor={dados.email} />
           <Campo icone={<User className="h-4 w-4" />}       label="Nome de usuário" valor={dados.nomeUsuario} />
-          <Campo icone={<Phone className="h-4 w-4" />}      label="Celular"       valor={dados.celular} />
-          <Campo icone={<BadgeCheck className="h-4 w-4" />} label="Matrícula"     valor={dados.matricula} />
-          <Campo icone={<Building2 className="h-4 w-4" />}  label="Cargo"         valor={dados.cargo} />
-          <Campo icone={<User className="h-4 w-4" />}       label="CPF"           valor={
+          <Campo icone={<Phone className="h-4 w-4" />}      label="Celular"        valor={dados.celular} />
+          <Campo icone={<BadgeCheck className="h-4 w-4" />} label="Matrícula"      valor={dados.matricula} />
+          <Campo icone={<Building2 className="h-4 w-4" />}  label="Cargo"          valor={dados.cargo} />
+          <Campo icone={<User className="h-4 w-4" />}       label="CPF"            valor={
             dados.cpf
               ? dados.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
               : null
@@ -169,18 +267,14 @@ export function MeuPerfil() {
         </div>
 
         <form onSubmit={handleAlterarSenha} className="space-y-4 p-5">
-
           {erroSenha && (
             <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{erroSenha}</span>
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{erroSenha}</span>
             </div>
           )}
-
           {sucessoSenha && (
             <div className="flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Senha alterada com sucesso!</span>
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /><span>Senha alterada com sucesso!</span>
             </div>
           )}
 
@@ -194,15 +288,10 @@ export function MeuPerfil() {
                 placeholder="••••••••"
                 className="pr-10"
               />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                onClick={() => setShowNova(!showNova)}
-              >
+              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" onClick={() => setShowNova(!showNova)}>
                 {showNova ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-
             {novaSenha && (
               <div className="grid grid-cols-2 gap-1 pt-1">
                 {[
@@ -229,11 +318,7 @@ export function MeuPerfil() {
                 placeholder="••••••••"
                 className={`pr-10 ${confirmarSenha && confirmarSenha !== novaSenha ? "border-red-400" : ""}`}
               />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                onClick={() => setShowConfirmar(!showConfirmar)}
-              >
+              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" onClick={() => setShowConfirmar(!showConfirmar)}>
                 {showConfirmar ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
@@ -247,17 +332,18 @@ export function MeuPerfil() {
             className="w-full bg-[#1351B4] hover:bg-[#0c3b8d]"
             disabled={salvandoSenha || !novaSenha || !confirmarSenha}
           >
-            {salvandoSenha ? (
-              <><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
-            ) : (
-              <><Lock className="mr-2 h-4 w-4" />Alterar Senha</>
-            )}
+            {salvandoSenha
+              ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
+              : <><Lock className="mr-2 h-4 w-4" />Alterar Senha</>
+            }
           </Button>
         </form>
       </div>
 
-      {/* Seção MFA */}
-      <ConfigurarMfa />
+      {/* Seção MFA — destacada quando setup é obrigatório */}
+      <div className={mfaSetupObrigatorio ? "rounded-lg ring-2 ring-orange-400 ring-offset-2" : ""}>
+        <ConfigurarMfa />
+      </div>
 
     </div>
   );

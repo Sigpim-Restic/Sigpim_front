@@ -17,11 +17,11 @@ export interface LoginResponse {
   perfil: string | null;
   idOrgao: number | null;
   idUnidade: number | null;
-  // Força troca de senha no primeiro login
   trocarSenhaNoProximoLogin: boolean;
-  // MFA
   mfaRequired: boolean;
   mfaToken: string | null;
+  // True quando admin sem MFA tenta logar com MFA forçado ativo
+  mfaSetupObrigatorio: boolean;
 }
 
 export const authApi = {

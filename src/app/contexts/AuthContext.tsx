@@ -20,6 +20,7 @@ interface AuthContextValue {
     mfaRequired: boolean;
     mfaToken?: string;
     trocarSenhaNoProximoLogin?: boolean;
+    mfaSetupObrigatorio?: boolean;
   }>;
   logout: () => void;
   salvarSessao: (res: LoginResponse) => void;
@@ -84,12 +85,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await authApi.login(data);
 
-      // MFA pendente — não salva sessão ainda
       if (res.mfaRequired && res.mfaToken) {
         return { mfaRequired: true, mfaToken: res.mfaToken };
       }
 
-      // Login direto — salva sessão
+      // Setup MFA obrigatório — salva sessão para poder chamar endpoints autenticados
+      if (res.mfaSetupObrigatorio) {
+        salvarSessao(res);
+        return { mfaRequired: false, mfaSetupObrigatorio: true };
+      }
+
       salvarSessao(res);
       return {
         mfaRequired: false,
