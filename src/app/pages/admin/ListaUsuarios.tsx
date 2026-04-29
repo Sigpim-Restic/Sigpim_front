@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Plus, Search, MoreVertical, Shield,
-  UserCheck, UserX, Loader2, AlertCircle, RefreshCw, Clock, Trash2, RotateCcw,
+  UserCheck, UserX, Loader2, AlertCircle, RefreshCw,
+  Clock, Trash2, RotateCcw, ShieldOff,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -25,6 +26,7 @@ import {
   usuariosApi, type UsuarioResponse, type PerfilUsuario,
 } from "../../api/usuarios";
 import { usePermissoes } from "../../hooks/usePermissoes";
+import { useAuth } from "../../contexts/AuthContext";
 
 const PERFIL_LABELS: Record<PerfilUsuario, string> = {
   ADMINISTRADOR_SISTEMA:     "Admin. Sistema",
@@ -55,6 +57,8 @@ interface DefinirPerfilState {
 export function ListaUsuarios() {
   const navigate  = useNavigate();
   const perm      = usePermissoes();
+  const { usuario: usuarioLogado } = useAuth();
+  const ehAdminSistema = usuarioLogado?.perfil === "ADMINISTRADOR_SISTEMA";
 
   const [usuarios,     setUsuarios]     = useState<UsuarioResponse[]>([]);
   const [inativos,     setInativos]     = useState<UsuarioResponse[]>([]);
@@ -127,7 +131,7 @@ export function ListaUsuarios() {
   const handleExcluir = (u: UsuarioResponse) => {
     confirmar({
       titulo:    "Excluir usuário",
-      mensagem:  `Tem certeza que deseja excluir "${u.nomeCompleto}"? O usuário será movido para a lixeira e poderá ser reativado depois.`,
+      mensagem:  `Tem certeza que deseja excluir "${u.nomeCompleto}"? O usuário será movido para a lixeira.`,
       variante:  "destrutivo",
       onConfirmar: () => executarAcao(u.id, () => usuariosApi.excluir(u.id)),
     });
@@ -136,7 +140,7 @@ export function ListaUsuarios() {
   const handleReativar = (u: UsuarioResponse) => {
     confirmar({
       titulo:    "Reativar usuário",
-      mensagem:  `Deseja reativar "${u.nomeCompleto}"? A conta voltará para "Aguardando Ativação" e precisará ser ativada pelo admin.`,
+      mensagem:  `Deseja reativar "${u.nomeCompleto}"? A conta voltará para "Aguardando Ativação".`,
       variante:  "default",
       onConfirmar: () => executarAcao(u.id, () => usuariosApi.reativar(u.id)),
     });
@@ -145,9 +149,18 @@ export function ListaUsuarios() {
   const handleExcluirPermanente = (u: UsuarioResponse) => {
     confirmar({
       titulo:    "⚠️ Exclusão permanente",
-      mensagem:  `Esta ação é IRREVERSÍVEL. O usuário "${u.nomeCompleto}" será removido definitivamente do banco de dados. O histórico de auditoria será preservado. Deseja continuar?`,
+      mensagem:  `Esta ação é IRREVERSÍVEL. O usuário "${u.nomeCompleto}" será removido definitivamente. Deseja continuar?`,
       variante:  "destrutivo",
       onConfirmar: () => executarAcao(u.id, () => usuariosApi.excluirPermanentemente(u.id)),
+    });
+  };
+
+  const handleResetarMfa = (u: UsuarioResponse) => {
+    confirmar({
+      titulo:    "Resetar MFA",
+      mensagem:  `O MFA de "${u.nomeCompleto}" será desativado. O usuário precisará reconfigurar o app autenticador no próximo login.`,
+      variante:  "destrutivo",
+      onConfirmar: () => executarAcao(u.id, () => usuariosApi.resetarMfa(u.id)),
     });
   };
 
@@ -320,10 +333,12 @@ export function ListaUsuarios() {
               usuarios={filtradosAtivos}
               acaoLoading={acaoLoading}
               perm={perm}
+              ehAdminSistema={ehAdminSistema}
               onDefinirPerfil={abrirDefinirPerfil}
               onAtivar={handleAtivar}
               onDesativar={handleDesativar}
               onExcluir={handleExcluir}
+              onResetarMfa={handleResetarMfa}
               navigate={navigate}
             />
           )}
@@ -349,10 +364,12 @@ export function ListaUsuarios() {
               usuarios={inativos}
               acaoLoading={acaoLoading}
               perm={perm}
+              ehAdminSistema={ehAdminSistema}
               onDefinirPerfil={abrirDefinirPerfil}
               onAtivar={handleAtivar}
               onDesativar={handleDesativar}
               onExcluir={handleExcluir}
+              onResetarMfa={handleResetarMfa}
               navigate={navigate}
               destacarPendentes
             />
@@ -362,8 +379,7 @@ export function ListaUsuarios() {
         {/* ── ABA: DELETADOS ──────────────────────────────────────────────── */}
         <TabsContent value="deletados" className="space-y-4 mt-4">
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            Usuários removidos logicamente (soft delete). Você pode <strong>reativar</strong> a conta (ela voltará para "Aguardando Ativação")
-            ou <strong>excluir permanentemente</strong> do banco de dados. A exclusão permanente é irreversível.
+            Usuários removidos logicamente. Você pode <strong>reativar</strong> a conta ou <strong>excluir permanentemente</strong> do banco de dados.
           </div>
 
           {loading ? (
@@ -396,16 +412,20 @@ interface TabelaProps {
   usuarios: UsuarioResponse[];
   acaoLoading: number | null;
   perm: ReturnType<typeof usePermissoes>;
+  ehAdminSistema: boolean;
   onDefinirPerfil: (u: UsuarioResponse) => void;
   onAtivar: (u: UsuarioResponse) => void;
   onDesativar: (u: UsuarioResponse) => void;
   onExcluir: (u: UsuarioResponse) => void;
+  onResetarMfa: (u: UsuarioResponse) => void;
   navigate: ReturnType<typeof useNavigate>;
   destacarPendentes?: boolean;
 }
 
 function TabelaUsuarios({
-  usuarios, acaoLoading, perm, onDefinirPerfil, onAtivar, onDesativar, onExcluir, navigate, destacarPendentes,
+  usuarios, acaoLoading, perm, ehAdminSistema,
+  onDefinirPerfil, onAtivar, onDesativar, onExcluir, onResetarMfa,
+  navigate, destacarPendentes,
 }: TabelaProps) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -471,6 +491,20 @@ function TabelaUsuarios({
                             : <><UserCheck className="mr-2 h-4 w-4" />Ativar</>
                           }
                         </DropdownMenuItem>
+
+                        {/* Resetar MFA — visível apenas para ADMINISTRADOR_SISTEMA */}
+                        {ehAdminSistema && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-orange-600 focus:text-orange-700"
+                              onClick={() => onResetarMfa(u)}
+                            >
+                              <ShieldOff className="mr-2 h-4 w-4" />Resetar MFA
+                            </DropdownMenuItem>
+                          </>
+                        )}
+
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-red-600" onClick={() => onExcluir(u)}>
                           <Trash2 className="mr-2 h-4 w-4" />Excluir usuário
@@ -537,12 +571,10 @@ function TabelaDeletados({ usuarios, acaoLoading, perm, onReativar, onExcluirPer
                   {perm.canManageUsuario && (
                     <div className="flex items-center justify-end gap-1">
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="outline" size="sm"
                         className="text-green-700 border-green-300 hover:bg-green-50 gap-1.5"
                         disabled={acaoLoading === u.id}
                         onClick={() => onReativar(u)}
-                        title="Reverter exclusão"
                       >
                         {acaoLoading === u.id
                           ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -551,15 +583,12 @@ function TabelaDeletados({ usuarios, acaoLoading, perm, onReativar, onExcluirPer
                         Reativar
                       </Button>
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="outline" size="sm"
                         className="text-red-600 border-red-300 hover:bg-red-50 gap-1.5"
                         disabled={acaoLoading === u.id}
                         onClick={() => onExcluirPermanente(u)}
-                        title="Excluir permanentemente do banco"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Excluir
+                        <Trash2 className="h-3.5 w-3.5" />Excluir
                       </Button>
                     </div>
                   )}

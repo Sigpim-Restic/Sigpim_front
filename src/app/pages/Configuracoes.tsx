@@ -11,12 +11,12 @@ import { configuracoesSistemaApi } from "../api/configuracoes-sistema";
 export function Configuracoes() {
   const navigate = useNavigate();
 
-  const [mfaForcado,         setMfaForcado]         = useState(false);
-  const [carregandoMfa,      setCarregandoMfa]      = useState(true);
-  const [salvandoMfa,        setSalvandoMfa]        = useState(false);
+  const [mfaForcado,    setMfaForcado]    = useState(false);
+  const [carregandoMfa, setCarregandoMfa] = useState(true);
+  const [salvandoMfa,   setSalvandoMfa]   = useState(false);
 
   useEffect(() => {
-    configuracoesSistemaApi.getMfaForcadoAdministradores()
+    configuracoesSistemaApi.getMfaForcado()
       .then((r) => setMfaForcado(r.ativo))
       .catch(() => {})
       .finally(() => setCarregandoMfa(false));
@@ -25,10 +25,9 @@ export function Configuracoes() {
   const handleToggleMfa = async (ativo: boolean) => {
     setSalvandoMfa(true);
     try {
-      const res = await configuracoesSistemaApi.setMfaForcadoAdministradores(ativo);
+      const res = await configuracoesSistemaApi.setMfaForcado(ativo);
       setMfaForcado(res.ativo);
     } catch {
-      // Reverte UI em caso de erro
       setMfaForcado(!ativo);
     } finally {
       setSalvandoMfa(false);
@@ -141,12 +140,12 @@ export function Configuracoes() {
             <Input type="number" defaultValue={120} className="max-w-32" />
           </div>
 
-          {/* MFA forçado — agora com lógica real */}
+          {/* MFA forçado para todos — com lógica real e auditoria no backend */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-900">Forçar MFA para administradores</p>
+              <p className="text-sm text-gray-900">Forçar MFA para todos os usuários</p>
               <p className="text-xs text-gray-500">
-                Exige autenticação de dois fatores para perfis ADMINISTRADOR_SISTEMA e ADMINISTRADOR_PATRIMONIAL
+                Bloqueia o login de qualquer usuário sem MFA ativo e confirmado. Toda alteração é registrada na auditoria.
               </p>
             </div>
             {carregandoMfa ? (

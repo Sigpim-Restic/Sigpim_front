@@ -56,6 +56,8 @@ export interface UsuarioResponse {
   ativo: boolean;
   criadoEm: string | null;
   atualizadoEm: string | null;
+  // Foto de perfil — URL absoluta resolvida pelo backend (V27)
+  fotoPerfil: string | null;
 }
 
 export const usuariosApi = {
@@ -98,13 +100,15 @@ export const usuariosApi = {
   alterarMinhaSenha(novaSenha: string): Promise<void> {
     return api.patch<void>("/usuarios/minha-senha", { novaSenha });
   },
-
-  // Adicionar dentro do objeto usuariosApi:
-atualizarMinhaFoto(foto: File): Promise<UsuarioResponse> {
-  const form = new FormData();
-  form.append("foto", foto);
-  return api.patch("/usuarios/minha-foto", form);
-},
+  atualizarMinhaFoto(foto: File): Promise<UsuarioResponse> {
+    const form = new FormData();
+    form.append("foto", foto);
+    return api.patch("/usuarios/minha-foto", form);
+  },
+  // Exclusivo para ADMINISTRADOR_SISTEMA — reseta MFA de outro usuário
+  resetarMfa(id: number): Promise<void> {
+    return api.delete<void>(`/usuarios/${id}/mfa`);
+  },
 };
 
 export const orgaosApi = {

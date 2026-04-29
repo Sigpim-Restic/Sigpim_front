@@ -17,13 +17,11 @@ export const mfaApi = {
     return api.post("/auth/mfa/confirmar", { codigo });
   },
 
-  /** Desativa o MFA — requer código válido. */
-  desativar(codigo: string): Promise<void> {
-    return api.post("/auth/mfa/desativar", { codigo });
-  },
-
   /** Segunda etapa do login — valida token temporário + código TOTP. */
   verificar(mfaToken: string, codigo: string): Promise<LoginResponse> {
     return api.post("/auth/mfa/verificar", { mfaToken, codigo });
   },
+
+  // REMOVIDO: desativar() — política da organização proíbe desativação self-service.
+  // Reset de MFA é feito pelo ADMINISTRADOR_SISTEMA via DELETE /usuarios/{id}/mfa.
 };

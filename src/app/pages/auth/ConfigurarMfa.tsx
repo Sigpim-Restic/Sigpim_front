@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Shield, ShieldCheck, ShieldOff, Loader2, AlertCircle, CheckCircle2, Copy } from "lucide-react";
+import { Shield, ShieldCheck, Loader2, AlertCircle, CheckCircle2, Copy } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -7,18 +7,19 @@ import { mfaApi, type MfaSetupResponse } from "../../api/mfa";
 import { useAuth } from "../../contexts/AuthContext";
 import QRCode from "react-qr-code";
 
-type Etapa = "inicial" | "qrcode" | "confirmar" | "ativo" | "desativar";
+type Etapa = "inicial" | "qrcode" | "confirmar" | "ativo";
 
 export function ConfigurarMfa() {
   const { usuario, atualizarMfa } = useAuth();
-  const mfaAtivo = usuario?.mfaAtivo ?? false;
+  const mfaAtivo  = usuario?.mfaAtivo ?? false;
+  const ehAdmin   = usuario?.perfil === "ADMINISTRADOR_SISTEMA";
 
-  const [etapa,    setEtapa]    = useState<Etapa>(mfaAtivo ? "ativo" : "inicial");
-  const [setup,    setSetup]    = useState<MfaSetupResponse | null>(null);
-  const [codigo,   setCodigo]   = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const [erro,     setErro]     = useState<string | null>(null);
-  const [copiado,  setCopiado]  = useState(false);
+  const [etapa,   setEtapa]   = useState<Etapa>(mfaAtivo ? "ativo" : "inicial");
+  const [setup,   setSetup]   = useState<MfaSetupResponse | null>(null);
+  const [codigo,  setCodigo]  = useState("");
+  const [loading, setLoading] = useState(false);
+  const [erro,    setErro]    = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
 
   const handleIniciarSetup = async () => {
     setLoading(true); setErro(null);
@@ -38,20 +39,6 @@ export function ConfigurarMfa() {
       await mfaApi.confirmar(codigo);
       atualizarMfa(true);
       setEtapa("ativo");
-      setCodigo("");
-    } catch (e: unknown) {
-      setErro(e instanceof Error ? e.message : "Código inválido. Tente novamente.");
-      setCodigo("");
-    } finally { setLoading(false); }
-  };
-
-  const handleDesativar = async () => {
-    if (codigo.length !== 6) return;
-    setLoading(true); setErro(null);
-    try {
-      await mfaApi.desativar(codigo);
-      atualizarMfa(false);
-      setEtapa("inicial");
       setCodigo("");
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Código inválido. Tente novamente.");
@@ -86,7 +73,8 @@ export function ConfigurarMfa() {
           <p className="text-xs text-gray-500">
             {mfaAtivo
               ? "MFA ativo — sua conta está protegida com um segundo fator."
-              : "Adicione uma camada extra de segurança ao seu login."}
+              : "MFA obrigatório — configure antes de acessar o sistema."
+            }
           </p>
         </div>
         {mfaAtivo && (
@@ -102,12 +90,13 @@ export function ConfigurarMfa() {
         </div>
       )}
 
-      {/* Etapa: inicial — MFA desativado */}
+      {/* Etapa: inicial — MFA não configurado */}
       {etapa === "inicial" && (
         <div className="space-y-3">
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-4 text-sm text-gray-600 space-y-1">
-            <p>Com o MFA ativo, além da senha você precisará de um código do app autenticador a cada login.</p>
-            <p className="text-xs text-gray-400">Compatível com Google Authenticator, Microsoft Authenticator e Authy — todos gratuitos.</p>
+          <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm text-orange-800 space-y-1">
+            <p className="font-medium">Configuração obrigatória</p>
+            <p>O acesso ao sistema requer autenticação de dois fatores. Configure agora usando um app autenticador.</p>
+            <p className="text-xs text-orange-600 mt-1">Compatível com Google Authenticator, Microsoft Authenticator e Authy — todos gratuitos.</p>
           </div>
           <Button
             className="bg-[#1351B4] hover:bg-[#0c3b8d]"
@@ -116,7 +105,7 @@ export function ConfigurarMfa() {
           >
             {loading
               ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Gerando...</>
-              : <><Shield className="mr-2 h-4 w-4" />Ativar MFA</>
+              : <><Shield className="mr-2 h-4 w-4" />Configurar MFA agora</>
             }
           </Button>
         </div>
@@ -137,11 +126,7 @@ export function ConfigurarMfa() {
           <div className="space-y-1.5">
             <Label className="text-xs text-gray-500">Chave manual (se não conseguir escanear)</Label>
             <div className="flex gap-2">
-              <Input
-                value={setup.secretKey}
-                readOnly
-                className="font-mono text-xs bg-gray-50"
-              />
+              <Input value={setup.secretKey} readOnly className="font-mono text-xs bg-gray-50" />
               <Button variant="outline" size="sm" onClick={copiarChave}>
                 {copiado
                   ? <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -151,11 +136,7 @@ export function ConfigurarMfa() {
             </div>
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => setEtapa("confirmar")}
-          >
+          <Button variant="outline" className="w-full" onClick={() => setEtapa("confirmar")}>
             Já escaneei — inserir código de confirmação →
           </Button>
         </div>
@@ -207,54 +188,15 @@ export function ConfigurarMfa() {
         <div className="space-y-3">
           <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
-            MFA configurado com sucesso. Seu login agora exige o código do app autenticador.
-          </div>
-          <Button
-            variant="outline"
-            className="text-red-600 border-red-300 hover:bg-red-50"
-            onClick={() => { setEtapa("desativar"); setCodigo(""); setErro(null); }}
-          >
-            <ShieldOff className="mr-2 h-4 w-4" />Desativar MFA
-          </Button>
-        </div>
-      )}
-
-      {/* Etapa: desativar */}
-      {etapa === "desativar" && (
-        <div className="space-y-4">
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-            Para desativar o MFA, confirme com um código válido do seu app autenticador.
+            MFA configurado. Seu login exige o código do app autenticador.
           </div>
 
-          <div className="space-y-2">
-            <Label>Código de verificação</Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              value={codigo}
-              onChange={handleCodigoChange}
-              placeholder="000000"
-              maxLength={6}
-              className="text-center text-xl font-mono tracking-widest h-12"
-              autoFocus
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => { setEtapa("ativo"); setCodigo(""); setErro(null); }} disabled={loading}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              className="flex-1"
-              onClick={handleDesativar}
-              disabled={loading || codigo.length !== 6}
-            >
-              {loading
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Desativando...</>
-                : <><ShieldOff className="mr-2 h-4 w-4" />Confirmar desativação</>
-              }
-            </Button>
+          {/* Nota informativa — desativar MFA não é permitido pelo próprio usuário */}
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-500">
+            {ehAdmin
+              ? "Para resetar o MFA de outro usuário, acesse a lista de usuários e use a opção \"Resetar MFA\" no menu de ações."
+              : "Se perder acesso ao seu app autenticador, entre em contato com o Administrador do Sistema para resetar o MFA."
+            }
           </div>
         </div>
       )}
