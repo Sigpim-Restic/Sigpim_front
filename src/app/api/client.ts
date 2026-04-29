@@ -31,6 +31,7 @@ function buildHeaders(isMultipart = false): HeadersInit {
   if (!isMultipart) {
     headers["Content-Type"] = "application/json";
   }
+  // isMultipart = true → não seta Content-Type, o browser define o boundary automaticamente
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -109,6 +110,18 @@ export const api = {
     }).then((r) => handleResponse<T>(r));
   },
 
+  /**
+   * PATCH multipart — para upload de arquivos via PATCH.
+   * Não seta Content-Type, o browser define o boundary do FormData automaticamente.
+   */
+  patchMultipart<T>(path: string, formData: FormData): Promise<T> {
+    return fetch(`${BASE_URL}${path}`, {
+      method: "PATCH",
+      headers: buildHeaders(true),
+      body: formData,
+    }).then((r) => handleResponse<T>(r));
+  },
+
   delete<T>(path: string): Promise<T> {
     return fetch(`${BASE_URL}${path}`, {
       method: "DELETE",
@@ -116,7 +129,7 @@ export const api = {
     }).then((r) => handleResponse<T>(r));
   },
 
-  /** Upload multipart — não seta Content-Type, o browser define o boundary */
+  /** Upload multipart POST — não seta Content-Type, o browser define o boundary */
   upload<T>(path: string, formData: FormData): Promise<T> {
     return fetch(`${BASE_URL}${path}`, {
       method: "POST",

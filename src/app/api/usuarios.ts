@@ -103,7 +103,9 @@ export const usuariosApi = {
   atualizarMinhaFoto(foto: File): Promise<UsuarioResponse> {
     const form = new FormData();
     form.append("foto", foto);
-    return api.patch("/usuarios/minha-foto", form);
+    // Usa patchMultipart para não forçar Content-Type: application/json
+    // o browser define o boundary do multipart/form-data automaticamente
+    return api.patchMultipart<UsuarioResponse>("/usuarios/minha-foto", form);
   },
   // Exclusivo para ADMINISTRADOR_SISTEMA — reseta MFA de outro usuário
   resetarMfa(id: number): Promise<void> {
