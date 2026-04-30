@@ -7,9 +7,9 @@ interface LogoProps {
 }
 
 const sizeMap = {
-  small: "h-10 w-10",
+  small:  "h-10 w-10",
   medium: "h-16 w-16",
-  large: "h-24 w-24",
+  large:  "h-24 w-24",
 };
 
 export function Logo({ size = "medium", variant = "icon-only", className = "" }: LogoProps) {
@@ -19,10 +19,12 @@ export function Logo({ size = "medium", variant = "icon-only", className = "" }:
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <div className={`flex shrink-0 items-center justify-center rounded-xl ${sizeClass} bg-white/10 backdrop-blur-sm`}>
+        {/* Brasão institucional — substituir src pelo ativo correto quando definido */}
+        {/* <img src="/assets/brasao-sao-luis.png" alt="Brasão de São Luís" ... /> */}
         {!imageNotFound && (
           <img
-            src="/assets/brasao-sao-luis.png"
-            alt="Brasão de São Luís"
+            src="/assets/brasao.png"
+            alt="Brasão"
             className="h-full w-full object-contain p-1"
             onError={() => setImageNotFound(true)}
           />
@@ -30,7 +32,8 @@ export function Logo({ size = "medium", variant = "icon-only", className = "" }:
       </div>
       {variant === "with-text" && (
         <div className="overflow-hidden">
-          <h1 className="text-lg font-semibold text-white whitespace-nowrap">SIGPIM-SLZ</h1>
+          {/* Item 10: SIGPIM-SLZ → SIGPIM */}
+          <h1 className="text-lg font-semibold text-white whitespace-nowrap">SIGPIM</h1>
           <p className="text-xs text-white/60 whitespace-nowrap">Fase 2</p>
         </div>
       )}

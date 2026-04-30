@@ -9,6 +9,14 @@ export interface UsuarioLogado {
   idOrgao: number | null;
   idUnidade: number | null;
   mfaAtivo: boolean;
+  /**
+   * Sigla do órgão do usuário — necessária para canValidarDominio() no
+   * usePermissoes, que verifica se o VALIDADOR_DOCUMENTAL pertence ao órgão
+   * responsável pelo domínio que está tentando validar.
+   * Preenchida via endpoint GET /orgaos/{id} após o login, ou enviada
+   * diretamente no LoginResponse quando o backend for atualizado.
+   */
+  siglaOrgao: string | null;
 }
 
 interface AuthContextValue {
@@ -25,6 +33,7 @@ interface AuthContextValue {
   logout: () => void;
   salvarSessao: (res: LoginResponse) => void;
   atualizarMfa: (ativo: boolean) => void;
+  atualizarSiglaOrgao: (sigla: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -41,6 +50,9 @@ function resParaUsuario(res: LoginResponse): UsuarioLogado {
     idOrgao:      res.idOrgao ?? null,
     idUnidade:    res.idUnidade ?? null,
     mfaAtivo:     false,
+    // siglaOrgao é null inicialmente; deve ser populada após o login
+    // via GET /orgaos/{idOrgao} ou quando o backend incluir no LoginResponse.
+    siglaOrgao:   null,
   };
 }
 
@@ -80,6 +92,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  /**
+   * Atualiza a sigla do órgão após o login.
+   * Chamar após GET /orgaos/{idOrgao} retornar a sigla.
+   * Exemplo de uso no componente de login ou no AppInitializer:
+   *
+   *   if (usuario?.idOrgao) {
+   *     const orgao = await orgaosApi.buscarPorId(usuario.idOrgao);
+   *     atualizarSiglaOrgao(orgao.sigla);
+   *   }
+   */
+  const atualizarSiglaOrgao = useCallback((sigla: string) => {
+    setUsuario((prev) => {
+      if (!prev) return prev;
+      const atualizado = { ...prev, siglaOrgao: sigla };
+      localStorage.setItem(USUARIO_KEY, JSON.stringify(atualizado));
+      return atualizado;
+    });
+  }, []);
+
   const login = useCallback(async (data: LoginRequest) => {
     setLoading(true);
     try {
@@ -107,7 +138,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ usuario, token, loading, autenticado: !!token, login, logout, salvarSessao, atualizarMfa }}
+      value={{
+        usuario, token, loading, autenticado: !!token,
+        login, logout, salvarSessao, atualizarMfa, atualizarSiglaOrgao,
+      }}
     >
       {children}
     </AuthContext.Provider>

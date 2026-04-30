@@ -3,6 +3,7 @@ import { imoveisApi, type ImovelRequest } from "../api/imoveis";
 import { localizacoesApi } from "../api/localizacoes";
 import { ocupacoesApi, type OcupacaoRequest } from "../api/ocupacoes";
 import { documentosApi, type DocumentoUploadParams } from "../api/documentos";
+import { useAuth } from "../contexts/AuthContext";
 
 // ── Tipos das etapas ─────────────────────────────────────────────────────────
 
@@ -64,7 +65,10 @@ export interface DadosEtapa7 {
   observacoes: string;
 }
 export interface DadosEtapa8 {
-  imovelHistorico: string;
+  // BUG 3 (item 3 do feedback): tombamento pode ser histórico OU cultural OU ambos.
+  // Substituído o boolean único por dois flags independentes.
+  tombadoHistorico: boolean;
+  tombadoCultural: boolean;
   observacoes: string;
 }
 export interface ArquivoAnexo {
@@ -95,7 +99,8 @@ const Ctx = createContext<Ctx | null>(null);
 
 const e1: DadosEtapa1 = { nomeReferencia: "", idOrigemCadastro: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" };
 const e2: DadosEtapa2 = {
-  logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "",
+  logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", cep: "",
+  // cidade removida de "São Luís" — item 10 do feedback (remover referências à cidade)
   latitude: "", longitude: "",
   pontos: [],
 };
@@ -104,7 +109,7 @@ const e4: DadosEtapa4 = { areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimen
 const e5: DadosEtapa5 = { statusOcupacao: "", idNivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" };
 const e6: DadosEtapa6 = { possuiInstrumento: "", tipoInstrumento: "", numeroInstrumento: "", dataAssinatura: "", dataInicio: "", dataVencimento: "", observacoes: "" };
 const e7: DadosEtapa7 = { situacaoDominial: "", matriculaRegistro: "", cartorio: "", inscricaoImobiliaria: "", observacoes: "" };
-const e8: DadosEtapa8 = { imovelHistorico: "", observacoes: "" };
+const e8: DadosEtapa8 = { tombadoHistorico: false, tombadoCultural: false, observacoes: "" };
 
 // ── Utilitário: converte lista de pontos em WKT POLYGON ──────────────────────
 function pontosParaWkt(pontos: PontoPoligono[]): string | undefined {
@@ -124,20 +129,34 @@ function pontosParaWkt(pontos: PontoPoligono[]): string | undefined {
   return `POLYGON((${coords}, ${primeiro}))`;
 }
 
-const LS_KEY = "sigpim_rascunho_imovel";
+// ── Chave de rascunho isolada por usuário ────────────────────────────────────
+// BUG 2 CORRIGIDO: a chave anterior "sigpim_rascunho_imovel" era global no
+// localStorage — quando um cadastrador salvava rascunho e deslogava, o validador
+// que logava em seguida via o banner do rascunho (que não era dele).
+// Solução: incluir o id do usuário na chave, tornando o rascunho pessoal.
+function lsKey(userId: number | string): string {
+  return `sigpim_rascunho_imovel_${userId}`;
+}
 
-function salvarRascunho(state: object) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {}
+function salvarRascunho(userId: number | string, state: object) {
+  try { localStorage.setItem(lsKey(userId), JSON.stringify(state)); } catch {}
 }
-function carregarRascunho() {
-  try { const v = localStorage.getItem(LS_KEY); return v ? JSON.parse(v) : null; } catch { return null; }
+function carregarRascunho(userId: number | string) {
+  try {
+    const v = localStorage.getItem(lsKey(userId));
+    return v ? JSON.parse(v) : null;
+  } catch { return null; }
 }
-function limparRascunho() {
-  try { localStorage.removeItem(LS_KEY); } catch {}
+function limparRascunho(userId: number | string) {
+  try { localStorage.removeItem(lsKey(userId)); } catch {}
 }
 
 export function CadastroImovelProvider({ children }: { children: React.ReactNode }) {
-  const rascunho = carregarRascunho();
+  // Obtém o usuário autenticado para isolar o rascunho por sessão
+  const { usuario } = useAuth();
+  const userId = usuario?.id ?? 0;
+
+  const rascunho = carregarRascunho(userId);
   const [etapa1, setEtapa1] = useState<DadosEtapa1>(rascunho?.etapa1 ?? e1);
   const [etapa2, setEtapa2] = useState<DadosEtapa2>(rascunho?.etapa2 ?? e2);
   const [etapa3, setEtapa3] = useState<DadosEtapa3>(rascunho?.etapa3 ?? e3);
@@ -154,12 +173,12 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     setEtapa1(e1); setEtapa2(e2); setEtapa3(e3); setEtapa4(e4);
     setEtapa5(e5); setEtapa6(e6); setEtapa7(e7); setEtapa8(e8);
     setArquivos([]); setErro(null);
-    limparRascunho();
-  }, []);
+    limparRascunho(userId);
+  }, [userId]);
 
   const salvarRascunhoManual = useCallback(() => {
-    salvarRascunho({ etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8 });
-  }, [etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8]);
+    salvarRascunho(userId, { etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8 });
+  }, [userId, etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8]);
 
   const finalizar = useCallback(async (onSuccess: () => void) => {
     setSalvando(true);
@@ -189,12 +208,11 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
         inscricaoImobiliaria:     etapa7.inscricaoImobiliaria   || undefined,
         matriculaRegistro:        etapa7.matriculaRegistro      || undefined,
         cartorio:                 etapa7.cartorio               || undefined,
-        // Patrimônio histórico (etapa8)
-        imovelHistorico: etapa8.imovelHistorico === "SIM_TOMBADO" ||
-                         etapa8.imovelHistorico === "SIM_EM_PROCESSO" ||
-                         etapa8.imovelHistorico === "SIM_INVENTARIADO"
-                         ? true
-                         : etapa8.imovelHistorico === "NAO" ? false : undefined,
+        // Patrimônio histórico (etapa8) — item 3: dois flags independentes
+        tombadoHistorico: etapa8.tombadoHistorico || undefined,
+        tombadoCultural:  etapa8.tombadoCultural  || undefined,
+        // imovelHistorico legado: TRUE se qualquer um dos dois for TRUE
+        imovelHistorico:  (etapa8.tombadoHistorico || etapa8.tombadoCultural) || undefined,
       };
 
       const imovel = await imoveisApi.criar(req);
@@ -260,7 +278,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     } finally {
       setSalvando(false);
     }
-  }, [etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8, arquivos, resetar]);
+  }, [userId, etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8, arquivos, resetar]);
 
   return (
     <Ctx.Provider value={{
@@ -269,7 +287,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
       setEtapa1, setEtapa2, setEtapa3, setEtapa4, setEtapa5,
       setEtapa6, setEtapa7, setEtapa8, setArquivos,
       finalizar, resetar, salvarRascunhoManual,
-      temRascunho: carregarRascunho() !== null,
+      temRascunho: carregarRascunho(userId) !== null,
     }}>
       {children}
     </Ctx.Provider>

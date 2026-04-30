@@ -26,6 +26,7 @@ import { tiposImovelApi, type TipoImovelResponse } from "../../api/tipos-imovel-
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
 import { relatoriosApi } from "../../api/relatorios";
 import { usePermissoes } from "../../hooks/usePermissoes";
+import { useAuth } from "../../contexts/AuthContext";
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
   VALIDADO:     { label: "Validado",     cls: "bg-green-100 text-green-800" },
@@ -89,6 +90,13 @@ export function ListaImoveis() {
   const navigate = useNavigate();
   const perm = usePermissoes();
 
+  // BUG 2 CORRIGIDO: chave do rascunho isolada por usuário.
+  // Antes era uma chave global ("sigpim_rascunho_imovel") compartilhada entre
+  // todos os usuários do mesmo navegador. Se um cadastrador salvava rascunho
+  // e deslogava, o próximo usuário (ex: validador) via o banner indevidamente.
+  const { usuario } = useAuth();
+  const lsKeyRascunho = `sigpim_rascunho_imovel_${usuario?.id ?? 0}`;
+
   const [imoveis,       setImoveis]       = useState<ImovelResponse[]>([]);
   const [deletados,     setDeletados]     = useState<ImovelResponse[]>([]);
   const [tiposImovel,   setTiposImovel]   = useState<TipoImovelResponse[]>([]);
@@ -119,7 +127,7 @@ export function ListaImoveis() {
       setErro(e instanceof Error ? e.message : "Erro ao carregar imóveis.");
     } finally { setLoading(false); }
 
-    // Lixeira é carregada separadamente — perfis sem canDeleteImovel
+    // Lixeira carregada separadamente — perfis sem canDeleteImovel
     // recebem 403 neste endpoint e isso não deve afetar a listagem principal
     if (perm.canDeleteImovel) {
       try {
@@ -133,7 +141,7 @@ export function ListaImoveis() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  // Carrega tipos uma única vez ao montar — reflete tipos criados pelo admin nos catálogos
+  // Carrega tipos uma única vez ao montar
   useEffect(() => {
     tiposImovelApi.listarAtivos().then(setTiposImovel).catch(() => {});
   }, []);
@@ -244,10 +252,10 @@ export function ListaImoveis() {
         </div>
       </div>
 
-      {/* Banner rascunho */}
-      {(() => {
+      {/* Banner rascunho — isolado por usuário (Bug 2 corrigido) */}
+      {perm.canVerRascunho && (() => {
         try {
-          const r = localStorage.getItem("sigpim_rascunho_imovel");
+          const r = localStorage.getItem(lsKeyRascunho);
           if (!r) return null;
           const d = JSON.parse(r);
           const nome = d?.etapa1?.nomeReferencia;
@@ -259,10 +267,16 @@ export function ListaImoveis() {
               </p>
               <div className="flex gap-2">
                 <Link to="/dashboard/imoveis/novo/etapa-1">
-                  <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">Continuar Rascunho</Button>
+                  <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
+                    Continuar Rascunho
+                  </Button>
                 </Link>
-                <Button size="sm" variant="ghost" className="text-amber-700"
-                  onClick={() => { localStorage.removeItem("sigpim_rascunho_imovel"); window.location.reload(); }}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-amber-700"
+                  onClick={() => { localStorage.removeItem(lsKeyRascunho); window.location.reload(); }}
+                >
                   Descartar
                 </Button>
               </div>

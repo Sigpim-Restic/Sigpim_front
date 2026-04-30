@@ -269,17 +269,22 @@ export function MainLayout() {
         <div className="flex h-full flex-col">
 
           {/* Logo */}
+          {/* Item 10/11: referências a "São Luís" e "SIGPIM-SLZ" removidas */}
           <div className={`flex h-16 items-center border-b border-slate-100 transition-all duration-300 ${
             sidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
           }`}>
             {sidebarCollapsed ? (
-              <img src="/assets/brasao-sao-luis.png" alt="SIGPIM" className="h-8 w-8 object-contain" />
+              /* Brasão — substituir pelo ativo institucional definitivo quando disponível */
+              /* <img src="/assets/brasao-sao-luis.png" alt="SIGPIM" className="h-8 w-8 object-contain" /> */
+              <img src="/assets/brasao.png" alt="SIGPIM" className="h-8 w-8 object-contain" />
             ) : (
               <>
-                <img src="/assets/brasao-sao-luis.png" alt="Brasão" className="h-9 w-auto object-contain shrink-0" />
+                {/* <img src="/assets/brasao-sao-luis.png" alt="Brasão" className="h-9 w-auto object-contain shrink-0" /> */}
+                <img src="/assets/brasao.png" alt="Brasão" className="h-9 w-auto object-contain shrink-0" />
                 <div className="leading-tight overflow-hidden">
-                  <p className="text-[14px] font-bold tracking-tight text-[#1351B4] whitespace-nowrap">SIGPIM-SLZ</p>
-                  <p className="text-[11px] text-slate-400 whitespace-nowrap">Prefeitura de São Luís</p>
+                  <p className="text-[14px] font-bold tracking-tight text-[#1351B4] whitespace-nowrap">SIGPIM</p>
+                  {/* Subtítulo institucional — preencher quando definido */}
+                  {/* <p className="text-[11px] text-slate-400 whitespace-nowrap">Prefeitura de São Luís</p> */}
                 </div>
               </>
             )}
@@ -294,9 +299,9 @@ export function MainLayout() {
           {!sidebarCollapsed && (
             <div className="border-t border-slate-100 px-4 py-3">
               <p className="text-[10px] text-slate-400 leading-relaxed">
-                Prefeitura Municipal de São Luís
-                <br />
-                SIGPIM-SLZ · v2.0 · 2026
+                {/* Item 10/11: "Prefeitura Municipal de São Luís" e "SIGPIM-SLZ" removidos */}
+                {/* Prefeitura Municipal de São Luís */}
+                SIGPIM · v2.0 · 2026
               </p>
             </div>
           )}
@@ -325,10 +330,11 @@ export function MainLayout() {
           <aside className="fixed inset-y-0 left-0 z-50 w-60 flex flex-col border-r border-slate-200 bg-white shadow-xl lg:hidden">
             <div className="flex h-16 items-center justify-between border-b border-slate-100 px-4">
               <div className="flex items-center gap-3">
-                <img src="/assets/brasao-sao-luis.png" alt="Brasão" className="h-9 w-auto object-contain" />
+                {/* <img src="/assets/brasao-sao-luis.png" alt="Brasão" className="h-9 w-auto object-contain" /> */}
+                <img src="/assets/brasao.png" alt="Brasão" className="h-9 w-auto object-contain" />
                 <div className="leading-tight">
-                  <p className="text-[14px] font-bold tracking-tight text-[#1351B4]">SIGPIM-SLZ</p>
-                  <p className="text-[11px] text-slate-400">Prefeitura de São Luís</p>
+                  <p className="text-[14px] font-bold tracking-tight text-[#1351B4]">SIGPIM</p>
+                  {/* <p className="text-[11px] text-slate-400">Prefeitura de São Luís</p> */}
                 </div>
               </div>
               <button onClick={() => setSidebarOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-700">
@@ -340,7 +346,8 @@ export function MainLayout() {
             </nav>
             <div className="border-t border-slate-100 px-4 py-3">
               <p className="text-[10px] text-slate-400">
-                Prefeitura Municipal de São Luís · SIGPIM-SLZ · v2.0 · 2026
+                {/* Prefeitura Municipal de São Luís · SIGPIM-SLZ · v2.0 · 2026 */}
+                SIGPIM · v2.0 · 2026
               </p>
             </div>
           </aside>

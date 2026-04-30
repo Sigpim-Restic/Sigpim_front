@@ -66,14 +66,30 @@ function FlyTo({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
+// BUG 1 CORRIGIDO: react-leaflet v5 + Vite monta o MapContainer antes do
+// container ter dimensões reais no DOM, causando tile layer invisível.
+// Solução: chamar invalidateSize() após o mount para forçar recálculo.
+function MapResizer() {
+  const map = useMap();
+  useEffect(() => {
+    // Aguarda um frame para garantir que o container já tem tamanho real
+    const id = setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+    return () => clearTimeout(id);
+  }, [map]);
+  return null;
+}
+
 const STATUS_DOT: Record<string, string> = {
   VALIDADO:     "bg-green-500",
   PRE_CADASTRO: "bg-yellow-500",
   default:      "bg-gray-400",
 };
 
-// Centro de São Luís — MA
-const SLZ: [number, number] = [-2.5297, -44.3028];
+// Centro padrão do mapa — configurar conforme necessidade do município
+// const SLZ: [number, number] = [-2.5297, -44.3028]; // São Luís — MA
+const CENTRO_PADRAO: [number, number] = [-2.5297, -44.3028];
 
 export function MapaGIS() {
   const [searchParams] = useSearchParams();
@@ -111,8 +127,8 @@ export function MapaGIS() {
   }, [imovelIdParam, imoveis]);
 
   // Separa imóveis com e sem coordenadas
-  const comCoordenadas    = imoveis.filter((im) => im.latitude  != null && im.longitude != null);
-  const semCoordenadas    = imoveis.filter((im) => im.latitude  == null || im.longitude == null);
+  const comCoordenadas = imoveis.filter((im) => im.latitude  != null && im.longitude != null);
+  const semCoordenadas = imoveis.filter((im) => im.latitude  == null || im.longitude == null);
 
   const contagem = imoveis.reduce<Record<string, number>>((acc, im) => {
     acc[im.statusCadastro] = (acc[im.statusCadastro] ?? 0) + 1;
@@ -264,11 +280,15 @@ export function MapaGIS() {
           style={{ minHeight: "520px" }}
         >
           <MapContainer
-            center={SLZ}
+            center={CENTRO_PADRAO}
             zoom={12}
             style={{ height: "100%", width: "100%", minHeight: "520px" }}
             scrollWheelZoom
           >
+            {/* BUG 1 CORRIGIDO: MapResizer força invalidateSize() após o mount,
+                resolvendo o tile layer invisível com react-leaflet v5 + Vite */}
+            <MapResizer />
+
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

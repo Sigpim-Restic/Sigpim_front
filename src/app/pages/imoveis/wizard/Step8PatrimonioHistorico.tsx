@@ -2,7 +2,7 @@ import React from "react";
 import { WizardLayout } from "../../../components/layout/WizardLayout";
 import { Label } from "../../../components/ui/label";
 import { Textarea } from "../../../components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
+import { Checkbox } from "../../../components/ui/checkbox";
 import { AlertBox } from "../../../components/layout/States";
 import { useCadastroImovel } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
@@ -14,6 +14,8 @@ export function CadastroImovelStep8() {
 
   const handleNext = () => navigate("/dashboard/imoveis/novo/etapa-9");
 
+  const temProtecao = etapa8.tombadoHistorico || etapa8.tombadoCultural;
+
   return (
     <WizardLayout currentStep={8} onNext={handleNext}>
       <div className="p-6 space-y-6">
@@ -24,7 +26,7 @@ export function CadastroImovelStep8() {
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Patrimônio Histórico e Cultural</h3>
             <p className="text-sm text-gray-600 mt-0.5">
-              Identificação e proteção de bens de valor histórico
+              Identificação e proteção de bens de valor histórico ou cultural
             </p>
           </div>
         </div>
@@ -42,26 +44,65 @@ export function CadastroImovelStep8() {
         </div>
 
         <div className="grid gap-6">
-          {/* É patrimônio histórico? */}
-          <div className="space-y-2">
-            <Label>O imóvel é patrimônio histórico, cultural ou tombado?</Label>
-            <Select
-              value={etapa8.imovelHistorico}
-              onValueChange={(v) => setEtapa8({ ...etapa8, imovelHistorico: v })}
-            >
-              <SelectTrigger><SelectValue placeholder="Selecione uma opção" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="NAO">Não</SelectItem>
-                <SelectItem value="SIM_TOMBADO">Sim — Tombado</SelectItem>
-                <SelectItem value="SIM_EM_PROCESSO">Sim — Em processo de tombamento</SelectItem>
-                <SelectItem value="SIM_INVENTARIADO">Sim — Inventariado (sem tombamento)</SelectItem>
-                <SelectItem value="DESCONHECIDO">Desconhecido</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Item 3: dois flags independentes substituem o select único */}
+          {/* Um imóvel pode ser tombado historicamente OU culturalmente OU ambos ao mesmo tempo */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium text-gray-900">
+              Tipo de proteção patrimonial
+            </Label>
+            <p className="text-xs text-gray-500 -mt-1">
+              Selecione todas as categorias aplicáveis ao imóvel.
+            </p>
+
+            {/* Tombamento histórico */}
+            <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-4">
+              <Checkbox
+                id="tombado-historico"
+                checked={etapa8.tombadoHistorico}
+                onCheckedChange={(checked) =>
+                  setEtapa8({ ...etapa8, tombadoHistorico: Boolean(checked) })
+                }
+                className="mt-0.5"
+              />
+              <div>
+                <label
+                  htmlFor="tombado-historico"
+                  className="text-sm font-medium text-gray-900 cursor-pointer"
+                >
+                  Tombamento histórico / patrimonial
+                </label>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Tombamento municipal, estadual, federal, inventariado ou área de entorno.
+                </p>
+              </div>
+            </div>
+
+            {/* Proteção cultural */}
+            <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white p-4">
+              <Checkbox
+                id="tombado-cultural"
+                checked={etapa8.tombadoCultural}
+                onCheckedChange={(checked) =>
+                  setEtapa8({ ...etapa8, tombadoCultural: Boolean(checked) })
+                }
+                className="mt-0.5"
+              />
+              <div>
+                <label
+                  htmlFor="tombado-cultural"
+                  className="text-sm font-medium text-gray-900 cursor-pointer"
+                >
+                  Proteção cultural
+                </label>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Imóvel de interesse cultural, patrimônio imaterial vinculado ao bem ou similar.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Campos condicionais para imóveis históricos */}
-          {etapa8.imovelHistorico && etapa8.imovelHistorico !== "NAO" && etapa8.imovelHistorico !== "DESCONHECIDO" && (
+          {/* Aviso condicional — aparece quando qualquer proteção está marcada */}
+          {temProtecao && (
             <AlertBox variant="warning">
               Após o cadastro, acesse os detalhes do imóvel → aba Intervenções para registrar
               o parecer FUMPH antes de iniciar qualquer obra.
@@ -74,7 +115,7 @@ export function CadastroImovelStep8() {
             <Textarea
               value={etapa8.observacoes}
               onChange={(e) => setEtapa8({ ...etapa8, observacoes: e.target.value })}
-              placeholder="Informações adicionais sobre valor histórico, características arquitetônicas, estado de conservação patrimonial..."
+              placeholder="Informações adicionais sobre valor histórico, características arquitetônicas, estado de conservação patrimonial, referência do ato de tombamento..."
               rows={3}
             />
           </div>
