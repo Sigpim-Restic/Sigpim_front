@@ -5,21 +5,26 @@ import { localizacoesApi } from "../api/localizacoes";
 import type { ImovelRequest, ImovelResponse } from "../api/imoveis";
 import type { OcupacaoRequest } from "../api/ocupacoes";
 
+// ── Tipos das etapas ──────────────────────────────────────────────────────────
+
 export interface DadosEtapa1 {
   nomeReferencia: string;
-  idOrigemCadastro: string;  // FK — extensível via origens_cadastro (V25)
+  idOrigemCadastro: string;
   idOrgaoGestorPatrimonial: string;
   idUnidadeGestora: string;
   observacoesGerais: string;
 }
 export interface DadosEtapa2 {
   logradouro: string; numero: string; complemento: string;
-  bairro: string; cidade: string; cep: string;
+  bairro: string; cep: string;
+  // Item 10: "cidade" removida — não era usada no request e estava hardcoded como "São Luís"
   latitude: string; longitude: string; geometriaWkt: string;
 }
 export interface DadosEtapa3 {
-  tipoImovel: string; tipologia: string;
-  idSituacaoDominial: string; destinacaoAtual: string; descricaoUso: string;
+  idTipoImovel: string;
+  tipologia: string;
+  destinacaoAtual: string;
+  descricaoUso: string;
 }
 export interface DadosEtapa4 {
   areaTerrenoM2: string; areaConstruidaM2: string;
@@ -32,12 +37,28 @@ export interface DadosEtapa5 {
   dataInicio: string; dataFimPrevista: string; observacoes: string;
 }
 export interface DadosEtapa6 {
+  // Instrumentos e Contratos
+  possuiInstrumento: string;
+  tipoInstrumento: string;
+  numeroInstrumento: string;
+  dataAssinatura: string;
+  dataInicio: string;
+  dataVencimento: string;
+  observacoes: string;
+}
+export interface DadosEtapa7 {
+  // Dominial e Regularização
   idSituacaoDominial: string;
   matriculaRegistro: string;
   cartorio: string;
   inscricaoImobiliaria: string;
   observacoesDominial: string;
-  imovelHistorico: boolean | null;
+}
+export interface DadosEtapa8 {
+  // Patrimônio Histórico — item 3: dois flags independentes
+  tombadoHistorico: boolean;
+  tombadoCultural: boolean;
+  observacoes: string;
 }
 
 interface Ctx {
@@ -46,6 +67,7 @@ interface Ctx {
   erroCarregamento: string | null;
   etapa1: DadosEtapa1; etapa2: DadosEtapa2; etapa3: DadosEtapa3;
   etapa4: DadosEtapa4; etapa5: DadosEtapa5; etapa6: DadosEtapa6;
+  etapa7: DadosEtapa7; etapa8: DadosEtapa8;
   salvando: boolean; erro: string | null;
   setEtapa1: (d: DadosEtapa1) => void;
   setEtapa2: (d: DadosEtapa2) => void;
@@ -53,6 +75,8 @@ interface Ctx {
   setEtapa4: (d: DadosEtapa4) => void;
   setEtapa5: (d: DadosEtapa5) => void;
   setEtapa6: (d: DadosEtapa6) => void;
+  setEtapa7: (d: DadosEtapa7) => void;
+  setEtapa8: (d: DadosEtapa8) => void;
   salvar: (onSuccess: () => void) => Promise<void>;
 }
 
@@ -60,20 +84,16 @@ const Ctx = createContext<Ctx | null>(null);
 
 const vazios = {
   e1: (): DadosEtapa1 => ({ nomeReferencia: "", idOrigemCadastro: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" }),
-  e2: (): DadosEtapa2 => ({ logradouro: "", numero: "", complemento: "", bairro: "", cidade: "São Luís", cep: "", latitude: "", longitude: "", geometriaWkt: "" }),
-  e3: (): DadosEtapa3 => ({ tipoImovel: "", idTipoImovel: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" }),
+  e2: (): DadosEtapa2 => ({ logradouro: "", numero: "", complemento: "", bairro: "", cep: "", latitude: "", longitude: "", geometriaWkt: "" }),
+  e3: (): DadosEtapa3 => ({ idTipoImovel: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" }),
   e4: (): DadosEtapa4 => ({ areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "" }),
   e5: (): DadosEtapa5 => ({ statusOcupacao: "", nivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" }),
-  e6: (): DadosEtapa6 => ({ idSituacaoDominial: "", matriculaRegistro: "", cartorio: "", inscricaoImobiliaria: "", observacoesDominial: "", imovelHistorico: null }),
+  e6: (): DadosEtapa6 => ({ possuiInstrumento: "", tipoInstrumento: "", numeroInstrumento: "", dataAssinatura: "", dataInicio: "", dataVencimento: "", observacoes: "" }),
+  e7: (): DadosEtapa7 => ({ idSituacaoDominial: "", matriculaRegistro: "", cartorio: "", inscricaoImobiliaria: "", observacoesDominial: "" }),
+  e8: (): DadosEtapa8 => ({ tombadoHistorico: false, tombadoCultural: false, observacoes: "" }),
 };
 
-export function EditarImovelProvider({
-  idImovel,
-  children,
-}: {
-  idImovel: number;
-  children: React.ReactNode;
-}) {
+export function EditarImovelProvider({ idImovel, children }: { idImovel: number; children: React.ReactNode }) {
   const [imovel,           setImovel]           = useState<ImovelResponse | null>(null);
   const [carregando,       setCarregando]       = useState(true);
   const [erroCarregamento, setErroCarregamento] = useState<string | null>(null);
@@ -84,6 +104,8 @@ export function EditarImovelProvider({
   const [etapa4, setEtapa4] = useState<DadosEtapa4>(vazios.e4());
   const [etapa5, setEtapa5] = useState<DadosEtapa5>(vazios.e5());
   const [etapa6, setEtapa6] = useState<DadosEtapa6>(vazios.e6());
+  const [etapa7, setEtapa7] = useState<DadosEtapa7>(vazios.e7());
+  const [etapa8, setEtapa8] = useState<DadosEtapa8>(vazios.e8());
   const [salvando, setSalvando] = useState(false);
   const [erro,     setErro]     = useState<string | null>(null);
 
@@ -115,7 +137,6 @@ export function EditarImovelProvider({
             numero:      loc.numero      ?? "",
             complemento: loc.complemento ?? "",
             bairro:      loc.bairro      ?? "",
-            cidade:      "São Luís",
             cep:         loc.cep         ?? "",
             latitude:    loc.latitude    != null ? String(loc.latitude)  : "",
             longitude:   loc.longitude   != null ? String(loc.longitude) : "",
@@ -125,11 +146,10 @@ export function EditarImovelProvider({
 
         // Etapa 3 — Classificação
         setEtapa3({
-          tipoImovel:       im.tipoImovel       ?? "",
-          tipologia:        im.tipologia        ?? "",
-          destinacaoAtual:  "",
-          idTipoImovel:     im.idTipoImovel != null ? String(im.idTipoImovel) : "",
-          descricaoUso:     im.descricao        ?? "",
+          idTipoImovel:    im.idTipoImovel != null ? String(im.idTipoImovel) : "",
+          tipologia:       im.tipologia        ?? "",
+          destinacaoAtual: "",
+          descricaoUso:    im.descricao        ?? "",
         });
 
         // Etapa 4 — Dados físicos
@@ -141,16 +161,7 @@ export function EditarImovelProvider({
           anoConstrucao:          im.anoConstrucao       != null ? String(im.anoConstrucao)       : "",
         });
 
-        // Etapa 6 — Dominial
-        setEtapa6({
-          idSituacaoDominial:   im.idSituacaoDominial != null ? String(im.idSituacaoDominial) : "",
-          matriculaRegistro:    im.matriculaRegistro  ?? "",
-          cartorio:             im.cartorio           ?? "",
-          inscricaoImobiliaria: im.inscricaoImobiliaria ?? "",
-          observacoesDominial:  "",
-          imovelHistorico:      im.imovelHistorico ?? null,
-        });
-
+        // Etapa 5 — Ocupação
         const ocup = ocupPage?.content?.[0];
         if (ocup && ocup.vigente) {
           setEtapa5({
@@ -165,6 +176,24 @@ export function EditarImovelProvider({
             observacoes:          ocup.observacoes         ?? "",
           });
         }
+
+        // Etapa 6 — Instrumentos: não pré-populada (carregada separadamente na tela)
+
+        // Etapa 7 — Dominial
+        setEtapa7({
+          idSituacaoDominial:   im.idSituacaoDominial != null ? String(im.idSituacaoDominial) : "",
+          matriculaRegistro:    im.matriculaRegistro  ?? "",
+          cartorio:             im.cartorio           ?? "",
+          inscricaoImobiliaria: im.inscricaoImobiliaria ?? "",
+          observacoesDominial:  "",
+        });
+
+        // Etapa 8 — Patrimônio histórico (item 3: dois flags independentes)
+        setEtapa8({
+          tombadoHistorico: im.tombadoHistorico ?? false,
+          tombadoCultural:  im.tombadoCultural  ?? false,
+          observacoes:      "",
+        });
       })
       .catch(() => setErroCarregamento("Não foi possível carregar os dados do imóvel."))
       .finally(() => setCarregando(false));
@@ -176,19 +205,11 @@ export function EditarImovelProvider({
     setErro(null);
 
     try {
-      const idUnidade = etapa1.idUnidadeGestora ? Number(etapa1.idUnidadeGestora) : imovel.idUnidadeGestora;
-      const idOrgao   = etapa1.idOrgaoGestorPatrimonial ? Number(etapa1.idOrgaoGestorPatrimonial) : imovel.idOrgaoGestorPatrimonial ?? undefined;
-
       const req: ImovelRequest = {
         nomeReferencia:           etapa1.nomeReferencia    || undefined,
         idOrigemCadastro:         etapa1.idOrigemCadastro  ? Number(etapa1.idOrigemCadastro) : undefined,
         idTipoImovel:             etapa3.idTipoImovel ? Number(etapa3.idTipoImovel) : undefined,
         tipologia:                etapa3.tipologia         || undefined,
-        idSituacaoDominial:       etapa6.idSituacaoDominial ? Number(etapa6.idSituacaoDominial) : undefined,
-        inscricaoImobiliaria:     etapa6.inscricaoImobiliaria || undefined,
-        matriculaRegistro:        etapa6.matriculaRegistro   || undefined,
-        cartorio:                 etapa6.cartorio            || undefined,
-        imovelHistorico:          etapa6.imovelHistorico ?? undefined,
         descricao:                etapa3.descricaoUso ? etapa3.descricaoUso.slice(0, 500) : undefined,
         observacoesGerais:        etapa1.observacoesGerais ? etapa1.observacoesGerais.slice(0, 500) : undefined,
         areaTerrenoM2:            etapa4.areaTerrenoM2    ? parseFloat(etapa4.areaTerrenoM2)    : undefined,
@@ -196,12 +217,21 @@ export function EditarImovelProvider({
         numeroPavimentos:         etapa4.numeroPavimentos  ? parseInt(etapa4.numeroPavimentos)   : undefined,
         estadoConservacaoAtual:   etapa4.estadoConservacaoAtual || undefined,
         anoConstrucao:            etapa4.anoConstrucao   ? parseInt(etapa4.anoConstrucao)       : undefined,
-        idOrgaoGestorPatrimonial: idOrgao,
-        idUnidadeGestora:         idUnidade,
+        idSituacaoDominial:       etapa7.idSituacaoDominial ? Number(etapa7.idSituacaoDominial) : undefined,
+        inscricaoImobiliaria:     etapa7.inscricaoImobiliaria || undefined,
+        matriculaRegistro:        etapa7.matriculaRegistro   || undefined,
+        cartorio:                 etapa7.cartorio            || undefined,
+        // Item 3: dois flags independentes
+        tombadoHistorico:         etapa8.tombadoHistorico || undefined,
+        tombadoCultural:          etapa8.tombadoCultural  || undefined,
+        imovelHistorico:          (etapa8.tombadoHistorico || etapa8.tombadoCultural) || undefined,
+        idOrgaoGestorPatrimonial: etapa1.idOrgaoGestorPatrimonial ? Number(etapa1.idOrgaoGestorPatrimonial) : imovel.idOrgaoGestorPatrimonial ?? undefined,
+        idUnidadeGestora:         etapa1.idUnidadeGestora ? Number(etapa1.idUnidadeGestora) : imovel.idUnidadeGestora ?? undefined,
       };
 
       await imoveisApi.atualizar(imovel.id, req);
 
+      // Localização
       if (etapa2.latitude || etapa2.longitude || etapa2.logradouro) {
         const locReq = {
           idImovel:     imovel.id,
@@ -228,14 +258,15 @@ export function EditarImovelProvider({
     } finally {
       setSalvando(false);
     }
-  }, [imovel, etapa1, etapa2, etapa3, etapa4, etapa6]);
+  }, [imovel, etapa1, etapa2, etapa3, etapa4, etapa7, etapa8]);
 
   return (
     <Ctx.Provider value={{
       imovel, carregando, erroCarregamento,
-      etapa1, etapa2, etapa3, etapa4, etapa5, etapa6,
+      etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8,
       salvando, erro,
-      setEtapa1, setEtapa2, setEtapa3, setEtapa4, setEtapa5, setEtapa6,
+      setEtapa1, setEtapa2, setEtapa3, setEtapa4, setEtapa5,
+      setEtapa6, setEtapa7, setEtapa8,
       salvar,
     }}>
       {children}

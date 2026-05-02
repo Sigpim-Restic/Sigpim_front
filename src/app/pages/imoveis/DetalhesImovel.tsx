@@ -4,7 +4,7 @@ import {
   ArrowLeft, RefreshCw, AlertCircle, MapPin, FileText,
   Building2, Users, Edit, Map, Download, Loader2,
   ClipboardCheck, Wrench, Plus, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Clock, AlertTriangle, RotateCcw, DollarSign, Pencil, Trash2, BarChart2, FileCheck, Bell,
+  CheckCircle2, XCircle, Clock, AlertTriangle, RotateCcw, DollarSign, Pencil, Trash2, BarChart2, FileCheck, Bell, Shield,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -18,6 +18,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "../../components/ui/select";
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
+import { PainelValidacaoAbas } from "../../components/imoveis/PainelValidacaoAbas";
 import { documentosApi, type DocumentoResponse } from "../../api/documentos";
 import { ocupacoesApi, type OcupacaoResponse } from "../../api/ocupacoes";
 import { localizacoesApi, type LocalizacaoResponse } from "../../api/localizacoes";
@@ -1920,6 +1921,9 @@ export function DetalhesImovel() {
           <TabsTrigger value="instrumentos">
             <FileCheck className="mr-1.5 h-3.5 w-3.5" />Instrumentos
           </TabsTrigger>
+          <TabsTrigger value="validacao">
+            <Shield className="mr-1.5 h-3.5 w-3.5" />Validação
+          </TabsTrigger>
         </TabsList>
 
         {/* ── ABA DADOS ─────────────────────────────────────────────── */}
@@ -1940,6 +1944,22 @@ export function DetalhesImovel() {
               <Campo label="Cadastrado em"         valor={imovel.criadoEm ? new Date(imovel.criadoEm).toLocaleDateString("pt-BR") : null} />
               <Campo label="Atualizado em"         valor={imovel.atualizadoEm ? new Date(imovel.atualizadoEm).toLocaleDateString("pt-BR") : null} />
             </div>
+            {/* Patrimônio histórico — item 3: dois flags independentes */}
+            {(imovel.tombadoHistorico || imovel.tombadoCultural) && (
+              <div className="mt-4 border-t border-gray-100 pt-4 flex flex-wrap gap-2">
+                <p className="text-xs text-gray-500 w-full mb-1">Proteção patrimonial:</p>
+                {imovel.tombadoHistorico && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-800">
+                    🏛 Tombamento Histórico / Patrimonial
+                  </span>
+                )}
+                {imovel.tombadoCultural && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-800">
+                    🎨 Proteção Cultural
+                  </span>
+                )}
+              </div>
+            )}
             {imovel.descricao && (
               <div className="mt-4 border-t border-gray-100 pt-4">
                 <p className="text-xs text-gray-500 mb-1">Descrição</p>
@@ -2100,6 +2120,19 @@ export function DetalhesImovel() {
                 ) : <p className="text-sm font-medium text-gray-400">—</p>}
               </div>
             </div>
+            {/* Campos dominiais adicionais — V30 */}
+            {(imovel.proprietarioRegistral || imovel.areaRegistradaM2 || imovel.onusRestricoes) && (
+              <div className="mt-4 border-t border-gray-100 pt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                <Campo label="Proprietário registral" valor={(imovel as any).proprietarioRegistral} />
+                <Campo label="Área registrada (m²)"   valor={(imovel as any).areaRegistradaM2} />
+                {(imovel as any).onusRestricoes && (
+                  <div className="col-span-2 sm:col-span-3 lg:col-span-4">
+                    <p className="text-xs text-gray-500 mb-0.5">Ônus / Restrições registrárias</p>
+                    <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">{(imovel as any).onusRestricoes}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </Secao>
 
         </TabsContent>
@@ -2188,6 +2221,21 @@ export function DetalhesImovel() {
         {/* ── ABA INSTRUMENTOS DE USO ────────────────────────────────── */}
         <TabsContent value="instrumentos" className="mt-5">
           <AbaInstrumentosUso idImovel={Number(id)} />
+        </TabsContent>
+
+        {/* ── ABA VALIDAÇÃO ──────────────────────────────────────────── */}
+        {/* Mostra status de validação por domínio/aba (itens 5,6,7,8,9 do feedback) */}
+        <TabsContent value="validacao" className="mt-5">
+          <PainelValidacaoAbas
+            idImovel={Number(id)}
+            onMudanca={() => {
+              // Recarrega o imóvel quando uma aba é validada/revogada
+              // para refletir possível mudança de status
+              imoveisApi.buscarPorId(Number(id))
+                .then(setImovel)
+                .catch(() => {});
+            }}
+          />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Shield, Bell, Tag, Scale, Info, MapPin, RefreshCw } from "lucide-react";
+import { Shield, Bell, Tag, Scale, Info, MapPin, RefreshCw, Layers } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -78,6 +78,17 @@ export function Configuracoes() {
               <p className="text-xs text-gray-500">Levantamento, Demanda, Processo e outras</p>
             </div>
           </button>
+          {/* Novo: Níveis de Ocupação (V16) */}
+          <button
+            onClick={() => navigate("/dashboard/configuracoes/niveis-ocupacao")}
+            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:bg-blue-50 hover:border-blue-300 transition-colors"
+          >
+            <Layers className="h-5 w-5 text-[#1351B4] shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Níveis de Ocupação</p>
+              <p className="text-xs text-gray-500">Total, Parcial, Compartilhado e outros</p>
+            </div>
+          </button>
         </div>
       </Card>
 
@@ -92,7 +103,7 @@ export function Configuracoes() {
             { label: "Versão",             value: "2.0.0 — Fase 2" },
             { label: "Ambiente",           value: "Produção" },
             { label: "Banco de dados",     value: "PostgreSQL 18 + PostGIS" },
-            { label: "Última atualização", value: "28/04/2026" },
+            { label: "Última atualização", value: "01/05/2026" },
           ].map((i) => (
             <div key={i.label} className="rounded-lg bg-gray-50 px-4 py-3">
               <p className="text-xs text-gray-500">{i.label}</p>
@@ -140,7 +151,6 @@ export function Configuracoes() {
             <Input type="number" defaultValue={120} className="max-w-32" />
           </div>
 
-          {/* MFA forçado para todos — com lógica real e auditoria no backend */}
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-900">Forçar MFA para todos os usuários</p>

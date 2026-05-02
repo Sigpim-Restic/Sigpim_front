@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
 import {
   LayoutDashboard, Building2, Users, Map, FileText,
-  ClipboardList, History, Menu, X, Bell, RefreshCw,
+  ClipboardList, ClipboardCheck, Wrench, History, Menu, X, Bell, RefreshCw,
   ChevronRight, LogOut, User, Settings,
   BookOpen, List, FolderOpen, PanelLeftClose, PanelLeftOpen, Shield,
   AlertTriangle,
@@ -62,6 +62,24 @@ const menuItems: MenuItem[] = [
     path:  "/dashboard/ocupacoes",
     label: "Ocupações",
     icon:  ClipboardList,
+  },
+  {
+    path:  "/dashboard/vistorias",
+    label: "Vistorias",
+    icon:  ClipboardCheck,
+    perfisPermitidos: [
+      "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL",
+      "VALIDADOR_DOCUMENTAL", "VISTORIADOR", "PLANEJAMENTO", "AUDITOR",
+    ] as Perfil[],
+  },
+  {
+    path:  "/dashboard/intervencoes",
+    label: "Intervenções",
+    icon:  Wrench,
+    perfisPermitidos: [
+      "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL",
+      "VALIDADOR_DOCUMENTAL", "VISTORIADOR", "PLANEJAMENTO", "AUDITOR",
+    ] as Perfil[],
   },
   {
     path:  "/dashboard/pendencias",

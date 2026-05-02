@@ -14,6 +14,8 @@ import { ListaImoveis } from "./pages/imoveis/ListaImoveis";
 import { DetalhesImovel } from "./pages/imoveis/DetalhesImovel";
 import { EditarImovel } from "./pages/imoveis/EditarImovel";
 import { SucessoImovel } from "./pages/imoveis/SucessoImovel";
+
+// Wizard de criação
 import { CadastroImovelStep1 } from "./pages/imoveis/wizard/Step1Identificacao";
 import { CadastroImovelStep2 } from "./pages/imoveis/wizard/Step2Localizacao";
 import { CadastroImovelStep3 } from "./pages/imoveis/wizard/Step3Classificacao";
@@ -23,13 +25,21 @@ import { CadastroImovelStep6 } from "./pages/imoveis/wizard/Step6Instrumentos";
 import { CadastroImovelStep7 } from "./pages/imoveis/wizard/Step7Dominial";
 import { CadastroImovelStep8 } from "./pages/imoveis/wizard/Step8PatrimonioHistorico";
 import { CadastroImovelStep9 } from "./pages/imoveis/wizard/Step9Anexos";
+
+// Wizard de edição — 9 etapas espelhando o cadastro
 import { EditarStep1 } from "./pages/imoveis/wizard-editar/EditarStep1";
 import { EditarStep2 } from "./pages/imoveis/wizard-editar/EditarStep2";
 import { EditarStep3 } from "./pages/imoveis/wizard-editar/EditarStep3";
 import { EditarStep4 } from "./pages/imoveis/wizard-editar/EditarStep4";
 import { EditarStep5 } from "./pages/imoveis/wizard-editar/EditarStep5";
-import { EditarStep6 } from "./pages/imoveis/wizard-editar/EditarStep6";
+import { EditarStep6 } from "./pages/imoveis/wizard-editar/EditarStep6";  // Instrumentos (nova)
+import { EditarStep7 } from "./pages/imoveis/wizard-editar/EditarStep7";  // Dominial (era Step6)
+import { EditarStep8 } from "./pages/imoveis/wizard-editar/EditarStep8";  // Patrimônio (nova)
+import { EditarStep9 } from "./pages/imoveis/wizard-editar/EditarStep9";  // Documentos (nova)
+
 import { ListaOcupacoes } from "./pages/ocupacoes/ListaOcupacoes";
+import { ListaVistorias } from "./pages/vistorias/ListaVistorias";
+import { ListaIntervencoes } from "./pages/intervencoes/ListaIntervencoes";
 import { ListaDocumentos } from "./pages/documentos/ListaDocumentos";
 import { Relatorios } from "./pages/relatorios/Relatorios";
 import { VerificarMfa } from "./pages/auth/VerificarMfa";
@@ -43,6 +53,7 @@ import { VerificarDocumento } from "./pages/relatorios/VerificarDocumento";
 import { GerenciarTiposImovel } from "./pages/admin/GerenciarTiposImovel";
 import { GerenciarSituacoesDominiais } from "./pages/admin/GerenciarSituacoesDominiais";
 import { GerenciarOrigensCadastro } from "./pages/admin/GerenciarOrigensCadastro";
+import { GerenciarNiveisOcupacao } from "./pages/admin/GerenciarNiveisOcupacao";
 import { ProtectedRoute } from "./contexts/ProtectedRoute";
 import { CadastroImovelProvider } from "./contexts/CadastroImovelContext";
 import { RedefinirSenha } from "./pages/auth/RedefinirSenha";
@@ -74,7 +85,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: Dashboard },
 
-      // ── Perfil do usuário logado ─────────────────────────────────────────
+      // ── Perfil ──────────────────────────────────────────────────────────────
       { path: "meu-perfil", Component: MeuPerfil },
 
       // ── Imóveis ─────────────────────────────────────────────────────────────
@@ -102,23 +113,28 @@ export const router = createBrowserRouter([
       // Rotas dinâmicas — APÓS as estáticas
       { path: "imoveis/:id", Component: DetalhesImovel },
 
-      // Wizard de EDIÇÃO — aninhado sob EditarImovel (que provê o contexto)
+      // Wizard de EDIÇÃO — 9 etapas espelhando o cadastro
       {
         path: "imoveis/:id/editar",
         Component: EditarImovel,
         children: [
           { index: true, element: <Navigate to="etapa-1" replace /> },
-          { path: "etapa-1", Component: EditarStep1 },
-          { path: "etapa-2", Component: EditarStep2 },
-          { path: "etapa-3", Component: EditarStep3 },
-          { path: "etapa-4", Component: EditarStep4 },
-          { path: "etapa-5", Component: EditarStep5 },
-          { path: "etapa-6", Component: EditarStep6 },
+          { path: "etapa-1", Component: EditarStep1 },  // Identificação
+          { path: "etapa-2", Component: EditarStep2 },  // Localização
+          { path: "etapa-3", Component: EditarStep3 },  // Classificação
+          { path: "etapa-4", Component: EditarStep4 },  // Dados Físicos
+          { path: "etapa-5", Component: EditarStep5 },  // Ocupação
+          { path: "etapa-6", Component: EditarStep6 },  // Instrumentos (nova)
+          { path: "etapa-7", Component: EditarStep7 },  // Dominial (era etapa-6)
+          { path: "etapa-8", Component: EditarStep8 },  // Patrimônio (nova)
+          { path: "etapa-9", Component: EditarStep9 },  // Documentos (nova)
         ],
       },
 
       // ── Resto do sistema ────────────────────────────────────────────────────
       { path: "ocupacoes",               Component: ListaOcupacoes },
+      { path: "vistorias",               Component: ListaVistorias },
+      { path: "intervencoes",            Component: ListaIntervencoes },
       { path: "pendencias",              Component: Pendencias },
       { path: "documentos",              Component: ListaDocumentos },
       { path: "relatorios",              Component: Relatorios },
@@ -132,6 +148,7 @@ export const router = createBrowserRouter([
       { path: "configuracoes/tipos-imovel",          Component: GerenciarTiposImovel },
       { path: "configuracoes/situacoes-dominiais",   Component: GerenciarSituacoesDominiais },
       { path: "configuracoes/origens-cadastro",      Component: GerenciarOrigensCadastro },
+      { path: "configuracoes/niveis-ocupacao",        Component: GerenciarNiveisOcupacao },
     ],
   },
 ]);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
-  Building2, ClipboardList, FolderOpen, FileText, Map,
+  Building2, ClipboardList, ClipboardCheck, FolderOpen, FileText, Map,
   CheckCircle2, Clock, RefreshCw, AlertCircle, AlertTriangle,
   Wrench, ShieldCheck, TrendingUp, MapPin,
 } from "lucide-react";
@@ -145,12 +145,12 @@ export function Dashboard() {
   ].filter((e) => e.value > 0);
 
   const dadosIntervencoes = [
-    { name: "Planejada",      value: d.intervencoesPlanejadas },
-    { name: "Em Contratação", value: d.intervencoesEmContratacao },
-    { name: "Ag. Parecer",    value: d.intervencoesAguardandoParecer },
-    { name: "Em Execução",    value: d.intervencoesEmExecucao },
-    { name: "Concluída",      value: d.intervencoesConcluidas },
-    { name: "Cancelada",      value: d.intervencoesCanceladas },
+    { name: "Planejada",      value: d.intervencoesPlanejadas,      link: "/dashboard/intervencoes?status=PLANEJADA" },
+    { name: "Em Contratação", value: d.intervencoesEmContratacao,   link: "/dashboard/intervencoes?status=EM_CONTRATACAO" },
+    { name: "Ag. Parecer",    value: d.intervencoesAguardandoParecer, link: "/dashboard/intervencoes/fumph" },
+    { name: "Em Execução",    value: d.intervencoesEmExecucao,      link: "/dashboard/intervencoes?status=EM_EXECUCAO" },
+    { name: "Concluída",      value: d.intervencoesConcluidas,      link: "/dashboard/intervencoes?status=CONCLUIDA" },
+    { name: "Cancelada",      value: d.intervencoesCanceladas,      link: "/dashboard/intervencoes?status=CANCELADA" },
   ].filter((e) => e.value > 0);
 
   const dadosConservacao = d.distribuicaoConservacao.map((c) => ({
@@ -182,12 +182,12 @@ export function Dashboard() {
         <KpiCard label="Imóveis Cadastrados" value={fmt(total)}
           sub="total no sistema" icon={Building2}
           color="text-[#1351B4]" bg="bg-blue-50" link="/dashboard/imoveis" />
-        <KpiCard label="Ocupações" value={fmt(d.totalOcupacoes)}
-          sub="registradas" icon={ClipboardList}
-          color="text-purple-600" bg="bg-purple-50" link="/dashboard/ocupacoes" />
-        <KpiCard label="Documentos" value={fmt(d.totalDocumentos)}
-          sub="anexados" icon={FolderOpen}
-          color="text-orange-600" bg="bg-orange-50" link="/dashboard/documentos" />
+        <KpiCard label="Vistorias" value={fmt(d.totalVistorias)}
+          sub="registradas" icon={ClipboardCheck}
+          color="text-teal-600" bg="bg-teal-50" link="/dashboard/vistorias" />
+        <KpiCard label="Intervenções" value={fmt(d.totalIntervencoes)}
+          sub="registradas" icon={Wrench}
+          color="text-purple-600" bg="bg-purple-50" link="/dashboard/intervencoes" />
         <KpiCard label="Alertas não lidos" value={fmt(d.alertasNaoLidos)}
           sub={`de ${fmt(d.totalAlertas)} total`} icon={AlertTriangle}
           color={d.alertasNaoLidos > 0 ? "text-red-600" : "text-emerald-600"}
@@ -400,8 +400,8 @@ export function Dashboard() {
       {/* ── Risco + Conservação + Intervenções ───────────────────────────── */}
       <div className="grid gap-5 lg:grid-cols-3">
 
-        {/* Risco */}
-        <div className="rounded-xl border border-slate-200 bg-white p-5">
+        {/* Risco — clicável para /dashboard/vistorias filtrado por criticidade */}
+        <Link to="/dashboard/vistorias" className="block rounded-xl border border-slate-200 bg-white p-5 hover:border-slate-300 hover:shadow-md transition">
           <div className="flex items-center justify-between mb-4">
             <SectionTitle>Criticidade / Risco</SectionTitle>
             <AlertTriangle className="h-4 w-4 text-slate-400" />
@@ -440,7 +440,7 @@ export function Dashboard() {
               ⚠ {fmt(d.imoveisSemVistoria)} imóvel(is) sem vistoria registrada
             </div>
           )}
-        </div>
+        </Link>
 
         {/* Conservação */}
         <div className="rounded-xl border border-slate-200 bg-white p-5">
@@ -466,28 +466,40 @@ export function Dashboard() {
           )}
         </div>
 
-        {/* Intervenções */}
+        {/* Intervenções — clicável para /dashboard/intervencoes */}
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="flex items-center justify-between mb-4">
             <SectionTitle>Intervenções</SectionTitle>
-            <Wrench className="h-4 w-4 text-slate-400" />
+            <Link to="/dashboard/intervencoes" className="text-xs text-[#1351B4] hover:underline">
+              Ver todas →
+            </Link>
           </div>
           <div className="mb-4 text-center">
-            <span className="text-3xl font-bold tracking-tight text-[#1351B4]">{fmt(d.totalIntervencoes)}</span>
+            <Link to="/dashboard/intervencoes">
+              <span className="text-3xl font-bold tracking-tight text-[#1351B4] hover:underline cursor-pointer">
+                {fmt(d.totalIntervencoes)}
+              </span>
+            </Link>
             <p className="text-xs text-slate-400 mt-0.5">total registradas</p>
           </div>
           <div className="space-y-1.5">
             {dadosIntervencoes.map((iv) => (
-              <div key={iv.name} className="flex items-center justify-between text-xs">
+              <Link
+                key={iv.name}
+                to={iv.link}
+                className="flex items-center justify-between text-xs rounded-md px-2 py-1 hover:bg-slate-50 transition-colors"
+              >
                 <span className="text-slate-600">{iv.name}</span>
                 <Badge variant="secondary" className="text-xs">{fmt(iv.value)}</Badge>
-              </div>
+              </Link>
             ))}
           </div>
           {d.historicosAguardandoParecerFumph > 0 && (
-            <div className="mt-3 rounded-lg bg-purple-50 border border-purple-200 px-3 py-2 text-xs text-purple-800">
-              🏛 {fmt(d.historicosAguardandoParecerFumph)} aguardando parecer FUMPH
-            </div>
+            <Link to="/dashboard/intervencoes/fumph">
+              <div className="mt-3 rounded-lg bg-purple-50 border border-purple-200 px-3 py-2 text-xs text-purple-800 hover:bg-purple-100 transition-colors cursor-pointer">
+                🏛 {fmt(d.historicosAguardandoParecerFumph)} aguardando parecer FUMPH →
+              </div>
+            </Link>
           )}
         </div>
       </div>
@@ -504,19 +516,23 @@ export function Dashboard() {
                 <p className="text-xs text-purple-700">Imóveis históricos</p>
                 <p className="text-xl font-bold text-purple-800">{fmt(d.imoveisHistoricos)}</p>
               </div>
-              <div className="flex items-center justify-between rounded-lg bg-orange-50 px-4 py-3">
-                <p className="text-xs text-orange-700">Com intervenção ativa</p>
-                <p className="text-xl font-bold text-orange-800">{fmt(d.historicosComIntervencaoAtiva)}</p>
-              </div>
-              <div className="flex items-center justify-between rounded-lg bg-red-50 px-4 py-3">
-                <p className="text-xs text-red-700">Ag. Parecer FUMPH</p>
-                <p className="text-xl font-bold text-red-800">{fmt(d.historicosAguardandoParecerFumph)}</p>
-              </div>
+              <Link to="/dashboard/intervencoes?status=EM_EXECUCAO">
+                <div className="flex items-center justify-between rounded-lg bg-orange-50 px-4 py-3 hover:bg-orange-100 transition-colors cursor-pointer">
+                  <p className="text-xs text-orange-700">Com intervenção ativa</p>
+                  <p className="text-xl font-bold text-orange-800">{fmt(d.historicosComIntervencaoAtiva)}</p>
+                </div>
+              </Link>
+              <Link to="/dashboard/intervencoes/fumph">
+                <div className="flex items-center justify-between rounded-lg bg-red-50 px-4 py-3 hover:bg-red-100 transition-colors cursor-pointer">
+                  <p className="text-xs text-red-700">Ag. Parecer FUMPH</p>
+                  <p className="text-xl font-bold text-red-800">{fmt(d.historicosAguardandoParecerFumph)}</p>
+                </div>
+              </Link>
             </div>
           </div>
         )}
 
-        {/* Ações rápidas */}
+        {/* Ações rápidas — Vistorias e Intervenções adicionadas */}
         <div className={`rounded-xl border border-slate-200 bg-white p-5 ${d.imoveisHistoricos > 0 ? "lg:col-span-2" : "lg:col-span-3"}`}>
           <SectionTitle>Ações Rápidas</SectionTitle>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -525,14 +541,19 @@ export function Dashboard() {
                 <Building2 className="h-4 w-4" />Novo Imóvel
               </Button>
             </Link>
+            <Link to="/dashboard/vistorias">
+              <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
+                <ClipboardCheck className="h-4 w-4" />Vistorias
+              </Button>
+            </Link>
+            <Link to="/dashboard/intervencoes">
+              <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
+                <Wrench className="h-4 w-4" />Intervenções
+              </Button>
+            </Link>
             <Link to="/dashboard/ocupacoes">
               <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
                 <ClipboardList className="h-4 w-4" />Ocupações
-              </Button>
-            </Link>
-            <Link to="/dashboard/documentos">
-              <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
-                <FolderOpen className="h-4 w-4" />Documentos
               </Button>
             </Link>
             <Link to="/dashboard/relatorios">
@@ -543,11 +564,6 @@ export function Dashboard() {
             <Link to="/dashboard/mapa">
               <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
                 <Map className="h-4 w-4" />Mapa GIS
-              </Button>
-            </Link>
-            <Link to="/dashboard/auditoria">
-              <Button variant="outline" className="w-full justify-start text-sm gap-2 border-slate-200 text-slate-700 hover:text-[#1351B4] hover:border-[#1351B4]/30">
-                <ShieldCheck className="h-4 w-4" />Auditoria
               </Button>
             </Link>
           </div>

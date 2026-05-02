@@ -5,13 +5,17 @@ import { Button } from "../../../components/ui/button";
 import { Stepper } from "../../../components/layout/Stepper";
 import { useEditarImovel } from "../../../contexts/EditarImovelContext";
 
+// Espelha as 9 etapas do wizard de cadastro — itens 5/6 do feedback
 const steps = [
-  { number: 1, label: "Identificação", path: "" },
-  { number: 2, label: "Localização",   path: "" },
-  { number: 3, label: "Classificação", path: "" },
-  { number: 4, label: "Dados Físicos", path: "" },
-  { number: 5, label: "Ocupação",      path: "" },
-  { number: 6, label: "Dominial",      path: "" },
+  { number: 1, label: "Identificação" },
+  { number: 2, label: "Localização"   },
+  { number: 3, label: "Classificação" },
+  { number: 4, label: "Dados Físicos" },
+  { number: 5, label: "Ocupação"      },
+  { number: 6, label: "Instrumentos"  },
+  { number: 7, label: "Dominial"      },
+  { number: 8, label: "Patrimônio"    },
+  { number: 9, label: "Documentos"    },
 ];
 
 const TOTAL = steps.length;
@@ -21,35 +25,36 @@ interface Props {
   children: React.ReactNode;
   onNext?: () => void;
   salvando?: boolean;
-  isLastStep?: boolean;
 }
 
-export function EditarWizardLayout({ currentStep, children, onNext, salvando, isLastStep }: Props) {
+export function EditarWizardLayout({ currentStep, children, onNext, salvando }: Props) {
   const navigate  = useNavigate();
   const { imovel } = useEditarImovel();
   const idImovel  = imovel?.id;
 
   const stepsComPath = steps.map((s) => ({
     ...s,
-    path: `/imoveis/${idImovel}/editar/etapa-${s.number}`,
+    path: `/dashboard/imoveis/${idImovel}/editar/etapa-${s.number}`,
   }));
 
   const handleBack = () => {
-    if (currentStep > 1) navigate(`/imoveis/${idImovel}/editar/etapa-${currentStep - 1}`);
-    else navigate(`/imoveis/${idImovel}`);
+    if (currentStep > 1) navigate(`/dashboard/imoveis/${idImovel}/editar/etapa-${currentStep - 1}`);
+    else navigate(`/dashboard/imoveis/${idImovel}`);
   };
 
   const handleNext = () => {
     if (onNext) { onNext(); return; }
-    if (currentStep < TOTAL) navigate(`/imoveis/${idImovel}/editar/etapa-${currentStep + 1}`);
+    if (currentStep < TOTAL) navigate(`/dashboard/imoveis/${idImovel}/editar/etapa-${currentStep + 1}`);
   };
+
+  const isLastStep = currentStep === TOTAL;
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
 
-      {/* Cabeçalho com contexto do imóvel sendo editado */}
+      {/* Cabeçalho */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/imoveis/${idImovel}`)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(`/dashboard/imoveis/${idImovel}`)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
@@ -60,7 +65,7 @@ export function EditarWizardLayout({ currentStep, children, onNext, salvando, is
         </div>
       </div>
 
-      {/* Banner identificador — para o usuário nunca perder o contexto */}
+      {/* Banner identificador */}
       {imovel && (
         <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
           <Building2 className="h-5 w-5 text-[#1351B4] shrink-0" />
@@ -81,7 +86,7 @@ export function EditarWizardLayout({ currentStep, children, onNext, salvando, is
         <Stepper steps={stepsComPath} currentStep={currentStep} />
       </div>
 
-      {/* Conteúdo da etapa */}
+      {/* Conteúdo */}
       <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
         {children}
       </div>
@@ -99,10 +104,10 @@ export function EditarWizardLayout({ currentStep, children, onNext, salvando, is
         >
           {salvando
             ? "Salvando..."
-            : currentStep === TOTAL
+            : isLastStep
             ? "Salvar Alterações"
             : "Próxima Etapa"}
-          {!salvando && currentStep < TOTAL && <ArrowRight className="ml-2 h-4 w-4" />}
+          {!salvando && !isLastStep && <ArrowRight className="ml-2 h-4 w-4" />}
         </Button>
       </div>
     </div>

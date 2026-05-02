@@ -1,4 +1,4 @@
-// ─── Etapa 6 — Dominial, Regularização e Patrimônio Histórico (editar) ────────
+// Etapa 7 — Dominial e Regularização (editar)
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Label } from "../../../components/ui/label";
@@ -12,10 +12,10 @@ import { useEditarImovel } from "../../../contexts/EditarImovelContext";
 import { EditarWizardLayout } from "./EditarWizardLayout";
 import { situacoesDominiaisApi, type SituacaoDominialResponse } from "../../../api/situacoes-dominiais";
 
-export function EditarStep6() {
+export function EditarStep7() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { etapa6, setEtapa6, salvar, salvando, erro } = useEditarImovel();
+  const { etapa7, setEtapa7 } = useEditarImovel();
 
   const [situacoes,     setSituacoes]     = useState<SituacaoDominialResponse[]>([]);
   const [carregandoSit, setCarregandoSit] = useState(true);
@@ -27,39 +27,30 @@ export function EditarStep6() {
       .finally(() => setCarregandoSit(false));
   }, []);
 
-  const handleSalvar = () => {
-    salvar(() => navigate(`/imoveis/${id}`));
-  };
+  const handleNext = () => navigate(`/dashboard/imoveis/${id}/editar/etapa-8`);
 
   return (
-    <EditarWizardLayout currentStep={6} onNext={handleSalvar} salvando={salvando}>
+    <EditarWizardLayout currentStep={7} onNext={handleNext}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Dominial e Regularização</h3>
           <p className="text-sm text-gray-600 mt-1">
-            Registro, titularidade, situação dominial e patrimônio histórico
+            Registro, titularidade e situação dominial
           </p>
         </div>
 
-        {erro && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {erro}
-          </div>
-        )}
-
         <AlertBox variant="info">
           Alterações na situação dominial são registradas em auditoria.
-          Anexe documentos comprobatórios na aba Documentos após salvar.
+          Anexe documentos comprobatórios na etapa seguinte.
         </AlertBox>
 
         <div className="grid gap-6">
-
           {/* Situação Dominial */}
           <div className="space-y-2">
             <Label>Situação Dominial</Label>
             <Select
-              value={etapa6.idSituacaoDominial}
-              onValueChange={(v) => setEtapa6({ ...etapa6, idSituacaoDominial: v })}
+              value={etapa7.idSituacaoDominial}
+              onValueChange={(v) => setEtapa7({ ...etapa7, idSituacaoDominial: v })}
               disabled={carregandoSit}
             >
               <SelectTrigger>
@@ -78,16 +69,16 @@ export function EditarStep6() {
             <div className="space-y-2">
               <Label>Número da Matrícula</Label>
               <Input
-                value={etapa6.matriculaRegistro}
-                onChange={(e) => setEtapa6({ ...etapa6, matriculaRegistro: e.target.value })}
+                value={etapa7.matriculaRegistro}
+                onChange={(e) => setEtapa7({ ...etapa7, matriculaRegistro: e.target.value })}
                 placeholder="Ex: 12345"
               />
             </div>
             <div className="space-y-2">
               <Label>Cartório de Registro</Label>
               <Input
-                value={etapa6.cartorio}
-                onChange={(e) => setEtapa6({ ...etapa6, cartorio: e.target.value })}
+                value={etapa7.cartorio}
+                onChange={(e) => setEtapa7({ ...etapa7, cartorio: e.target.value })}
                 placeholder="Ex: 1º Ofício de Registro de Imóveis"
               />
             </div>
@@ -97,8 +88,8 @@ export function EditarStep6() {
           <div className="space-y-2">
             <Label>Inscrição Imobiliária (SEMFAZ)</Label>
             <Input
-              value={etapa6.inscricaoImobiliaria}
-              onChange={(e) => setEtapa6({ ...etapa6, inscricaoImobiliaria: e.target.value })}
+              value={etapa7.inscricaoImobiliaria}
+              onChange={(e) => setEtapa7({ ...etapa7, inscricaoImobiliaria: e.target.value })}
               placeholder="Ex: 01.234.567-8"
             />
           </div>
@@ -107,35 +98,12 @@ export function EditarStep6() {
           <div className="space-y-2">
             <Label>Observações sobre Regularização</Label>
             <Textarea
-              value={etapa6.observacoesDominial}
-              onChange={(e) => setEtapa6({ ...etapa6, observacoesDominial: e.target.value })}
+              value={etapa7.observacoesDominial}
+              onChange={(e) => setEtapa7({ ...etapa7, observacoesDominial: e.target.value })}
               placeholder="Processos de regularização, disputas judiciais, pendências cartoriais..."
               rows={3}
             />
           </div>
-
-          {/* Patrimônio Histórico */}
-          <div className="space-y-2">
-            <Label>Patrimônio Histórico ou Cultural?</Label>
-            <select
-              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1351B4]"
-              value={etapa6.imovelHistorico === true ? "true" : etapa6.imovelHistorico === false ? "false" : ""}
-              onChange={(e) => setEtapa6({
-                ...etapa6,
-                imovelHistorico: e.target.value === "true" ? true : e.target.value === "false" ? false : null,
-              })}
-            >
-              <option value="">Não informado</option>
-              <option value="false">Não</option>
-              <option value="true">Sim — aciona gate FUMPH em intervenções N1+</option>
-            </select>
-            {etapa6.imovelHistorico === true && (
-              <p className="text-xs text-orange-600">
-                ⚠ Intervenções nível N1 ou superior exigirão parecer e aceite da FUMPH.
-              </p>
-            )}
-          </div>
-
         </div>
       </div>
     </EditarWizardLayout>
