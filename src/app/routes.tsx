@@ -32,10 +32,10 @@ import { EditarStep2 } from "./pages/imoveis/wizard-editar/EditarStep2";
 import { EditarStep3 } from "./pages/imoveis/wizard-editar/EditarStep3";
 import { EditarStep4 } from "./pages/imoveis/wizard-editar/EditarStep4";
 import { EditarStep5 } from "./pages/imoveis/wizard-editar/EditarStep5";
-import { EditarStep6 } from "./pages/imoveis/wizard-editar/EditarStep6";  // Instrumentos (nova)
-import { EditarStep7 } from "./pages/imoveis/wizard-editar/EditarStep7";  // Dominial (era Step6)
-import { EditarStep8 } from "./pages/imoveis/wizard-editar/EditarStep8";  // Patrimônio (nova)
-import { EditarStep9 } from "./pages/imoveis/wizard-editar/EditarStep9";  // Documentos (nova)
+import { EditarStep6 } from "./pages/imoveis/wizard-editar/EditarStep6_Instrumentos";  // Instrumentos (nova)
+import { EditarStep7 } from "./pages/imoveis/wizard-editar/EditarStep7_Dominial";  // Dominial (era Step6)
+import { EditarStep8 } from "./pages/imoveis/wizard-editar/EditarStep8_Patrimonio";  // Patrimônio (nova)
+import { EditarStep9 } from "./pages/imoveis/wizard-editar/EditarStep9_Documentos";  // Documentos (nova)
 
 import { ListaOcupacoes } from "./pages/ocupacoes/ListaOcupacoes";
 import { ListaVistorias } from "./pages/vistorias/ListaVistorias";
