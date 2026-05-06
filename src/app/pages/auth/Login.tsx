@@ -96,7 +96,7 @@ export function Login() {
 
             <div className="mb-6 flex flex-col items-center gap-3">
               <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-20 w-20 object-contain" />
+                <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-[88px] w-[88px] object-contain" />
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
