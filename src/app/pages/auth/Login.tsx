@@ -51,10 +51,10 @@ export function Login() {
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-3">
-            <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-11 w-auto object-contain" />
+            <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-14 w-auto object-contain" />
             <div className="leading-tight">
               <p className="text-[15px] font-bold tracking-tight text-[#1351B4]">SIGPIM</p>
-              <p className="text-[11px] font-medium text-slate-500">SEMAD/SIN</p>
+              
             </div>
           </Link>
 
@@ -95,8 +95,8 @@ export function Login() {
           <div className="rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm">
 
             <div className="mb-6 flex flex-col items-center gap-3">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-12 w-12 object-contain" />
+              <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-20 w-20 object-contain" />
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -183,7 +183,7 @@ export function Login() {
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-400">
-            © {new Date().getFullYear()} SEMAD/SIN
+            © {new Date().getFullYear()} SIGPIM
           </p>
         </div>
       </main>

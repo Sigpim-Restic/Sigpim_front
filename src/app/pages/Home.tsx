@@ -95,10 +95,10 @@ export function Home() {
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-11 w-auto object-contain" />
+            <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-14 w-auto object-contain" />
             <div className="leading-tight">
               <h1 className="text-[15px] font-bold tracking-tight text-[#1351B4]">SIGPIM</h1>
-              <p className="text-[11px] font-medium text-slate-500">SEMAD/SIN</p>
+              
             </div>
           </div>
 
@@ -523,10 +523,10 @@ export function Home() {
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-12">
             <div className="lg:col-span-4">
               <div className="flex items-center gap-3">
-                <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-11 w-auto object-contain" />
+                <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-14 w-auto object-contain" />
                 <div className="leading-tight">
                   <h4 className="text-sm font-bold tracking-tight text-[#1351B4]">SIGPIM</h4>
-                  <p className="text-[11px] font-medium text-slate-500">SEMAD/SIN</p>
+                  
                 </div>
               </div>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600">
@@ -558,7 +558,7 @@ export function Home() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1351B4]" />
-                  <span>SEMAD — Av. Sen. Vitorino Freire, s/n — Centro</span>
+                  <span>Av. Sen. Vitorino Freire, s/n — Centro</span>
                 </li>
               </ul>
             </div>
@@ -576,7 +576,7 @@ export function Home() {
                     Portal da Prefeitura <ExternalLink className="h-3 w-3" />
                   </a>
                 </li>
-                {["SEMAD", "Ouvidoria"].map((l) => (
+                {["Ouvidoria"].map((l) => (
                   <li key={l}>
                     <a href="#" className="text-slate-700 transition-colors hover:text-[#1351B4]">{l}</a>
                   </li>
@@ -587,9 +587,9 @@ export function Home() {
 
           <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-slate-200 pt-6 text-center sm:flex-row sm:text-left">
             <p className="text-xs text-slate-500">
-              © {new Date().getFullYear()} SEMAD/SIN. Todos os direitos reservados.
+              © {new Date().getFullYear()} SIGPIM. Todos os direitos reservados.
             </p>
-            <p className="text-xs text-slate-400">SIGPIM v1.0.0 · Desenvolvido pela SEMAD/SIN</p>
+            <p className="text-xs text-slate-400">SIGPIM v1.0.0 · v1.0.0</p>
           </div>
         </div>
       </footer>

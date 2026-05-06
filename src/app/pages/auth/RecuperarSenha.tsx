@@ -75,7 +75,7 @@ export function RecuperarSenha() {
           </div>
           
           <p className="mt-6 text-center text-xs text-slate-400">
-            © {new Date().getFullYear()} SEMAD/SIN
+            © {new Date().getFullYear()} SIGPIM
           </p>
         </div>
       </div>
@@ -95,7 +95,7 @@ export function RecuperarSenha() {
               </div>
               <div>
                 <h1 className="text-xl font-bold tracking-tight text-[#1351B4]">SIGPIM</h1>
-                <p className="text-xs text-slate-500">SEMAD/SIN</p>
+                
               </div>
             </div>
           </div>
@@ -175,7 +175,7 @@ export function RecuperarSenha() {
           {/* Footer */}
           <div className="border-t border-slate-100 bg-slate-50 px-8 py-4">
             <p className="text-center text-xs text-slate-500">
-              SEMAD/SIN
+
               <br />
               Sistema de gestão patrimonial municipal. Seus dados estão protegidos.
             </p>
@@ -183,7 +183,7 @@ export function RecuperarSenha() {
         </div>
         
         <p className="mt-6 text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} SEMAD/SIN
+          © {new Date().getFullYear()} SIGPIM
         </p>
       </div>
     </div>

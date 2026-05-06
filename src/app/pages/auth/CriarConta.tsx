@@ -85,7 +85,7 @@ export function CriarConta() {
 
   useEffect(() => {
     orgaosApi.listarAtivos()
-      .then(setOrgaos)
+      .then((data) => setOrgaos(Array.isArray(data) ? data : []))
       .catch(() => setErro("Não foi possível carregar os órgãos."))
       .finally(() => setLoadingOrgaos(false));
   }, []);
@@ -95,7 +95,7 @@ export function CriarConta() {
     setLoadingUnidades(true);
     setFormData((prev) => ({ ...prev, idUnidade: "" }));
     unidadesApi.listarAtivasPorOrgao(Number(formData.idOrgao))
-      .then(setUnidades)
+      .then((data) => setUnidades(Array.isArray(data) ? data : []))
       .catch(() => setErro("Não foi possível carregar as unidades."))
       .finally(() => setLoadingUnidades(false));
   }, [formData.idOrgao]);
