@@ -1,4 +1,10 @@
-FROM node:22-alpine
+# ============================================================
+# SIGPIM — Dockerfile do front-end React/Vite
+# Node 22 build → Nginx Alpine runtime
+# ============================================================
+
+# ── Estágio 1: build ────────────────────────────────────────
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -7,6 +13,22 @@ RUN npm install --legacy-peer-deps
 
 COPY . .
 
-EXPOSE 5173
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+RUN npm run build
+
+# ── Estágio 2: runtime ──────────────────────────────────────
+FROM nginx:alpine AS runtime
+
+# Remove config padrão do Nginx
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Config customizada (SPA — redireciona tudo para index.html)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
