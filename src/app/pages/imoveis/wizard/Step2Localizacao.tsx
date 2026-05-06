@@ -108,7 +108,7 @@ export function CadastroImovelStep2() {
             cep: digits,
             logradouro: data.logradouro || prev.logradouro,
             bairro: data.bairro || prev.bairro,
-            cidade: "São Luís",
+            cidade: "",
           }));
         } else {
           setCepNaoEncontrado(true);
@@ -184,7 +184,7 @@ export function CadastroImovelStep2() {
 
         <AlertBox variant="info">
           Digite o CEP para preencher logradouro e bairro automaticamente.
-          Cidade e estado são fixos (São Luís — MA).{" "}
+          Cidade e estado são fixos para este município.{" "}
           <strong>Ao menos um endereço ou coordenada é obrigatório</strong> nesta etapa.
         </AlertBox>
 
@@ -248,7 +248,7 @@ export function CadastroImovelStep2() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="cidade">Cidade</Label>
-              <Input id="cidade" value="São Luís" disabled className="bg-gray-50 text-gray-500 cursor-not-allowed" />
+              <Input id="cidade" value="" disabled className="bg-gray-50 text-gray-500 cursor-not-allowed" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="estado">Estado</Label>

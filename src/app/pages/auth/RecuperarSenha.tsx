@@ -40,7 +40,7 @@ export function RecuperarSenha() {
           <div className="rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm text-center">
             <div className="mb-6 flex flex-col items-center gap-3">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <img src="/assets/brasao-sao-luis.png" alt="Brasão de São Luís" className="h-12 w-12 object-contain" />
+                <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-12 w-12 object-contain" />
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -75,7 +75,7 @@ export function RecuperarSenha() {
           </div>
           
           <p className="mt-6 text-center text-xs text-slate-400">
-            © {new Date().getFullYear()} Prefeitura Municipal de São Luís — SEMAD/SIN
+            © {new Date().getFullYear()} SEMAD/SIN
           </p>
         </div>
       </div>
@@ -91,11 +91,11 @@ export function RecuperarSenha() {
           <div className="border-b border-slate-200 px-8 py-6">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm">
-                <img src="/assets/brasao-sao-luis.png" alt="Brasão de São Luís" className="h-8 w-8 object-contain" />
+                <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-8 w-8 object-contain" />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-[#1351B4]">SIGPIM-SLZ</h1>
-                <p className="text-xs text-slate-500">Prefeitura de São Luís — MA</p>
+                <h1 className="text-xl font-bold tracking-tight text-[#1351B4]">SIGPIM</h1>
+                <p className="text-xs text-slate-500">SEMAD/SIN</p>
               </div>
             </div>
           </div>
@@ -175,7 +175,7 @@ export function RecuperarSenha() {
           {/* Footer */}
           <div className="border-t border-slate-100 bg-slate-50 px-8 py-4">
             <p className="text-center text-xs text-slate-500">
-              Prefeitura Municipal de São Luís — SEMAD/SIN
+              SEMAD/SIN
               <br />
               Sistema de gestão patrimonial municipal. Seus dados estão protegidos.
             </p>
@@ -183,7 +183,7 @@ export function RecuperarSenha() {
         </div>
         
         <p className="mt-6 text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} Prefeitura Municipal de São Luís — SEMAD/SIN
+          © {new Date().getFullYear()} SEMAD/SIN
         </p>
       </div>
     </div>

@@ -58,9 +58,9 @@ export function VerificarDocumento() {
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#1351B4]">
           <ShieldCheck className="h-7 w-7 text-white" />
         </div>
-        <h1 className="text-lg font-bold text-gray-900">SIGPIM-SLZ</h1>
+        <h1 className="text-lg font-bold text-gray-900">SIGPIM</h1>
         <p className="text-sm text-gray-500">
-          Prefeitura Municipal de São Luís · SEMAD
+          SEMAD
         </p>
         <p className="text-xs text-gray-400 mt-0.5">
           Verificação de Autenticidade de Documento
@@ -107,7 +107,7 @@ export function VerificarDocumento() {
               <div>
                 <p className="text-sm font-bold text-white">Documento Autêntico</p>
                 <p className="text-xs text-green-100">
-                  Emitido pelo SIGPIM-SLZ · Sistema oficial da Prefeitura de São Luís
+                  Emitido pelo SIGPIM · Sistema oficial de gestão patrimonial
                 </p>
               </div>
             </div>
@@ -155,11 +155,11 @@ export function VerificarDocumento() {
             to="/"
             className="text-xs text-[#1351B4] hover:underline"
           >
-            Acessar o SIGPIM-SLZ
+            Acessar o SIGPIM
           </Link>
           <span className="mx-2 text-gray-300">·</span>
           <span className="text-xs text-gray-400">
-            Prefeitura Municipal de São Luís · {new Date().getFullYear()}
+            SEMAD · {new Date().getFullYear()}
           </span>
         </div>
       </div>

@@ -89,7 +89,7 @@ export function EditarStep2() {
             </div>
             <div className="space-y-2">
               <Label>Cidade</Label>
-              <Input value="São Luís" disabled />
+              <Input value="" disabled />
             </div>
             <div className="space-y-2">
               <Label>Estado</Label>

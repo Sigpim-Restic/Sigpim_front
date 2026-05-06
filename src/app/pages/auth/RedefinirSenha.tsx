@@ -98,7 +98,7 @@ export function RedefinirSenha() {
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4"><Logo size="medium" /></div>
-            <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
+            <h1 className="text-2xl font-bold text-white">SIGPIM</h1>
           </div>
           <div className="px-8 py-8 text-center">
             <div className="flex justify-center mb-6">
@@ -126,7 +126,7 @@ export function RedefinirSenha() {
         <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
           <div className="bg-[#1351B4] px-8 py-6 text-center">
             <div className="flex justify-center mb-4"><Logo size="medium" /></div>
-            <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
+            <h1 className="text-2xl font-bold text-white">SIGPIM</h1>
           </div>
           <div className="px-8 py-8 text-center">
             <div className="flex justify-center mb-6">
@@ -168,7 +168,7 @@ export function RedefinirSenha() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="bg-[#1351B4] px-8 py-6 text-center">
           <div className="flex justify-center mb-4"><Logo size="medium" /></div>
-          <h1 className="text-2xl font-bold text-white">SIGPIM-SLZ</h1>
+          <h1 className="text-2xl font-bold text-white">SIGPIM</h1>
           <p className="text-sm text-white/80 mt-1">
             Sistema Integrado de Gestão do Patrimônio Imobiliário
           </p>
@@ -305,7 +305,7 @@ export function RedefinirSenha() {
 
         <div className="bg-gray-50 px-8 py-4 border-t border-gray-100">
           <p className="text-xs text-center text-gray-600">
-            Prefeitura Municipal de São Luís — SEMAD
+            SEMAD
             <br />
             Sistema de gestão patrimonial municipal. Seus dados estão protegidos.
           </p>

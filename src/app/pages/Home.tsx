@@ -95,10 +95,10 @@ export function Home() {
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/75">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <img src="/assets/brasao-sao-luis.png" alt="Brasão de São Luís" className="h-11 w-auto object-contain" />
+            <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-11 w-auto object-contain" />
             <div className="leading-tight">
-              <h1 className="text-[15px] font-bold tracking-tight text-[#1351B4]">SIGPIM-SLZ</h1>
-              <p className="text-[11px] font-medium text-slate-500">Prefeitura de São Luís — MA</p>
+              <h1 className="text-[15px] font-bold tracking-tight text-[#1351B4]">SIGPIM</h1>
+              <p className="text-[11px] font-medium text-slate-500">SEMAD/SIN</p>
             </div>
           </div>
 
@@ -186,7 +186,7 @@ export function Home() {
             </h2>
 
             <p className="mt-5 max-w-xl text-base leading-relaxed text-blue-100 sm:text-lg">
-              O sistema oficial de gestão do patrimônio imobiliário de São Luís — cadastre, atualize e fiscalize imóveis públicos com segurança e rastreabilidade.
+              O sistema oficial de gestão do patrimônio imobiliário municipal — cadastre, atualize e fiscalize imóveis públicos com segurança e rastreabilidade.
             </p>
 
             <ul className="mt-8 grid max-w-md gap-3 sm:grid-cols-2">
@@ -310,7 +310,7 @@ export function Home() {
             </span>
             <h3 className="mt-4 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">O que é o SIGPIM?</h3>
             <p className="mx-auto mt-4 max-w-3xl text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
-              Plataforma oficial da Prefeitura Municipal de São Luís para gerenciamento centralizado de todo o patrimônio imobiliário público.
+              Plataforma oficial para gerenciamento centralizado de todo o patrimônio imobiliário público municipal.
             </p>
           </div>
 
@@ -392,7 +392,7 @@ export function Home() {
             </span>
             <h3 className="mt-4 text-balance text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Mapa de Imóveis Públicos</h3>
             <p className="mx-auto mt-4 max-w-2xl text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
-              Visualize a localização dos imóveis públicos <strong className="text-slate-900">validados</strong> de São Luís.
+              Visualize a localização dos imóveis públicos <strong className="text-slate-900">validados</strong> do município.
             </p>
           </div>
 
@@ -523,14 +523,14 @@ export function Home() {
           <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-12">
             <div className="lg:col-span-4">
               <div className="flex items-center gap-3">
-                <img src="/assets/brasao-sao-luis.png" alt="Brasão de São Luís" className="h-11 w-auto object-contain" />
+                <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-11 w-auto object-contain" />
                 <div className="leading-tight">
-                  <h4 className="text-sm font-bold tracking-tight text-[#1351B4]">SIGPIM-SLZ</h4>
-                  <p className="text-[11px] font-medium text-slate-500">Prefeitura de São Luís — MA</p>
+                  <h4 className="text-sm font-bold tracking-tight text-[#1351B4]">SIGPIM</h4>
+                  <p className="text-[11px] font-medium text-slate-500">SEMAD/SIN</p>
                 </div>
               </div>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-600">
-                Sistema Integrado de Gestão do Patrimônio Imobiliário Municipal de São Luís do Maranhão.
+                Sistema Integrado de Gestão do Patrimônio Imobiliário Municipal.
               </p>
             </div>
 
@@ -558,7 +558,7 @@ export function Home() {
                 </li>
                 <li className="flex items-start gap-2">
                   <Building2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#1351B4]" />
-                  <span>SEMAD — Av. Sen. Vitorino Freire, s/n — Centro, São Luís/MA</span>
+                  <span>SEMAD — Av. Sen. Vitorino Freire, s/n — Centro</span>
                 </li>
               </ul>
             </div>
@@ -587,9 +587,9 @@ export function Home() {
 
           <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-slate-200 pt-6 text-center sm:flex-row sm:text-left">
             <p className="text-xs text-slate-500">
-              © {new Date().getFullYear()} Prefeitura Municipal de São Luís. Todos os direitos reservados.
+              © {new Date().getFullYear()} SEMAD/SIN. Todos os direitos reservados.
             </p>
-            <p className="text-xs text-slate-400">SIGPIM-SLZ v1.0.0 · Desenvolvido pela SEMAD/SIN</p>
+            <p className="text-xs text-slate-400">SIGPIM v1.0.0 · Desenvolvido pela SEMAD/SIN</p>
           </div>
         </div>
       </footer>

@@ -293,12 +293,12 @@ export function MainLayout() {
           }`}>
             {sidebarCollapsed ? (
               /* Brasão — substituir pelo ativo institucional definitivo quando disponível */
-              /* <img src="/assets/brasao-sao-luis.png" alt="SIGPIM" className="h-8 w-8 object-contain" /> */
-              <img src="/assets/brasao.png" alt="SIGPIM" className="h-8 w-8 object-contain" />
+              /* <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-8 w-8 object-contain" /> */
+              <img src="/assets/logo-sigpim.png" alt="SIGPIM" className="h-8 w-8 object-contain" />
             ) : (
               <>
-                {/* <img src="/assets/brasao-sao-luis.png" alt="Brasão" className="h-9 w-auto object-contain shrink-0" /> */}
-                <img src="/assets/brasao.png" alt="Brasão" className="h-9 w-auto object-contain shrink-0" />
+                {/* <img src="/assets/logo-sigpim.png" alt="Brasão" className="h-9 w-auto object-contain shrink-0" /> */}
+                <img src="/assets/logo-sigpim.png" alt="Brasão" className="h-9 w-auto object-contain shrink-0" />
                 <div className="leading-tight overflow-hidden">
                   <p className="text-[14px] font-bold tracking-tight text-[#1351B4] whitespace-nowrap">SIGPIM</p>
                   {/* Subtítulo institucional — preencher quando definido */}
@@ -348,8 +348,8 @@ export function MainLayout() {
           <aside className="fixed inset-y-0 left-0 z-50 w-60 flex flex-col border-r border-slate-200 bg-white shadow-xl lg:hidden">
             <div className="flex h-16 items-center justify-between border-b border-slate-100 px-4">
               <div className="flex items-center gap-3">
-                {/* <img src="/assets/brasao-sao-luis.png" alt="Brasão" className="h-9 w-auto object-contain" /> */}
-                <img src="/assets/brasao.png" alt="Brasão" className="h-9 w-auto object-contain" />
+                {/* <img src="/assets/logo-sigpim.png" alt="Brasão" className="h-9 w-auto object-contain" /> */}
+                <img src="/assets/logo-sigpim.png" alt="Brasão" className="h-9 w-auto object-contain" />
                 <div className="leading-tight">
                   <p className="text-[14px] font-bold tracking-tight text-[#1351B4]">SIGPIM</p>
                   {/* <p className="text-[11px] text-slate-400">Prefeitura de São Luís</p> */}
