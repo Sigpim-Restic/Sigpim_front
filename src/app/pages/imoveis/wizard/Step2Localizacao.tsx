@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { WizardLayout } from "../../../components/layout/WizardLayout";
 import { Input } from "../../../components/ui/input";
 import { Label } from "../../../components/ui/label";
@@ -7,6 +7,7 @@ import { Button } from "../../../components/ui/button";
 import { MapPin, Loader2, Plus, Trash2 } from "lucide-react";
 import { useCadastroImovel, type PontoPoligono } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
+import { PropertyMap, type Coordinate } from "../../../components/ui/property-map";
 
 interface ViaCepResponse {
   logradouro?: string;
@@ -28,13 +29,11 @@ async function buscarCep(cep: string): Promise<ViaCepResponse | null> {
   }
 }
 
-// Valida se uma string é uma coordenada decimal válida
 const coordRegex = /^-?[0-9]+(\.[0-9]+)?$/;
 function coordValida(v: string) {
   return v.trim() !== "" && coordRegex.test(v.trim());
 }
 
-// Gera o próximo label de ponto: P001, P002, ...
 function gerarLabelPonto(pontos: PontoPoligono[]): string {
   const n = pontos.length + 1;
   return `P${String(n).padStart(3, "0")}`;
@@ -48,6 +47,13 @@ export function CadastroImovelStep2() {
   const [cepNaoEncontrado, setCepNaoEncontrado] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Pontos válidos para o mapa ─────────────────────────────────────────────
+  const coordenadasMapa = useMemo<Coordinate[]>(() => {
+    return etapa2.pontos
+      .filter((p) => coordValida(p.latitude) && coordValida(p.longitude))
+      .map((p) => ({ lat: parseFloat(p.latitude), lng: parseFloat(p.longitude) }));
+  }, [etapa2.pontos]);
+
   // ── Validação ─────────────────────────────────────────────────────────────
   const validar = () => {
     const e: Record<string, string> = {};
@@ -58,7 +64,6 @@ export function CadastroImovelStep2() {
     if (etapa2.longitude && !coordRegex.test(etapa2.longitude))
       e.longitude = "Longitude inválida. Use formato decimal (ex: -44.2825).";
 
-    // Pré-cadastro §4.2: endereço resumido OU coordenada — pelo menos um obrigatório
     const temEndereco = etapa2.logradouro.trim() !== "" || etapa2.bairro.trim() !== "";
     const temCoordenada = coordValida(etapa2.latitude) && coordValida(etapa2.longitude);
     const temPontoValido = etapa2.pontos.some(
@@ -69,7 +74,6 @@ export function CadastroImovelStep2() {
         "Informe pelo menos um endereço resumido (logradouro ou bairro) ou uma coordenada geográfica. Isso é obrigatório no pré-cadastro.";
     }
 
-    // Valida pontos: se algum tem apenas uma coordenada preenchida, é inválido
     etapa2.pontos.forEach((p, i) => {
       const temLat = p.latitude.trim() !== "";
       const temLng = p.longitude.trim() !== "";
@@ -108,7 +112,6 @@ export function CadastroImovelStep2() {
             cep: digits,
             logradouro: data.logradouro || prev.logradouro,
             bairro: data.bairro || prev.bairro,
-            cidade: "",
           }));
         } else {
           setCepNaoEncontrado(true);
@@ -134,7 +137,7 @@ export function CadastroImovelStep2() {
     ? `${etapa2.cep.slice(0, 5)}-${etapa2.cep.slice(5)}`
     : etapa2.cep;
 
-  // ── Polígono: gerenciamento de pontos ─────────────────────────────────────
+  // ── Polígono ──────────────────────────────────────────────────────────────
   const adicionarPonto = () => {
     const novo: PontoPoligono = {
       id: gerarLabelPonto(etapa2.pontos),
@@ -147,7 +150,6 @@ export function CadastroImovelStep2() {
   const removerPonto = (index: number) => {
     const novos = etapa2.pontos
       .filter((_, i) => i !== index)
-      // Renumera os labels após remoção
       .map((p, i) => ({ ...p, id: `P${String(i + 1).padStart(3, "0")}` }));
     setEtapa2({ ...etapa2, pontos: novos });
   };
@@ -165,7 +167,6 @@ export function CadastroImovelStep2() {
     setEtapa2({ ...etapa2, pontos: novos });
   };
 
-  // Contagem de pontos válidos (ambas coordenadas preenchidas e válidas)
   const pontosValidos = etapa2.pontos.filter(
     (p) => coordValida(p.latitude) && coordValida(p.longitude)
   ).length;
@@ -240,7 +241,7 @@ export function CadastroImovelStep2() {
             </div>
           </div>
 
-          {/* Bairro + Cidade (fixa) + Estado (fixo) */}
+          {/* Bairro + Cidade (fixa: São Luís) + Estado (fixo: Maranhão) */}
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="bairro">Bairro</Label>
@@ -248,15 +249,25 @@ export function CadastroImovelStep2() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="cidade">Cidade</Label>
-              <Input id="cidade" value="" disabled className="bg-gray-50 text-gray-500 cursor-not-allowed" />
+              <Input
+                id="cidade"
+                value="São Luís"
+                disabled
+                className="bg-gray-50 text-gray-500 cursor-not-allowed"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="estado">Estado</Label>
-              <Input id="estado" value="Maranhão" disabled className="bg-gray-50 text-gray-500 cursor-not-allowed" />
+              <Input
+                id="estado"
+                value="Maranhão"
+                disabled
+                className="bg-gray-50 text-gray-500 cursor-not-allowed"
+              />
             </div>
           </div>
 
-          {/* ── Coordenadas de referência ─────────────────────────────────── */}
+          {/* ── Coordenadas de referência ──────────────────────────────────── */}
           <div className="border-t border-gray-200 pt-6">
             <h4 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
               <MapPin className="h-4 w-4 text-[#1351B4]" />
@@ -295,7 +306,7 @@ export function CadastroImovelStep2() {
             </div>
           </div>
 
-          {/* ── Polígono do imóvel — pontos ───────────────────────────────── */}
+          {/* ── Polígono do imóvel ────────────────────────────────────────── */}
           <div className="border-t border-gray-200 pt-6">
             <div className="flex items-center justify-between mb-1">
               <h4 className="font-medium text-gray-900 flex items-center gap-2">
@@ -317,6 +328,16 @@ export function CadastroImovelStep2() {
               Opcional. Cadastre os vértices do imóvel em ordem (sentido horário ou anti-horário).
               Com 3 ou mais pontos válidos, o polígono é gerado automaticamente. Use datum WGS84.
             </p>
+
+            {/* ── Preview do mapa — aparece quando há pontos válidos ── */}
+            {coordenadasMapa.length > 0 && (
+              <div className="mb-4 rounded-lg overflow-hidden border border-gray-200">
+                <PropertyMap
+                  points={coordenadasMapa}
+                  className="h-64 w-full"
+                />
+              </div>
+            )}
 
             {etapa2.pontos.length === 0 ? (
               <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 py-8 text-center">
