@@ -14,6 +14,7 @@ import {
 } from "../ui/dropdown-menu";
 import { useAuth } from "../../contexts/AuthContext";
 import { api } from "../../api/client";
+import { pendenciasApi } from "../../api/pendencias";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -168,6 +169,7 @@ export function MainLayout() {
   const [totalNaoLidos,     setTotalNaoLidos]     = useState(0);
   const [painelAberto,      setPainelAberto]      = useState(false);
   const [carregandoAlertas, setCarregandoAlertas] = useState(false);
+  const [pendenciasCount, setPendenciasCount] = useState(0);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -207,6 +209,16 @@ export function MainLayout() {
 
   useEffect(() => { carregarAlertas(); }, [carregarAlertas, location.pathname]);
 
+  // Busca contagem de pendências críticas para o badge do sidebar
+  useEffect(() => {
+    pendenciasApi.listarMinhas("ABERTA", 0, 100)
+      .then((res) => {
+        const criticas = res.content.filter((p) => p.prioridade === "CRITICA").length;
+        setPendenciasCount(criticas);
+      })
+      .catch(() => {});
+  }, [location.pathname]);
+
   const sidebarW  = sidebarCollapsed ? "w-[68px]" : "w-60";
   const contentPl = sidebarCollapsed ? "lg:pl-[68px]" : "lg:pl-60";
 
@@ -238,6 +250,11 @@ export function MainLayout() {
                 <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-[#1351B4]" : "text-slate-400"}`} />
                 {!collapsed && (
                   <span className="flex-1 overflow-hidden whitespace-nowrap">{item.label}</span>
+                  {item.path === "/dashboard/pendencias" && pendenciasCount > 0 && (
+                    <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                      {pendenciasCount > 9 ? "9+" : pendenciasCount}
+                    </span>
+                  )}
                 )}
                 {!collapsed && isActive && item.submenu && (
                   <ChevronRight className="h-3.5 w-3.5 text-[#1351B4]/60" />

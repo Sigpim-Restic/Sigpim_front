@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, ArrowRight, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, CheckCircle2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Stepper } from "./Stepper";
 import { useCadastroImovel } from "../../contexts/CadastroImovelContext";
@@ -31,16 +31,17 @@ interface WizardLayoutProps {
 export function WizardLayout({ currentStep, children, onNext, onBack, salvando, nextDisabled }: WizardLayoutProps) {
   const navigate = useNavigate();
   const { salvarRascunhoManual } = useCadastroImovel();
+  const [rascunhoSalvo, setRascunhoSalvo] = useState(false);
 
   const handleBack = () => {
-    salvarRascunhoManual(); // persiste antes de navegar
+    salvarRascunhoManual();
     if (onBack) { onBack(); return; }
     if (currentStep > 1) navigate(`/dashboard/imoveis/novo/etapa-${currentStep - 1}`);
     else navigate("/dashboard/imoveis");
   };
 
   const handleNext = () => {
-    salvarRascunhoManual(); // persiste antes de navegar
+    salvarRascunhoManual();
     if (onNext) { onNext(); return; }
     if (currentStep < TOTAL) navigate(`/dashboard/imoveis/novo/etapa-${currentStep + 1}`);
     else navigate("/dashboard/imoveis/sucesso");
@@ -48,12 +49,8 @@ export function WizardLayout({ currentStep, children, onNext, onBack, salvando, 
 
   const handleSalvarRascunho = () => {
     salvarRascunhoManual();
-    // Feedback visual mínimo
-    const btn = document.getElementById("btn-rascunho");
-    if (btn) {
-      btn.textContent = "✓ Salvo!";
-      setTimeout(() => { if (btn) btn.textContent = "Salvar Rascunho"; }, 2000);
-    }
+    setRascunhoSalvo(true);
+    setTimeout(() => setRascunhoSalvo(false), 2500);
   };
 
   return (
@@ -68,8 +65,28 @@ export function WizardLayout({ currentStep, children, onNext, onBack, salvando, 
             Etapa {currentStep} de {TOTAL} — preencha o que souber; campos incompletos viram pendências
           </p>
         </div>
-        <Button id="btn-rascunho" variant="outline" size="sm" onClick={handleSalvarRascunho}>
-          <Save className="mr-2 h-4 w-4" />Salvar Rascunho
+
+        {/* Botão salvar rascunho com feedback de estado */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSalvarRascunho}
+          className={rascunhoSalvo
+            ? "border-emerald-400 text-emerald-700 bg-emerald-50 hover:bg-emerald-50"
+            : ""
+          }
+        >
+          {rascunhoSalvo ? (
+            <>
+              <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
+              Rascunho salvo!
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              Salvar Rascunho
+            </>
+          )}
         </Button>
       </div>
 
