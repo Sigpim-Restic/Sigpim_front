@@ -206,6 +206,7 @@ export function CadastroUsuario() {
       <AlertBox variant="info">
         Campos com <span className="text-red-600 font-medium">*</span> são obrigatórios.
         Se marcado "Exigir troca de senha no primeiro login", o usuário verá um modal ao entrar pela primeira vez.
+        A foto de perfil pode ser adicionada pelo próprio usuário após o primeiro acesso.
       </AlertBox>
 
       {erroApi && (
