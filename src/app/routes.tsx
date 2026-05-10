@@ -10,6 +10,7 @@ import { ListaUsuarios } from "./pages/admin/ListaUsuarios";
 import { CadastroUsuario } from "./pages/admin/CadastroUsuario";
 import { Permissoes } from "./pages/admin/Permissoes";
 import { SucessoUsuario } from "./pages/admin/SucessoUsuario";
+import { GerenciarPessoas } from "./pages/admin/GerenciarPessoas";
 import { ListaImoveis } from "./pages/imoveis/ListaImoveis";
 import { DetalhesImovel } from "./pages/imoveis/DetalhesImovel";
 import { EditarImovel } from "./pages/imoveis/EditarImovel";
@@ -32,10 +33,10 @@ import { EditarStep2 } from "./pages/imoveis/wizard-editar/EditarStep2";
 import { EditarStep3 } from "./pages/imoveis/wizard-editar/EditarStep3";
 import { EditarStep4 } from "./pages/imoveis/wizard-editar/EditarStep4";
 import { EditarStep5 } from "./pages/imoveis/wizard-editar/EditarStep5";
-import { EditarStep6 } from "./pages/imoveis/wizard-editar/EditarStep6_Instrumentos";  // Instrumentos (nova)
-import { EditarStep7 } from "./pages/imoveis/wizard-editar/EditarStep7_Dominial";  // Dominial (era Step6)
-import { EditarStep8 } from "./pages/imoveis/wizard-editar/EditarStep8_Patrimonio";  // Patrimônio (nova)
-import { EditarStep9 } from "./pages/imoveis/wizard-editar/EditarStep9_Documentos";  // Documentos (nova)
+import { EditarStep6 } from "./pages/imoveis/wizard-editar/EditarStep6_Instrumentos";
+import { EditarStep7 } from "./pages/imoveis/wizard-editar/EditarStep7_Dominial";
+import { EditarStep8 } from "./pages/imoveis/wizard-editar/EditarStep8_Patrimonio";
+import { EditarStep9 } from "./pages/imoveis/wizard-editar/EditarStep9_Documentos";
 
 import { ListaOcupacoes } from "./pages/ocupacoes/ListaOcupacoes";
 import { ListaVistorias } from "./pages/vistorias/ListaVistorias";
@@ -119,15 +120,15 @@ export const router = createBrowserRouter([
         Component: EditarImovel,
         children: [
           { index: true, element: <Navigate to="etapa-1" replace /> },
-          { path: "etapa-1", Component: EditarStep1 },  // Identificação
-          { path: "etapa-2", Component: EditarStep2 },  // Localização
-          { path: "etapa-3", Component: EditarStep3 },  // Classificação
-          { path: "etapa-4", Component: EditarStep4 },  // Dados Físicos
-          { path: "etapa-5", Component: EditarStep5 },  // Ocupação
-          { path: "etapa-6", Component: EditarStep6 },  // Instrumentos (nova)
-          { path: "etapa-7", Component: EditarStep7 },  // Dominial (era etapa-6)
-          { path: "etapa-8", Component: EditarStep8 },  // Patrimônio (nova)
-          { path: "etapa-9", Component: EditarStep9 },  // Documentos (nova)
+          { path: "etapa-1", Component: EditarStep1 },
+          { path: "etapa-2", Component: EditarStep2 },
+          { path: "etapa-3", Component: EditarStep3 },
+          { path: "etapa-4", Component: EditarStep4 },
+          { path: "etapa-5", Component: EditarStep5 },
+          { path: "etapa-6", Component: EditarStep6 },
+          { path: "etapa-7", Component: EditarStep7 },
+          { path: "etapa-8", Component: EditarStep8 },
+          { path: "etapa-9", Component: EditarStep9 },
         ],
       },
 
@@ -144,11 +145,12 @@ export const router = createBrowserRouter([
       { path: "usuarios/novo",           Component: CadastroUsuario },
       { path: "usuarios/:id/permissoes", Component: Permissoes },
       { path: "usuarios/sucesso",        Component: SucessoUsuario },
-      { path: "configuracoes",                       Component: Configuracoes },
-      { path: "configuracoes/tipos-imovel",          Component: GerenciarTiposImovel },
-      { path: "configuracoes/situacoes-dominiais",   Component: GerenciarSituacoesDominiais },
-      { path: "configuracoes/origens-cadastro",      Component: GerenciarOrigensCadastro },
-      { path: "configuracoes/niveis-ocupacao",        Component: GerenciarNiveisOcupacao },
+      { path: "configuracoes",                         Component: Configuracoes },
+      { path: "configuracoes/tipos-imovel",            Component: GerenciarTiposImovel },
+      { path: "configuracoes/situacoes-dominiais",     Component: GerenciarSituacoesDominiais },
+      { path: "configuracoes/origens-cadastro",        Component: GerenciarOrigensCadastro },
+      { path: "configuracoes/niveis-ocupacao",         Component: GerenciarNiveisOcupacao },
+      { path: "configuracoes/pessoas",                 Component: GerenciarPessoas },
     ],
   },
 ]);

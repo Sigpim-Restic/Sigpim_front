@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Shield, Bell, Tag, Scale, Info, MapPin, RefreshCw, Layers } from "lucide-react";
+import { Shield, Bell, Tag, Scale, Info, MapPin, RefreshCw, Layers, Users } from "lucide-react";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -78,7 +78,6 @@ export function Configuracoes() {
               <p className="text-xs text-gray-500">Levantamento, Demanda, Processo e outras</p>
             </div>
           </button>
-          {/* Novo: Níveis de Ocupação (V16) */}
           <button
             onClick={() => navigate("/dashboard/configuracoes/niveis-ocupacao")}
             className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:bg-blue-50 hover:border-blue-300 transition-colors"
@@ -87,6 +86,16 @@ export function Configuracoes() {
             <div>
               <p className="text-sm font-medium text-gray-900">Níveis de Ocupação</p>
               <p className="text-xs text-gray-500">Total, Parcial, Compartilhado e outros</p>
+            </div>
+          </button>
+          <button
+            onClick={() => navigate("/dashboard/configuracoes/pessoas")}
+            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:bg-blue-50 hover:border-blue-300 transition-colors"
+          >
+            <Users className="h-5 w-5 text-[#1351B4] shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Pessoas</p>
+              <p className="text-xs text-gray-500">Locadores, cessionários e contatos patrimoniais</p>
             </div>
           </button>
         </div>
