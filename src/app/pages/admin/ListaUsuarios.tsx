@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import {
   Plus, Search, MoreVertical, Shield,
   UserCheck, UserX, Loader2, AlertCircle, RefreshCw,
-  Clock, Trash2, RotateCcw, ShieldOff,
+  Clock, Trash2, RotateCcw, ShieldOff, KeyRound,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -27,6 +27,7 @@ import {
 } from "../../api/usuarios";
 import { usePermissoes } from "../../hooks/usePermissoes";
 import { useAuth } from "../../contexts/AuthContext";
+import { ModalResetSenha } from "./ModalResetSenha";
 
 const PERFIL_LABELS: Record<PerfilUsuario, string> = {
   ADMINISTRADOR_SISTEMA:     "Admin. Sistema",
@@ -77,6 +78,9 @@ export function ListaUsuarios() {
   const [definirPerfil, setDefinirPerfil] = useState<DefinirPerfilState>({
     aberto: false, usuario: null, perfilSelecionado: "",
   });
+
+  // Estado do modal de reset de senha
+  const [resetSenha, setResetSenha] = useState<{ id: number; nome: string } | null>(null);
 
   const carregar = useCallback(() => {
     setLoading(true);
@@ -247,6 +251,16 @@ export function ListaUsuarios() {
         </DialogContent>
       </Dialog>
 
+      {/* Modal de reset de senha */}
+      {resetSenha && (
+        <ModalResetSenha
+          idUsuario={resetSenha.id}
+          nomeUsuario={resetSenha.nome}
+          aberto={!!resetSenha}
+          onFechar={() => setResetSenha(null)}
+        />
+      )}
+
       {/* Cabeçalho */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-gray-600">Gerencie usuários e suas permissões de acesso ao sistema</p>
@@ -339,6 +353,7 @@ export function ListaUsuarios() {
               onDesativar={handleDesativar}
               onExcluir={handleExcluir}
               onResetarMfa={handleResetarMfa}
+              onResetarSenha={(u) => setResetSenha({ id: u.id, nome: u.nomeCompleto })}
               navigate={navigate}
             />
           )}
@@ -370,6 +385,7 @@ export function ListaUsuarios() {
               onDesativar={handleDesativar}
               onExcluir={handleExcluir}
               onResetarMfa={handleResetarMfa}
+              onResetarSenha={(u) => setResetSenha({ id: u.id, nome: u.nomeCompleto })}
               navigate={navigate}
               destacarPendentes
             />
@@ -418,13 +434,15 @@ interface TabelaProps {
   onDesativar: (u: UsuarioResponse) => void;
   onExcluir: (u: UsuarioResponse) => void;
   onResetarMfa: (u: UsuarioResponse) => void;
+  onResetarSenha: (u: UsuarioResponse) => void;
   navigate: ReturnType<typeof useNavigate>;
   destacarPendentes?: boolean;
 }
 
 function TabelaUsuarios({
   usuarios, acaoLoading, perm, ehAdminSistema,
-  onDefinirPerfil, onAtivar, onDesativar, onExcluir, onResetarMfa,
+  onDefinirPerfil, onAtivar, onDesativar, onExcluir,
+  onResetarMfa, onResetarSenha,
   navigate, destacarPendentes,
 }: TabelaProps) {
   return (
@@ -492,10 +510,17 @@ function TabelaUsuarios({
                           }
                         </DropdownMenuItem>
 
-                        {/* Resetar MFA — visível apenas para ADMINISTRADOR_SISTEMA */}
+                        {/* Opções exclusivas do ADMINISTRADOR_SISTEMA */}
                         {ehAdminSistema && (
                           <>
                             <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => onResetarSenha(u)}
+                              className="gap-2"
+                            >
+                              <KeyRound className="mr-2 h-4 w-4 text-blue-500" />
+                              Redefinir Senha
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-orange-600 focus:text-orange-700"
                               onClick={() => onResetarMfa(u)}
