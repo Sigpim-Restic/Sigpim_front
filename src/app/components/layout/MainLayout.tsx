@@ -209,6 +209,13 @@ export function MainLayout() {
 
   useEffect(() => { carregarAlertas(); }, [carregarAlertas, location.pathname]);
 
+  // Atualiza o título da aba do browser conforme a página atual
+  useEffect(() => {
+    const crumbs = getBreadcrumbs(location.pathname);
+    const pagina = crumbs.length > 1 ? crumbs[crumbs.length - 1].label : "Painel";
+    document.title = `${pagina} — SIGPIM`;
+  }, [location.pathname]);
+
   // Busca contagem de pendências críticas para o badge do sidebar
   useEffect(() => {
     pendenciasApi.listarMinhas("ABERTA", 0, 100)
