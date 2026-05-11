@@ -1,7 +1,6 @@
 import { RouterProvider } from "react-router";
 import { router } from "./routes";
 import { Toaster } from "./components/ui/sonner";
-import { SessionExpiredModal } from "./SessionExpiredModal";
 
 export default function App() {
   return (
@@ -11,9 +10,13 @@ export default function App() {
         position="top-right"
         richColors
         closeButton
-        duration={3500}
+        duration={6000}
+        toastOptions={{
+          classNames: {
+            error: "duration-[8000ms]",
+          },
+        }}
       />
-      <SessionExpiredModal />
     </>
   );
 }
