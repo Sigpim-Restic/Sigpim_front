@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Shield, Bell, Tag, Scale, Info, MapPin, RefreshCw, Layers, Users } from "lucide-react";
+import { Shield, Bell, Tag, Scale, Info, MapPin, RefreshCw, Layers, Users, Loader2, Save } from "lucide-react";
+import { toast } from "sonner";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -15,12 +16,44 @@ export function Configuracoes() {
   const [carregandoMfa, setCarregandoMfa] = useState(true);
   const [salvandoMfa,   setSalvandoMfa]   = useState(false);
 
+  const [sessionMinutes,        setSessionMinutes]        = useState<number>(120);
+  const [idleTimeoutMinutes,    setIdleTimeoutMinutes]    = useState<number>(30);
+  const [idleWarningMinutes,    setIdleWarningMinutes]    = useState<number>(5);
+  const [carregandoSession,     setCarregandoSession]     = useState(true);
+  const [salvandoSession,       setSalvandoSession]       = useState(false);
+
   useEffect(() => {
     configuracoesSistemaApi.getMfaForcado()
       .then((r) => setMfaForcado(r.ativo))
       .catch(() => {})
       .finally(() => setCarregandoMfa(false));
   }, []);
+
+  useEffect(() => {
+    configuracoesSistemaApi.getSessionExpiration()
+      .then((r) => setSessionMinutes(r.minutos))
+      .catch(() => {})
+      .finally(() => setCarregandoSession(false));
+    configuracoesSistemaApi.getSessionIdle()
+      .then((r) => {
+        setIdleTimeoutMinutes(r.timeoutMinutes);
+        setIdleWarningMinutes(r.warningMinutes);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSalvarSessao = async () => {
+    setSalvandoSession(true);
+    try {
+      await configuracoesSistemaApi.setSessionExpiration(sessionMinutes);
+      await configuracoesSistemaApi.setSessionIdle(idleTimeoutMinutes, idleWarningMinutes);
+      toast.success("Configurações de sessão salvas. Efeito nos próximos logins.");
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "Erro ao salvar configurações de sessão.");
+    } finally {
+      setSalvandoSession(false);
+    }
+  };
 
   const handleToggleMfa = async (ativo: boolean) => {
     setSalvandoMfa(true);
@@ -155,10 +188,67 @@ export function Configuracoes() {
           <h3 className="text-sm font-semibold text-gray-900">Segurança e Sessão</h3>
         </div>
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Tempo de sessão (minutos)</Label>
-            <Input type="number" defaultValue={120} className="max-w-32" />
-          </div>
+          {carregandoSession ? (
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <RefreshCw className="h-4 w-4 animate-spin" />Carregando...
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm">Duração da sessão (minutos)</Label>
+                <p className="text-xs text-gray-500">
+                  Tempo de vida do token após o login. Mín: 5 min, Máx: 480 min (8h).
+                  Alterações têm efeito nos <strong>próximos logins</strong>.
+                </p>
+                <Input
+                  type="number" min={5} max={480}
+                  value={sessionMinutes}
+                  onChange={(e) => setSessionMinutes(Number(e.target.value))}
+                  className="max-w-32"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm">Timeout de inatividade (minutos)</Label>
+                <p className="text-xs text-gray-500">
+                  Minutos sem interação antes de exibir o aviso. Use 0 para desativar.
+                </p>
+                <Input
+                  type="number" min={0} max={240}
+                  value={idleTimeoutMinutes}
+                  onChange={(e) => setIdleTimeoutMinutes(Number(e.target.value))}
+                  className="max-w-32"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-sm">Janela de aviso antes do logout (minutos)</Label>
+                <p className="text-xs text-gray-500">
+                  Contagem regressiva exibida ao usuário antes do logout automático.
+                </p>
+                <Input
+                  type="number" min={1} max={30}
+                  value={idleWarningMinutes}
+                  onChange={(e) => setIdleWarningMinutes(Number(e.target.value))}
+                  className="max-w-32"
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={handleSalvarSessao}
+                  disabled={salvandoSession}
+                  className="bg-[#1351B4] hover:bg-[#0c3b8d]"
+                >
+                  {salvandoSession
+                    ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando...</>
+                    : <><Save className="mr-2 h-3.5 w-3.5" />Salvar configurações de sessão</>
+                  }
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <div>
@@ -188,10 +278,7 @@ export function Configuracoes() {
         </div>
       </Card>
 
-      <div className="flex justify-end gap-3">
-        <Button variant="outline">Cancelar</Button>
-        <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]">Salvar Configurações</Button>
-      </div>
+
     </div>
   );
 }

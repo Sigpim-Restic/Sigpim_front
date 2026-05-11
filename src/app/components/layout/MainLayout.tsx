@@ -1,5 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router";
+import { useIdleTimer } from "../../hooks/useIdleTimer";
+import { configuracoesSistemaApi } from "../../api/configuracoes-sistema";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "../ui/alert-dialog";
 import {
   LayoutDashboard, Building2, Users, Map, FileText,
   ClipboardList, ClipboardCheck, Wrench, History, Menu, X, Bell, RefreshCw,
@@ -209,12 +215,58 @@ export function MainLayout() {
 
   useEffect(() => { carregarAlertas(); }, [carregarAlertas, location.pathname]);
 
-  // Atualiza o título da aba do browser conforme a página atual
+  // Carrega configurações de inatividade do servidor
   useEffect(() => {
-    const crumbs = getBreadcrumbs(location.pathname);
-    const pagina = crumbs.length > 1 ? crumbs[crumbs.length - 1].label : "Painel";
-    document.title = `${pagina} — SIGPIM`;
-  }, [location.pathname]);
+    configuracoesSistemaApi.getSessionIdle()
+      .then((cfg) => {
+        if (cfg.timeoutMinutes > 0) {
+          setIdleTimeoutMs(cfg.timeoutMinutes  * 60 * 1000);
+          setIdleWarningMs(cfg.warningMinutes  * 60 * 1000);
+        } else {
+          setIdleTimeoutMs(0); // desativado pelo admin
+        }
+      })
+      .catch(() => {}); // usa o default local em caso de erro
+  }, []);
+
+  const handleIdleExpire = useCallback(() => {
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    setIdleWarning(false);
+    localStorage.removeItem("sigpim_token");
+    localStorage.removeItem("sigpim_usuario");
+    window.dispatchEvent(new CustomEvent("sigpim:sessao-expirada", {
+      detail: { returnTo: window.location.pathname + window.location.search },
+    }));
+  }, []);
+
+  const handleIdleWarn = useCallback(() => {
+    const warnSecs = Math.floor(idleWarningMs / 1000);
+    setIdleCountdown(warnSecs);
+    setIdleWarning(true);
+    countdownRef.current = setInterval(() => {
+      setIdleCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownRef.current) clearInterval(countdownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [idleWarningMs]);
+
+  const handleIdleReset = useCallback(() => {
+    if (countdownRef.current) clearInterval(countdownRef.current);
+    setIdleWarning(false);
+  }, []);
+
+  useIdleTimer({
+    timeoutMs: idleTimeoutMs,
+    warningMs: idleWarningMs,
+    onWarn:    handleIdleWarn,
+    onReset:   handleIdleReset,
+    onExpire:  handleIdleExpire,
+    enabled:   idleTimeoutMs > 0,
+  });
 
   // Busca contagem de pendências críticas para o badge do sidebar
   useEffect(() => {
