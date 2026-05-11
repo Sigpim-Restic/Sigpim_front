@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import {
   AlertTriangle, RefreshCw, AlertCircle, Building2,
@@ -14,6 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "../../components/ui/dialog";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "../../components/ui/alert-dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "../../components/ui/select";
@@ -211,6 +215,23 @@ function TabelaPendencias({ pendencias, loading, podeResolver, podeExcluir, onRe
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={confirmExcluir.aberto} onOpenChange={(v) => !v && setConfirmExcluir({ aberto: false, pendencia: null })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir pendência</AlertDialogTitle>
+            <AlertDialogDescription>
+              Excluir <strong>"{confirmExcluir.pendencia?.titulo}"</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarExcluir} className="bg-red-600 hover:bg-red-700 text-white">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -227,6 +248,9 @@ export function Pendencias() {
   const [filtroStatus,  setFiltroStatus]  = useState<StatusPendencia | "">("");
   const [search,        setSearch]        = useState("");
   const [acaoId,        setAcaoId]        = useState<number | null>(null);
+  const [confirmExcluir, setConfirmExcluir] = useState<{ aberto: boolean; pendencia: PendenciaResponse | null }>({
+    aberto: false, pendencia: null,
+  });
 
   // Modal criação
   const [modalCriar,  setModalCriar]  = useState(false);
@@ -285,7 +309,6 @@ export function Pendencias() {
       carregarMinhas(); carregarTodas();
     } catch (e: unknown) {
       setErroCriar(e instanceof Error ? e.message : "Erro ao criar.");
-      toast.error(e instanceof Error ? e.message : "Erro ao criar pendência.");
     } finally { setSalvando(false); }
   };
 
@@ -317,13 +340,20 @@ export function Pendencias() {
       .catch(() => { /* silencia — ciência é best-effort */ });
   };
 
-  const handleExcluir = async (p: PendenciaResponse) => {
-    if (!confirm(`Excluir a pendência "${p.titulo}"?`)) return;
+  const handleExcluir = (p: PendenciaResponse) =>
+    setConfirmExcluir({ aberto: true, pendencia: p });
+
+  const confirmarExcluir = async () => {
+    const p = confirmExcluir.pendencia;
+    if (!p) return;
+    setConfirmExcluir({ aberto: false, pendencia: null });
     setAcaoId(p.id);
     try {
       await pendenciasApi.excluir(p.id);
+      toast.success("Pendência excluída.");
       carregarMinhas(); carregarTodas();
     } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir.");
       setErro(e instanceof Error ? e.message : "Erro ao excluir.");
     } finally { setAcaoId(null); }
   };

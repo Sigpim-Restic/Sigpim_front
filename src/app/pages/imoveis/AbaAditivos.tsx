@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import React, { useState, useEffect, useCallback } from "react";
 import { Plus, Loader2, AlertCircle, Pencil, Trash2, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -9,6 +9,10 @@ import { Badge } from "../../components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "../../components/ui/dialog";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "../../components/ui/alert-dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "../../components/ui/select";
@@ -54,6 +58,8 @@ export function AbaAditivos({ idContrato, valorMensalAtual, canWrite }: Props) {
   const [aditivos,     setAditivos]     = useState<AditivoContratoResponse[]>([]);
   const [carregando,   setCarregando]   = useState(true);
   const [erro,         setErro]         = useState<string | null>(null);
+  const [confirmAditivoId, setConfirmAditivoId] = useState<number | null>(null);
+  const confirmAditivo = aditivos.find((a) => a.id === confirmAditivoId);
   const [modalAberto,  setModalAberto]  = useState(false);
   const [editando,     setEditando]     = useState<AditivoContratoResponse | null>(null);
   const [expandido,    setExpandido]    = useState<number | null>(null);
@@ -114,17 +120,8 @@ export function AbaAditivos({ idContrato, valorMensalAtual, canWrite }: Props) {
     } finally { setSalvando(false); }
   };
 
-  const handleDeletar = async (a: AditivoContratoResponse) => {
-    if (!confirm(`Remover o aditivo "${a.numeroAditivo}"?`)) return;
-    try {
-      await aditivosContratoApi.deletar(idContrato, a.id);
-      toast.success("Aditivo removido.");
-      carregar();
-    } catch (e: unknown) {
-      toast.error((e as Error)?.message ?? "Erro ao remover aditivo.");
-      setErro((e as Error)?.message ?? "Erro ao remover.");
-    }
-  };
+  const handleDeletar = (a: AditivoContratoResponse) =>
+    setConfirmAditivoId(a.id);
 
   return (
     <div className="space-y-4">

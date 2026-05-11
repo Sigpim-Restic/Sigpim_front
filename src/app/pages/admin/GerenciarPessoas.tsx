@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Plus, Search, MoreVertical, Loader2, AlertCircle,
   RefreshCw, Trash2, Pencil, User, Building2, Landmark,
@@ -15,6 +15,10 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "../../components/ui/dialog";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "../../components/ui/alert-dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -95,11 +99,9 @@ function ModalPessoa({ aberto, editando, onFechar, onSalvo }: ModalPessoaProps) 
     try {
       if (editando) await pessoasApi.atualizar(editando.id, form);
       else          await pessoasApi.criar(form);
-      toast.success("Pessoa salva com sucesso.");
       onSalvo();
       onFechar();
     } catch (e: unknown) {
-      toast.error((e as Error)?.message ?? "Erro ao salvar pessoa.");
       setErro((e as Error)?.message ?? "Erro ao salvar.");
     } finally {
       setSalvando(false);
@@ -249,6 +251,9 @@ export function GerenciarPessoas() {
   const [modalAberto, setModalAberto] = useState(false);
   const [editando,  setEditando]  = useState<PessoaResponse | null>(null);
   const [excluindo, setExcluindo] = useState<number | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ aberto: boolean; id: number | null; nome: string }>({
+    aberto: false, id: null, nome: "",
+  });
 
   const carregar = useCallback(async () => {
     setLoading(true); setErro(null);
@@ -269,13 +274,20 @@ export function GerenciarPessoas() {
   useEffect(() => { carregar(); }, [carregar]);
   useEffect(() => { setPage(0); }, [busca, filtTipo]);
 
-  const handleExcluir = async (id: number) => {
-    if (!confirm("Remover esta pessoa? Contratos vinculados perderão o vínculo.")) return;
+  const handleExcluir = (p: PessoaResponse) =>
+    setConfirmDelete({ aberto: true, id: p.id, nome: p.nome });
+
+  const confirmarExcluir = async () => {
+    if (!confirmDelete.id) return;
+    const id = confirmDelete.id;
+    setConfirmDelete((s) => ({ ...s, aberto: false }));
     setExcluindo(id);
     try {
       await pessoasApi.deletar(id);
+      toast.success("Pessoa removida.");
       carregar();
     } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "Erro ao remover.");
       setErro((e as Error)?.message ?? "Erro ao remover.");
     } finally { setExcluindo(null); }
   };
@@ -299,7 +311,7 @@ export function GerenciarPessoas() {
           {!loading && <span className="ml-1 text-gray-400">({total} no total)</span>}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" aria-label="Recarregar" onClick={carregar} disabled={loading}>
+          <Button variant="outline" size="icon" onClick={carregar} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
           <Button onClick={abrirNova} className="bg-[#1351B4] hover:bg-[#0c3b8d]">
@@ -389,7 +401,7 @@ export function GerenciarPessoas() {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600"
-                            onClick={() => handleExcluir(p.id)}>
+                            onClick={() => handleExcluir(p)}>
                             <Trash2 className="mr-2 h-4 w-4" />Remover
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -416,6 +428,23 @@ export function GerenciarPessoas() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={confirmDelete.aberto} onOpenChange={(v) => !v && setConfirmDelete((s) => ({ ...s, aberto: false }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover pessoa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remover <strong>{confirmDelete.nome}</strong>? Contratos vinculados perderão o vínculo. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarExcluir} className="bg-red-600 hover:bg-red-700 text-white">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

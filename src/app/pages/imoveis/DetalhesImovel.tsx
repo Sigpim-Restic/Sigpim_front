@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import {
   ArrowLeft, RefreshCw, AlertCircle, MapPin, FileText,
   Building2, Users, Edit, Map, Download, Loader2,
   ClipboardCheck, Wrench, Plus, ChevronDown, ChevronUp,
-  CheckCircle2, XCircle, Clock, AlertTriangle, RotateCcw, DollarSign, Pencil, Trash2, BarChart2, FileCheck, Bell, Shield,
+  CheckCircle2, XCircle, Clock, AlertTriangle, RotateCcw, DollarSign, Pencil, Trash2, BarChart2, FileCheck, Bell, Shield, GitFork,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -13,6 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "../../components/ui/dialog";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "../../components/ui/alert-dialog";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import {
@@ -50,6 +54,7 @@ import {
 import { contratosLocacaoApi, type ContratoLocacaoResponse, type ContratoLocacaoRequest, STATUS_CONTRATO } from "../../api/contratoLocacao";
 import { PessoaCombobox } from "../../components/ui/PessoaCombobox";
 import { AbaAditivos } from "./AbaAditivos";
+import { ModalDesmembramento } from "./ModalDesmembramento";
 
 // ─── helpers visuais ──────────────────────────────────────────────────────────
 
@@ -404,11 +409,9 @@ function AbaIntervencoes({ idImovel }: { idImovel: number }) {
       await intervencoesApi.criar(idImovel, form as IntervencaoRequest);
       setModalAberto(false);
       setForm({ tipoIntervencao: "MANUTENCAO_PREVENTIVA", nivelIntervencao: "N0" });
-      toast.success("Intervenção criada com sucesso.");
       carregar();
     } catch (e: unknown) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar intervenção.");
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar intervenção.");
     } finally { setSalvando(false); }
   };
 
@@ -416,10 +419,8 @@ function AbaIntervencoes({ idImovel }: { idImovel: number }) {
     setAvancoLoading(iv.id);
     try {
       await intervencoesApi.avancarStatus(idImovel, iv.id, novoStatus);
-      toast.success("Status atualizado.");
       carregar();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Erro ao avançar status.");
       setErro(e instanceof Error ? e.message : "Erro ao avançar status.");
     } finally { setAvancoLoading(null); }
   };
@@ -682,6 +683,8 @@ function AbaFiscal({ idImovel }: { idImovel: number }) {
   const [salvando,    setSalvando]    = useState(false);
   const [formErro,    setFormErro]    = useState<string | null>(null);
   const [excluindoId, setExcluindoId] = useState<number | null>(null);
+  const [confirmFiscalId, setConfirmFiscalId] = useState<number | null>(null);
+  const confirmFiscal = dados.find((d) => d.id === confirmFiscalId);
 
   const anoAtual = new Date().getFullYear();
   const [form, setForm] = useState<Partial<DadoFiscalRequest>>({
@@ -733,20 +736,22 @@ function AbaFiscal({ idImovel }: { idImovel: number }) {
         await dadosFiscaisApi.criar(idImovel, form as DadoFiscalRequest);
       }
       setModalAberto(false);
-      toast.success("Dado fiscal salvo com sucesso.");
       carregar();
     } catch (e: unknown) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar.");
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar dado fiscal.");
     } finally { setSalvando(false); }
   };
 
-  const handleDeletar = async (d: DadoFiscalResponse) => {
-    if (!confirm(`Remover registro do exercício ${d.exercicio}?`)) return;
-    setExcluindoId(d.id);
+  const handleDeletar = (d: DadoFiscalResponse) => setConfirmFiscalId(d.id);
+
+  const confirmarDeletar = async () => {
+    if (!confirmFiscalId) return;
+    const id = confirmFiscalId;
+    setConfirmFiscalId(null);
+    setExcluindoId(id);
     try {
-      await dadosFiscaisApi.deletar(idImovel, d.id);
-      toast.success("Registro removido.");
+      await dadosFiscaisApi.deletar(idImovel, id);
+      toast.success("Registro fiscal removido.");
       carregar();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Erro ao remover.");
@@ -853,6 +858,23 @@ function AbaFiscal({ idImovel }: { idImovel: number }) {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={confirmFiscalId !== null} onOpenChange={(v) => !v && setConfirmFiscalId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover registro fiscal</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remover o registro do exercício <strong>{confirmFiscal?.exercicio}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarDeletar} className="bg-red-600 hover:bg-red-700 text-white">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Topo */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">Inscrição imobiliária e valores venais por exercício (SEMFAZ)</p>
@@ -957,6 +979,8 @@ function AbaAvaliacaoPatrimonial({ idImovel }: { idImovel: number }) {
   const [editando, setEditando] = useState<AvaliacaoPatrimonialResponse | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [formErro, setFormErro] = useState<string | null>(null);
+  const [confirmAvalId, setConfirmAvalId] = useState<number | null>(null);
+  const confirmAval = avaliacoes.find((a) => a.id === confirmAvalId);
 
   const [form, setForm] = useState<Partial<AvaliacaoPatrimonialRequest>>({
     metodologia: "COMPARATIVO_MERCADO",
@@ -1013,19 +1037,21 @@ function AbaAvaliacaoPatrimonial({ idImovel }: { idImovel: number }) {
       }
       setModalAberto(false);
       carregar();
-      toast.success("Avaliação patrimonial salva com sucesso.");
     } catch (e) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar avaliação.");
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar avaliação patrimonial.");
     } finally {
       setSalvando(false);
     }
   };
 
-  const handleDeletar = async (a: AvaliacaoPatrimonialResponse) => {
-    if (!confirm(`Remover avaliação de ${fmtMoeda(a.valorAvaliado)} (${fmtData(a.dataAvaliacao)})?`)) return;
+  const handleDeletar = (a: AvaliacaoPatrimonialResponse) => setConfirmAvalId(a.id);
+
+  const confirmarDeletar = async () => {
+    if (!confirmAvalId) return;
+    const id = confirmAvalId;
+    setConfirmAvalId(null);
     try {
-      await avaliacoesPatrimoniaisApi.deletar(idImovel, a.id);
+      await avaliacoesPatrimoniaisApi.deletar(idImovel, id);
       toast.success("Avaliação removida.");
       carregar();
     } catch (e) {
@@ -1045,6 +1071,23 @@ function AbaAvaliacaoPatrimonial({ idImovel }: { idImovel: number }) {
 
   return (
     <div className="space-y-4">
+      <AlertDialog open={confirmAvalId !== null} onOpenChange={(v) => !v && setConfirmAvalId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover avaliação patrimonial</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remover a avaliação de <strong>{confirmAval ? fmtMoeda(confirmAval.valorAvaliado) : "—"}</strong>{confirmAval ? ` (${fmtData(confirmAval.dataAvaliacao)})` : ""}? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarDeletar} className="bg-red-600 hover:bg-red-700 text-white">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-gray-700">Avaliações Patrimoniais</h3>
@@ -1139,7 +1182,7 @@ function AbaAvaliacaoPatrimonial({ idImovel }: { idImovel: number }) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalAberto(false)} disabled={salvando}>Cancelar</Button>
             <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={handleSalvar} disabled={salvando}>
-              {salvando ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</> : editando ? "Salvar alterações" : "Registrar avaliação"}
+              {salvando ? "Salvando..." : editando ? "Salvar alterações" : "Registrar avaliação"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1227,6 +1270,8 @@ function AbaInstrumentosUso({ idImovel }: { idImovel: number }) {
   const [editando, setEditando] = useState<InstrumentoUsoResponse | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [formErro, setFormErro] = useState<string | null>(null);
+  const [confirmInstrId, setConfirmInstrId] = useState<number | null>(null);
+  const confirmInstr = instrumentos.find((i) => i.id === confirmInstrId);
   const [form, setForm] = useState<Partial<InstrumentoUsoRequest>>({
     tipoInstrumento: "CESSAO_USO",
     statusInstrumento: "VIGENTE",
@@ -1282,17 +1327,19 @@ function AbaInstrumentosUso({ idImovel }: { idImovel: number }) {
       }
       setModalAberto(false);
       carregar();
-      toast.success("Instrumento salvo com sucesso.");
     } catch (e) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar instrumento.");
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar instrumento.");
     } finally { setSalvando(false); }
   };
 
-  const handleDeletar = async (i: InstrumentoUsoResponse) => {
-    if (!confirm(`Remover o instrumento "${i.numeroInstrumento ?? i.tipoInstrumento}"?`)) return;
+  const handleDeletar = (i: InstrumentoUsoResponse) => setConfirmInstrId(i.id);
+
+  const confirmarDeletar = async () => {
+    if (!confirmInstrId) return;
+    const id = confirmInstrId;
+    setConfirmInstrId(null);
     try {
-      await instrumentosUsoApi.deletar(idImovel, i.id);
+      await instrumentosUsoApi.deletar(idImovel, id);
       toast.success("Instrumento removido.");
       carregar();
     } catch (e) {
@@ -1323,6 +1370,23 @@ function AbaInstrumentosUso({ idImovel }: { idImovel: number }) {
 
   return (
     <div className="space-y-4">
+      <AlertDialog open={confirmInstrId !== null} onOpenChange={(v) => !v && setConfirmInstrId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover instrumento de uso</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remover o instrumento <strong>{confirmInstr?.numeroInstrumento ?? confirmInstr?.tipoInstrumento ?? "selecionado"}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarDeletar} className="bg-red-600 hover:bg-red-700 text-white">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-gray-700">Instrumentos de Uso</h3>
@@ -1430,7 +1494,7 @@ function AbaInstrumentosUso({ idImovel }: { idImovel: number }) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalAberto(false)} disabled={salvando}>Cancelar</Button>
             <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={handleSalvar} disabled={salvando}>
-              {salvando ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</> : editando ? "Salvar alterações" : "Registrar instrumento"}
+              {salvando ? "Salvando..." : editando ? "Salvar alterações" : "Registrar instrumento"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1517,6 +1581,8 @@ function AbaContratosLocacao({ idImovel }: { idImovel: number }) {
   const [salvando,     setSalvando]     = useState(false);
   const [formErro,     setFormErro]     = useState<string | null>(null);
   const [expandido,    setExpandido]    = useState<number | null>(null);
+  const [confirmContratoId, setConfirmContratoId] = useState<number | null>(null);
+  const confirmContrato = contratos.find((c) => c.id === confirmContratoId);
   const [form, setForm] = useState<Partial<ContratoLocacaoRequest>>({
     statusContrato: "VIGENTE",
     alertaDias: [90, 60, 30],
@@ -1577,18 +1643,21 @@ function AbaContratosLocacao({ idImovel }: { idImovel: number }) {
         await contratosLocacaoApi.criar(idImovel, form as ContratoLocacaoRequest);
       }
       setModalAberto(false);
-      toast.success("Contrato salvo com sucesso.");
       carregar();
     } catch (e) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar contrato.");
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar contrato.");
     } finally { setSalvando(false); }
   };
 
-  const handleDeletar = async (c: ContratoLocacaoResponse) => {
-    if (!confirm(`Remover o contrato "${c.numeroContrato ?? c.locador}"?`)) return;
+  const handleDeletar = (c: ContratoLocacaoResponse) => setConfirmContratoId(c.id);
+
+  const confirmarDeletar = async () => {
+    if (!confirmContratoId) return;
+    const id = confirmContratoId;
+    setConfirmContratoId(null);
     try {
-      await contratosLocacaoApi.deletar(idImovel, c.id);
+      await contratosLocacaoApi.deletar(idImovel, id);
+      toast.success("Contrato removido.");
       carregar();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao remover contrato.");
@@ -1614,6 +1683,23 @@ function AbaContratosLocacao({ idImovel }: { idImovel: number }) {
 
   return (
     <div className="space-y-4">
+      <AlertDialog open={confirmContratoId !== null} onOpenChange={(v) => !v && setConfirmContratoId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover contrato de locação</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remover o contrato <strong>"{confirmContrato?.numeroContrato ?? confirmContrato?.locador}"</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmarDeletar} className="bg-red-600 hover:bg-red-700 text-white">
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-gray-700">Contratos de Locação</h3>
@@ -1857,6 +1943,7 @@ export function DetalhesImovel() {
   const [salvandoRecusa, setSalvandoRecusa] = useState(false);
 
   const [loadingNotificar,  setLoadingNotificar]  = useState(false);
+  const [modalDesmembramento, setModalDesmembramento] = useState(false);
   const [erroNotificar,     setErroNotificar]      = useState<string | null>(null);
   const [notificadoOk,      setNotificadoOk]       = useState(false);
   // Pendências do checklist de validação — consultadas ao carregar o imóvel
@@ -2162,6 +2249,13 @@ export function DetalhesImovel() {
             <Button size="sm" className="bg-[#1351B4] hover:bg-[#0c3b8d]"
               onClick={() => navigate(`/dashboard/imoveis/${imovel.id}/editar`)}>
               <Edit className="mr-2 h-4 w-4" />Editar
+            </Button>
+          )}
+          {perm.canDeleteImovel && (
+            <Button size="sm" variant="outline"
+              onClick={() => setModalDesmembramento(true)}
+              title="Desmembrar este imóvel em dois ou mais imóveis filhos">
+              <GitFork className="mr-2 h-4 w-4" />Desmembrar
             </Button>
           )}
         </div>

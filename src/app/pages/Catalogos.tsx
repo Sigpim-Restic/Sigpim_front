@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Database, Search, Plus, Edit2, Check, X,
   RefreshCw, AlertCircle, ChevronDown, ChevronUp, Trash2,
@@ -12,6 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "../components/ui/dialog";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "../components/ui/alert-dialog";
 import { catalogosApi, type CatalogoItem } from "../api/catalogos";
 import { usePermissoes } from "../hooks/usePermissoes";
 
@@ -230,7 +234,6 @@ export function Catalogos() {
       }
       carregar();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Erro ao alterar status.");
       setErro(e instanceof Error ? e.message : "Erro ao alterar status.");
     } finally {
       setAcaoId(null);
@@ -240,6 +243,13 @@ export function Catalogos() {
   // ── Desativar domínio inteiro ────────────────────────────────────────────────
 
   const [desativandoDominio, setDesativandoDominio] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    aberto: boolean;
+    titulo: string;
+    descricao: string;
+    variante: "warning" | "destructive";
+    onConfirmar: () => void;
+  }>({ aberto: false, titulo: "", descricao: "", variante: "warning", onConfirmar: () => {} });
 
   const handleDesativarDominio = async (dominio: Dominio) => {
     const ativos = dominio.itens.filter((i) => i.ativo !== false);
@@ -247,20 +257,23 @@ export function Catalogos() {
       setErro("Este domínio não possui itens ativos para desativar.");
       return;
     }
-    const confirmar = window.confirm(
-      `Desativar o domínio "${TIPO_LABEL[dominio.tipo] ?? dominio.tipo}" e todos os seus ${ativos.length} valor(es) ativo(s)?\n\nOs valores ficarão inativos e não aparecerão nos dropdowns. Esta ação pode ser revertida reativando cada item individualmente.`
-    );
-    if (!confirmar) return;
-    setDesativandoDominio(dominio.tipo);
-    try {
-      await Promise.all(ativos.map((item) => catalogosApi.desativar(item.id)));
-      toast.success("Domínio desativado.");
-      carregar();
-    } catch (e: unknown) {
-      setErro(e instanceof Error ? e.message : "Erro ao desativar domínio.");
-    } finally {
-      setDesativandoDominio(null);
-    }
+    setConfirmDialog({
+      aberto: true,
+      titulo: `Desativar domínio "${TIPO_LABEL[dominio.tipo] ?? dominio.tipo}"`,
+      descricao: `Todos os ${ativos.length} valor(es) ativo(s) ficarão inativos e não aparecerão nos dropdowns. Esta ação pode ser revertida reativando cada item individualmente.`,
+      variante: "warning",
+      onConfirmar: async () => {
+        setDesativandoDominio(dominio.tipo);
+        try {
+          await Promise.all(ativos.map((item) => catalogosApi.desativar(item.id)));
+          toast.success("Domínio desativado.");
+          carregar();
+        } catch (e: unknown) {
+          toast.error(e instanceof Error ? e.message : "Erro ao desativar domínio.");
+          setErro(e instanceof Error ? e.message : "Erro ao desativar domínio.");
+        } finally { setDesativandoDominio(null); }
+      },
+    });
   };
 
   const handleRestaurarDominio = async (dominio: Dominio) => {
@@ -273,7 +286,6 @@ export function Catalogos() {
     setAcaoDominioTipo(dominio.tipo);
     try {
       await Promise.all(inativos.map((item) => catalogosApi.ativar(item.id)));
-      toast.success("Domínio restaurado.");
       await carregar();
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao restaurar domínio.");
@@ -289,21 +301,23 @@ export function Catalogos() {
       return;
     }
 
-    const confirmar = window.confirm(
-      `Excluir definitivamente o domínio "${TIPO_LABEL[dominio.tipo] ?? dominio.tipo}" e todos os seus ${itensDominio.length} valor(es)?\n\nEsta ação remove os registros do banco e não pode ser desfeita.`
-    );
-    if (!confirmar) return;
-
-    setAcaoDominioTipo(dominio.tipo);
-    try {
-      await Promise.all(itensDominio.map((item) => catalogosApi.excluirDefinitivo(item.id)));
-      toast.success("Domínio excluído.");
-      await carregar();
-    } catch (e: unknown) {
-      setErro(e instanceof Error ? e.message : "Erro ao excluir domínio definitivamente.");
-    } finally {
-      setAcaoDominioTipo(null);
-    }
+    setConfirmDialog({
+      aberto: true,
+      titulo: `Excluir domínio "${TIPO_LABEL[dominio.tipo] ?? dominio.tipo}" definitivamente`,
+      descricao: `Todos os ${itensDominio.length} valor(es) serão removidos do banco. Esta ação não pode ser desfeita.`,
+      variante: "destructive",
+      onConfirmar: async () => {
+        setAcaoDominioTipo(dominio.tipo);
+        try {
+          await Promise.all(itensDominio.map((item) => catalogosApi.excluirDefinitivo(item.id)));
+          toast.success("Domínio excluído definitivamente.");
+          await carregar();
+        } catch (e: unknown) {
+          toast.error(e instanceof Error ? e.message : "Erro ao excluir domínio.");
+          setErro(e instanceof Error ? e.message : "Erro ao excluir domínio definitivamente.");
+        } finally { setAcaoDominioTipo(null); }
+      },
+    });
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
