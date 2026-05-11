@@ -54,7 +54,7 @@ export function EditarWizardLayout({ currentStep, children, onNext, salvando }: 
 
       {/* Cabeçalho */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/dashboard/imoveis/${idImovel}`)}>
+        <Button variant="ghost" size="icon" aria-label="Voltar para detalhes do imóvel" onClick={() => navigate(`/dashboard/imoveis/${idImovel}`)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">

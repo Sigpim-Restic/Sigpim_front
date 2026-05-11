@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useLocation } from "react-router";
 import {
   User, Mail, Phone, BadgeCheck, Building2, Lock, Eye, EyeOff,
@@ -109,10 +110,12 @@ export function MeuPerfil() {
     setUploadandoFoto(true);
     try {
       const atualizado = await usuariosApi.atualizarMinhaFoto(file);
+      toast.success("Foto de perfil atualizada.");
       setDados(atualizado);
       if (atualizado.fotoPerfil) setPreviewFoto(atualizado.fotoPerfil);
     } catch (err: unknown) {
       setErroFoto(err instanceof Error ? err.message : "Erro ao enviar foto.");
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar foto.");
       // Reverte o preview em caso de erro
       setPreviewFoto(dados?.fotoPerfil ?? null);
     } finally {
@@ -133,6 +136,7 @@ export function MeuPerfil() {
     setSalvandoSenha(true);
     try {
       await usuariosApi.alterarMinhaSenha(novaSenha);
+      toast.success("Senha alterada com sucesso.");
       setSucessoSenha(true);
       setNovaSenha("");
       setConfirmarSenha("");

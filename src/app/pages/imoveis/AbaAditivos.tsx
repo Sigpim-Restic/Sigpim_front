@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { Plus, Loader2, AlertCircle, Pencil, Trash2, ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -106,8 +107,10 @@ export function AbaAditivos({ idContrato, valorMensalAtual, canWrite }: Props) {
       else          await aditivosContratoApi.criar(idContrato, form);
       setModalAberto(false);
       carregar();
+      toast.success("Aditivo salvo com sucesso.");
     } catch (e: unknown) {
       setFormErro((e as Error)?.message ?? "Erro ao salvar aditivo.");
+      toast.error((e as Error)?.message ?? "Erro ao salvar aditivo.");
     } finally { setSalvando(false); }
   };
 
@@ -115,8 +118,10 @@ export function AbaAditivos({ idContrato, valorMensalAtual, canWrite }: Props) {
     if (!confirm(`Remover o aditivo "${a.numeroAditivo}"?`)) return;
     try {
       await aditivosContratoApi.deletar(idContrato, a.id);
+      toast.success("Aditivo removido.");
       carregar();
     } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "Erro ao remover aditivo.");
       setErro((e as Error)?.message ?? "Erro ao remover.");
     }
   };

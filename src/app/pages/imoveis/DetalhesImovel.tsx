@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { useParams, useNavigate, Link } from "react-router";
 import {
   ArrowLeft, RefreshCw, AlertCircle, MapPin, FileText,
@@ -142,9 +143,11 @@ function AbaVistorias({ idImovel }: { idImovel: number }) {
       await vistoriasApi.criar(idImovel, form as VistoriaRequest);
       setModalAberto(false);
       setForm({ vistoriaInicial: false, criticidadeRisco: "BAIXO", estadoConservacao: "BOM" });
+      toast.success("Vistoria registrada com sucesso.");
       carregar();
     } catch (e: unknown) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar vistoria.");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar vistoria.");
     } finally { setSalvando(false); }
   };
 
@@ -401,9 +404,11 @@ function AbaIntervencoes({ idImovel }: { idImovel: number }) {
       await intervencoesApi.criar(idImovel, form as IntervencaoRequest);
       setModalAberto(false);
       setForm({ tipoIntervencao: "MANUTENCAO_PREVENTIVA", nivelIntervencao: "N0" });
+      toast.success("Intervenção criada com sucesso.");
       carregar();
     } catch (e: unknown) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar intervenção.");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar intervenção.");
     } finally { setSalvando(false); }
   };
 
@@ -411,8 +416,10 @@ function AbaIntervencoes({ idImovel }: { idImovel: number }) {
     setAvancoLoading(iv.id);
     try {
       await intervencoesApi.avancarStatus(idImovel, iv.id, novoStatus);
+      toast.success("Status atualizado.");
       carregar();
     } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erro ao avançar status.");
       setErro(e instanceof Error ? e.message : "Erro ao avançar status.");
     } finally { setAvancoLoading(null); }
   };
@@ -726,9 +733,11 @@ function AbaFiscal({ idImovel }: { idImovel: number }) {
         await dadosFiscaisApi.criar(idImovel, form as DadoFiscalRequest);
       }
       setModalAberto(false);
+      toast.success("Dado fiscal salvo com sucesso.");
       carregar();
     } catch (e: unknown) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar.");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar dado fiscal.");
     } finally { setSalvando(false); }
   };
 
@@ -737,8 +746,10 @@ function AbaFiscal({ idImovel }: { idImovel: number }) {
     setExcluindoId(d.id);
     try {
       await dadosFiscaisApi.deletar(idImovel, d.id);
+      toast.success("Registro removido.");
       carregar();
     } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erro ao remover.");
       setErro(e instanceof Error ? e.message : "Erro ao remover.");
     } finally { setExcluindoId(null); }
   };
@@ -1002,8 +1013,10 @@ function AbaAvaliacaoPatrimonial({ idImovel }: { idImovel: number }) {
       }
       setModalAberto(false);
       carregar();
+      toast.success("Avaliação patrimonial salva com sucesso.");
     } catch (e) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar avaliação.");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar avaliação patrimonial.");
     } finally {
       setSalvando(false);
     }
@@ -1013,9 +1026,10 @@ function AbaAvaliacaoPatrimonial({ idImovel }: { idImovel: number }) {
     if (!confirm(`Remover avaliação de ${fmtMoeda(a.valorAvaliado)} (${fmtData(a.dataAvaliacao)})?`)) return;
     try {
       await avaliacoesPatrimoniaisApi.deletar(idImovel, a.id);
+      toast.success("Avaliação removida.");
       carregar();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro ao remover avaliação.");
+      toast.error(e instanceof Error ? e.message : "Erro ao remover avaliação.");
     }
   };
 
@@ -1125,7 +1139,7 @@ function AbaAvaliacaoPatrimonial({ idImovel }: { idImovel: number }) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalAberto(false)} disabled={salvando}>Cancelar</Button>
             <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={handleSalvar} disabled={salvando}>
-              {salvando ? "Salvando..." : editando ? "Salvar alterações" : "Registrar avaliação"}
+              {salvando ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</> : editando ? "Salvar alterações" : "Registrar avaliação"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1268,8 +1282,10 @@ function AbaInstrumentosUso({ idImovel }: { idImovel: number }) {
       }
       setModalAberto(false);
       carregar();
+      toast.success("Instrumento salvo com sucesso.");
     } catch (e) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar instrumento.");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar instrumento.");
     } finally { setSalvando(false); }
   };
 
@@ -1277,9 +1293,10 @@ function AbaInstrumentosUso({ idImovel }: { idImovel: number }) {
     if (!confirm(`Remover o instrumento "${i.numeroInstrumento ?? i.tipoInstrumento}"?`)) return;
     try {
       await instrumentosUsoApi.deletar(idImovel, i.id);
+      toast.success("Instrumento removido.");
       carregar();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro ao remover instrumento.");
+      toast.error(e instanceof Error ? e.message : "Erro ao remover instrumento.");
     }
   };
 
@@ -1413,7 +1430,7 @@ function AbaInstrumentosUso({ idImovel }: { idImovel: number }) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalAberto(false)} disabled={salvando}>Cancelar</Button>
             <Button className="bg-[#1351B4] hover:bg-[#0c3b8d]" onClick={handleSalvar} disabled={salvando}>
-              {salvando ? "Salvando..." : editando ? "Salvar alterações" : "Registrar instrumento"}
+              {salvando ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando...</> : editando ? "Salvar alterações" : "Registrar instrumento"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1560,9 +1577,11 @@ function AbaContratosLocacao({ idImovel }: { idImovel: number }) {
         await contratosLocacaoApi.criar(idImovel, form as ContratoLocacaoRequest);
       }
       setModalAberto(false);
+      toast.success("Contrato salvo com sucesso.");
       carregar();
     } catch (e) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar contrato.");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar contrato.");
     } finally { setSalvando(false); }
   };
 
@@ -1572,7 +1591,7 @@ function AbaContratosLocacao({ idImovel }: { idImovel: number }) {
       await contratosLocacaoApi.deletar(idImovel, c.id);
       carregar();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Erro ao remover contrato.");
+      toast.error(e instanceof Error ? e.message : "Erro ao remover contrato.");
     }
   };
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { Link, useNavigate } from "react-router";
 import {
   Plus, Search, Filter, MoreVertical, Edit, Eye, Save,
@@ -148,8 +149,8 @@ export function ListaImoveis() {
 
   const executarAcao = async (idImovel: number, acao: () => Promise<void>) => {
     setAcaoLoading(idImovel);
-    try { await acao(); carregar(); }
-    catch (e: unknown) { setErro((e as Error).message ?? "Erro ao executar ação."); }
+    try { await acao(); toast.success("Operação realizada com sucesso."); carregar(); }
+    catch (e: unknown) { toast.error((e as Error).message ?? "Erro ao executar ação."); setErro((e as Error).message ?? "Erro ao executar ação."); }
     finally { setAcaoLoading(null); }
   };
 
@@ -197,7 +198,9 @@ export function ListaImoveis() {
       a.href = url; a.download = nomeArquivo; a.click();
       URL.revokeObjectURL(url);
     } catch (e: unknown) {
-      setErroPdf(`Erro ao gerar PDF de ${im.codigoSigpim}: ${e instanceof Error ? e.message : "erro desconhecido"}`);
+      const msg = `Erro ao gerar PDF de ${im.codigoSigpim}: ${e instanceof Error ? e.message : "erro desconhecido"}`;
+      setErroPdf(msg);
+      toast.error(msg);
     } finally { setPdfLoadingId(null); }
   };
 

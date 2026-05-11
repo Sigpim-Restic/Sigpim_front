@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import {
   Plus, Search, MoreVertical, Loader2, AlertCircle,
   RefreshCw, Trash2, Pencil, User, Building2, Landmark,
@@ -94,9 +95,11 @@ function ModalPessoa({ aberto, editando, onFechar, onSalvo }: ModalPessoaProps) 
     try {
       if (editando) await pessoasApi.atualizar(editando.id, form);
       else          await pessoasApi.criar(form);
+      toast.success("Pessoa salva com sucesso.");
       onSalvo();
       onFechar();
     } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "Erro ao salvar pessoa.");
       setErro((e as Error)?.message ?? "Erro ao salvar.");
     } finally {
       setSalvando(false);
@@ -296,7 +299,7 @@ export function GerenciarPessoas() {
           {!loading && <span className="ml-1 text-gray-400">({total} no total)</span>}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={carregar} disabled={loading}>
+          <Button variant="outline" size="icon" aria-label="Recarregar" onClick={carregar} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </Button>
           <Button onClick={abrirNova} className="bg-[#1351B4] hover:bg-[#0c3b8d]">

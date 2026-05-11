@@ -200,7 +200,7 @@ export function CadastroImovelStep9() {
                       <p className="text-sm font-medium text-gray-900 truncate">{arq.file.name}</p>
                       <p className="text-xs text-gray-400">{formatarTamanho(arq.file.size)}</p>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => remover(arq.id)} className="h-8 w-8 text-gray-400 hover:text-red-500">
+                    <Button variant="ghost" size="icon" aria-label="Remover arquivo" onClick={() => remover(arq.id)} className="h-8 w-8 text-gray-400 hover:text-red-500">
                       <X className="h-4 w-4" />
                     </Button>
                   </div>

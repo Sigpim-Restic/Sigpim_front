@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
 import {
   Upload, Search, Download, Eye, FileText, Image, File, Trash2, RotateCcw,
   CheckCircle2, Clock, XCircle, RefreshCw, AlertCircle, X, Loader2,
@@ -275,7 +276,7 @@ export function ListaDocumentos() {
       const url  = URL.createObjectURL(blob);
       window.open(url, "_blank");
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch { alert("Não foi possível abrir o documento."); }
+    } catch { toast.error("Não foi possível abrir o documento."); }
   };
 
   const handleDownload = async (doc: DocumentoResponse) => {
@@ -288,7 +289,7 @@ export function ListaDocumentos() {
       a.download = (doc.descricao || `documento-${doc.id}`) + ext;
       a.click();
       URL.revokeObjectURL(url);
-    } catch { alert("Erro ao baixar documento."); }
+    } catch { toast.error("Erro ao baixar documento."); }
   };
 
   const handleConfirmarExclusao = async () => {

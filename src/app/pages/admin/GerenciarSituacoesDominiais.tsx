@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import {
   Plus, Pencil, ArrowLeft, RefreshCw, AlertCircle,
@@ -90,8 +91,10 @@ export function GerenciarSituacoesDominiais() {
       }
       fecharForm();
       carregar();
+      toast.success("Salvo com sucesso.");
     } catch (e: unknown) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar.");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar.");
     } finally {
       setSalvando(false);
     }
@@ -107,6 +110,7 @@ export function GerenciarSituacoesDominiais() {
       }
       carregar();
     } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erro ao alterar status.");
       setErro(e instanceof Error ? e.message : "Erro ao alterar status.");
     } finally {
       setAcaoLoading(null);

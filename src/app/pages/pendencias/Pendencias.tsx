@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import {
   AlertTriangle, RefreshCw, AlertCircle, Building2,
@@ -278,11 +279,13 @@ export function Pendencias() {
     setSalvando(true);
     try {
       await pendenciasApi.criar(form as PendenciaRequest);
+      toast.success("Pendência criada com sucesso.");
       setModalCriar(false);
       setForm({ prioridade: "NORMAL" });
       carregarMinhas(); carregarTodas();
     } catch (e: unknown) {
       setErroCriar(e instanceof Error ? e.message : "Erro ao criar.");
+      toast.error(e instanceof Error ? e.message : "Erro ao criar pendência.");
     } finally { setSalvando(false); }
   };
 
@@ -291,6 +294,7 @@ export function Pendencias() {
     setAcaoId(modalResolver.id);
     try {
       await pendenciasApi.resolver(modalResolver.id, { observacao: obsResolucao || undefined });
+      toast.success("Pendência resolvida.");
       setModalResolver(null); setObsResolucao("");
       carregarMinhas(); carregarTodas();
     } catch (e: unknown) {

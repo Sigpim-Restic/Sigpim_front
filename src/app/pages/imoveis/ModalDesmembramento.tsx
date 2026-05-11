@@ -173,7 +173,7 @@ export function ModalDesmembramento({ imovelPai, aberto, onFechar, onSucesso }: 
                         </span>
                       </div>
                       {filhos.length > 2 && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50"
+                        <Button variant="ghost" size="icon" aria-label="Remover" className="h-7 w-7 text-red-500 hover:bg-red-50"
                           onClick={() => removerFilho(i)} disabled={salvando}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>

@@ -194,7 +194,7 @@ export function CadastroUsuario() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/usuarios")}>
+        <Button variant="ghost" size="icon" aria-label="Voltar para usuários" onClick={() => navigate("/dashboard/usuarios")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>

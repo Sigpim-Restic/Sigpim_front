@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import {
   Plus, Pencil, ArrowLeft, RefreshCw, AlertCircle,
@@ -112,6 +113,7 @@ export function GerenciarNiveisOcupacao() {
       }
       carregar();
     } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erro ao alterar status.");
       setErro(e instanceof Error ? e.message : "Erro ao alterar status.");
     } finally {
       setAcaoLoading(null);
@@ -178,7 +180,7 @@ export function GerenciarNiveisOcupacao() {
 
       {/* Cabeçalho */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/configuracoes")}>
+        <Button variant="ghost" size="icon" aria-label="Voltar para configurações" onClick={() => navigate("/dashboard/configuracoes")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">

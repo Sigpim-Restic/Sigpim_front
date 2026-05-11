@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router";
 import {
   ArrowLeft, Shield, AlertTriangle, Loader2,
@@ -185,9 +186,11 @@ export function Permissoes() {
 
     try {
       const novo = await permissoesApi.salvar(Number(id), { conceder, revogar });
+      toast.success("Permissões salvas com sucesso.");
       setDados(novo);
       setPending({});
     } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "Erro ao salvar permissões.");
       setErro((e as Error)?.message ?? "Erro ao salvar permissões.");
     } finally {
       setSalvando(false);
@@ -200,9 +203,11 @@ export function Permissoes() {
     setSalvando(true);
     try {
       const novo = await permissoesApi.resetar(Number(id));
+      toast.success("Permissões redefinidas para o padrão.");
       setDados(novo);
       setPending({});
     } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "Erro ao resetar permissões.");
       setErro((e as Error)?.message ?? "Erro ao resetar permissões.");
     } finally {
       setSalvando(false);

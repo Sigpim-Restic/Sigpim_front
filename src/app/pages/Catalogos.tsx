@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import {
   Database, Search, Plus, Edit2, Check, X,
   RefreshCw, AlertCircle, ChevronDown, ChevronUp, Trash2,
@@ -206,10 +207,12 @@ export function Catalogos() {
           tipo, codigo, valor, descricao: form.descricao || undefined,
         });
       }
+      toast.success("Item salvo com sucesso.");
       fecharForm();
       carregar();
     } catch (e: unknown) {
       setFormErro(e instanceof Error ? e.message : "Erro ao salvar.");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar item.");
     } finally {
       setSalvando(false);
     }
@@ -227,6 +230,7 @@ export function Catalogos() {
       }
       carregar();
     } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erro ao alterar status.");
       setErro(e instanceof Error ? e.message : "Erro ao alterar status.");
     } finally {
       setAcaoId(null);
@@ -250,6 +254,7 @@ export function Catalogos() {
     setDesativandoDominio(dominio.tipo);
     try {
       await Promise.all(ativos.map((item) => catalogosApi.desativar(item.id)));
+      toast.success("Domínio desativado.");
       carregar();
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao desativar domínio.");
@@ -268,6 +273,7 @@ export function Catalogos() {
     setAcaoDominioTipo(dominio.tipo);
     try {
       await Promise.all(inativos.map((item) => catalogosApi.ativar(item.id)));
+      toast.success("Domínio restaurado.");
       await carregar();
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao restaurar domínio.");
@@ -291,6 +297,7 @@ export function Catalogos() {
     setAcaoDominioTipo(dominio.tipo);
     try {
       await Promise.all(itensDominio.map((item) => catalogosApi.excluirDefinitivo(item.id)));
+      toast.success("Domínio excluído.");
       await carregar();
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao excluir domínio definitivamente.");

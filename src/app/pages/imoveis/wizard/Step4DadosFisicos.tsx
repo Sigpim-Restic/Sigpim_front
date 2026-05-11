@@ -190,7 +190,7 @@ export function CadastroImovelStep4() {
                   />
                 </div>
                 {laterais.length > 1 && (
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removerLateral(lat.id)} className="mb-0.5 h-9 w-9 text-gray-400 hover:text-red-500 hover:bg-red-50">
+                  <Button type="button" variant="ghost" size="icon" aria-label="Remover lateral" onClick={() => removerLateral(lat.id)} className="mb-0.5 h-9 w-9 text-gray-400 hover:text-red-500 hover:bg-red-50">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
