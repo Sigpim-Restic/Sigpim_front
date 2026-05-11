@@ -1,10 +1,10 @@
 import { toast } from "sonner";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Plus, Search, Filter, MoreVertical, Edit, Eye, Save,
   MapPin, Download, RefreshCw, AlertCircle, Trash2, Loader2,
-  FileText, RotateCcw, GitMerge,
+  FileText, RotateCcw,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import {
@@ -25,8 +25,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { tiposImovelApi, type TipoImovelResponse } from "../../api/tipos-imovel-alertas";
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
-import { ModalRemembramento } from "./ModalRemembramento";
-import { Checkbox } from "../../components/ui/checkbox";
 import { relatoriosApi } from "../../api/relatorios";
 import { usePermissoes } from "../../hooks/usePermissoes";
 import { useAuth } from "../../contexts/AuthContext";
@@ -108,15 +106,19 @@ export function ListaImoveis() {
   const [totalElements, setTotal]         = useState(0);
   const [page,          setPage]          = useState(0);
   const [search,        setSearch]        = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search by 400ms to avoid firing a request on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
   const [filterStatus,  setStatus]        = useState("todos");
   const [filterTipo,    setTipo]          = useState("todos");
   const [acaoLoading,   setAcaoLoading]   = useState<number | null>(null);
 
   const [pdfLoadingId,  setPdfLoadingId]  = useState<number | null>(null);
   const [erroPdf,       setErroPdf]       = useState<string | null>(null);
-
-  const [selecionados, setSelecionados] = useState<ImovelResponse[]>([]);
-  const [modalRemembramento, setModalRemembramento] = useState(false);
 
   const [confirmacao, setConfirmacao] = useState<ConfirmacaoState>({
     aberto: false, titulo: "", mensagem: "",
@@ -126,7 +128,11 @@ export function ListaImoveis() {
   const carregar = useCallback(async () => {
     setLoading(true); setErro(null);
     try {
-      const res = await imoveisApi.listar(page, 20);
+      const res = await imoveisApi.listar(page, 20, {
+        busca:        debouncedSearch.trim() || undefined,
+        status:       filterStatus !== "todos" ? filterStatus : undefined,
+        idTipoImovel: filterTipo   !== "todos" ? Number(filterTipo) : undefined,
+      });
       setImoveis(res.content);
       setTotal(res.totalElements);
     } catch (e: unknown) {
@@ -147,6 +153,9 @@ export function ListaImoveis() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // Reset to page 0 when filters change
+  useEffect(() => { setPage(0); }, [search, filterStatus, filterTipo]);
+
   // Carrega tipos uma única vez ao montar
   useEffect(() => {
     tiposImovelApi.listarAtivos().then(setTiposImovel).catch(() => {});
@@ -154,8 +163,8 @@ export function ListaImoveis() {
 
   const executarAcao = async (idImovel: number, acao: () => Promise<void>) => {
     setAcaoLoading(idImovel);
-    try { await acao(); toast.success("Operação realizada com sucesso."); carregar(); }
-    catch (e: unknown) { toast.error((e as Error).message ?? "Erro ao executar ação."); setErro((e as Error).message ?? "Erro ao executar ação."); }
+    try { await acao(); carregar(); }
+    catch (e: unknown) { setErro((e as Error).message ?? "Erro ao executar ação."); }
     finally { setAcaoLoading(null); }
   };
 
@@ -207,49 +216,11 @@ export function ListaImoveis() {
     } finally { setPdfLoadingId(null); }
   };
 
-  const filtrados = imoveis.filter((im) => {
-    const txt = search.toLowerCase();
-    const matchSearch = !search ||
-      [im.codigoSigpim, im.nomeReferencia ?? "", im.tipologia ?? ""]
-        .join(" ").toLowerCase().includes(txt);
-    const matchStatus = filterStatus === "todos" || im.statusCadastro === filterStatus;
-    const matchTipo   = filterTipo === "todos" || String(im.idTipoImovel) === filterTipo;
-    return matchSearch && matchStatus && matchTipo;
-  });
+  // Filtering is done server-side; imoveis already contains the filtered page
+  const filtrados = imoveis;
 
   return (
     <div className="space-y-5">
-
-      {/* Banner de seleção */}
-      {selecionados.length > 0 && (
-        <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-800">
-          <GitMerge className="h-4 w-4 shrink-0" />
-          <span>{selecionados.length} imóvel(is) selecionado(s).</span>
-          {selecionados.length >= 2 && perm.canDeleteImovel && (
-            <Button size="sm" variant="outline" className="ml-auto border-blue-300 hover:bg-blue-100"
-              onClick={() => setModalRemembramento(true)}>
-              <GitMerge className="mr-1.5 h-3.5 w-3.5" />Remembrar selecionados
-            </Button>
-          )}
-          <Button size="sm" variant="ghost" className="text-blue-600 hover:bg-blue-100"
-            onClick={() => setSelecionados([])}>
-            Limpar seleção
-          </Button>
-        </div>
-      )}
-
-      {/* Modal de Remembramento */}
-      <ModalRemembramento
-        imoveisOrigem={selecionados}
-        aberto={modalRemembramento}
-        onFechar={() => setModalRemembramento(false)}
-        onSucesso={() => {
-          setModalRemembramento(false);
-          setSelecionados([]);
-          toast.success("Remembramento registrado com sucesso.");
-          carregar();
-        }}
-      />
 
       {/* Modal de confirmação unificado */}
       <Dialog open={confirmacao.aberto} onOpenChange={(v) => !v && fecharConfirmacao()}>
@@ -405,16 +376,6 @@ export function ListaImoveis() {
               <Download className="mr-2 h-4 w-4" />
               Exportar {filtrados.length > 0 && !loading ? `(${filtrados.length})` : ""}
             </Button>
-            {perm.canDeleteImovel && selecionados.length >= 2 && (
-              <Button
-                variant="outline"
-                onClick={() => setModalRemembramento(true)}
-                title="Remembrar imóveis selecionados em um único imóvel resultante"
-              >
-                <GitMerge className="mr-2 h-4 w-4" />
-                Remembrar ({selecionados.length})
-              </Button>
-            )}
           </div>
 
           {/* Tabela de ativos */}
@@ -423,16 +384,6 @@ export function ListaImoveis() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
-                    <TableHead className="w-10">
-                      <Checkbox
-                        aria-label="Selecionar todos da página"
-                        checked={filtrados.length > 0 && filtrados.every((im) => selecionados.some((s) => s.id === im.id))}
-                        onCheckedChange={(checked) => {
-                          if (checked) setSelecionados((prev) => [...prev, ...filtrados.filter((im) => !prev.some((s) => s.id === im.id))]);
-                          else setSelecionados((prev) => prev.filter((s) => !filtrados.some((im) => im.id === s.id)));
-                        }}
-                      />
-                    </TableHead>
                     <TableHead className="text-xs">Código</TableHead>
                     <TableHead className="text-xs">Nome / Tipologia</TableHead>
                     <TableHead className="text-xs">Tipo</TableHead>
@@ -444,14 +395,14 @@ export function ListaImoveis() {
                 <TableBody>
                   {loading && (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-12 text-center text-sm text-gray-400">
+                      <TableCell colSpan={6} className="py-12 text-center text-sm text-gray-400">
                         <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin" />Carregando imóveis...
                       </TableCell>
                     </TableRow>
                   )}
                   {!loading && !erro && filtrados.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-12 text-center text-sm text-gray-400">
+                      <TableCell colSpan={6} className="py-12 text-center text-sm text-gray-400">
                         {search || filterStatus !== "todos" || filterTipo !== "todos"
                           ? "Nenhum imóvel encontrado com esses filtros."
                           : 'Nenhum imóvel cadastrado. Clique em "Novo Imóvel" para começar.'}
@@ -464,17 +415,6 @@ export function ListaImoveis() {
                     const emAcao = acaoLoading === im.id;
                     return (
                       <TableRow key={im.id} className="hover:bg-gray-50/80">
-                        <TableCell>
-                          <Checkbox
-                            aria-label={`Selecionar ${im.codigoSigpim}`}
-                            checked={selecionados.some((s) => s.id === im.id)}
-                            onCheckedChange={(checked) => {
-                              setSelecionados((prev) =>
-                                checked ? [...prev, im] : prev.filter((s) => s.id !== im.id)
-                              );
-                            }}
-                          />
-                        </TableCell>
                         <TableCell>
                           <Link
                             to={`/dashboard/imoveis/${im.id}`}

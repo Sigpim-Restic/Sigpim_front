@@ -51,7 +51,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
     }
     localStorage.removeItem("sigpim_token");
     localStorage.removeItem("sigpim_usuario");
-    window.location.href = "/login";
+    // Dispatch a custom event so the UI can show a modal instead of hard-redirecting.
+    // This preserves the current URL so the user can return after re-logging in.
+    window.dispatchEvent(new CustomEvent("sigpim:sessao-expirada", {
+      detail: { returnTo: window.location.pathname + window.location.search },
+    }));
     throw new ApiError(401, "Sessão expirada. Faça login novamente.");
   }
 

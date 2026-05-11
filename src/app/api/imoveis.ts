@@ -92,8 +92,19 @@ export interface VerificarNomeResponse {
 }
 
 export const imoveisApi = {
-  listar(page = 0, size = 20): Promise<PageResponse<ImovelResponse>> {
-    return api.get(`/imoveis?page=${page}&size=${size}&sort=codigoSigpim`);
+  listar(
+    page = 0,
+    size = 20,
+    filtros?: { busca?: string; status?: string; idTipoImovel?: number }
+  ): Promise<PageResponse<ImovelResponse>> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("size", String(size));
+    params.set("sort", "codigoSigpim");
+    if (filtros?.busca)        params.set("busca",        filtros.busca);
+    if (filtros?.status)       params.set("status",       filtros.status);
+    if (filtros?.idTipoImovel) params.set("idTipoImovel", String(filtros.idTipoImovel));
+    return api.get(`/imoveis?${params.toString()}`);
   },
   buscarPorId(id: number): Promise<ImovelResponse> {
     return api.get(`/imoveis/${id}`);

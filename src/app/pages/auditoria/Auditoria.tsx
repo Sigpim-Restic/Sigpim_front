@@ -101,6 +101,127 @@ function exportarCSV(logs: LogAuditoria[]) {
   URL.revokeObjectURL(url);
 }
 
+
+// ── DiffViewer ────────────────────────────────────────────────────────────────
+// Compares two JSON objects side-by-side, highlighting added/removed/changed keys.
+
+interface DiffViewerProps {
+  antes: Record<string, unknown> | null;
+  depois: Record<string, unknown> | null;
+  acao: string;
+}
+
+function formatVal(v: unknown): string {
+  if (v === null || v === undefined) return "—";
+  if (typeof v === "object") return JSON.stringify(v);
+  return String(v);
+}
+
+function DiffViewer({ antes, depois, acao }: DiffViewerProps) {
+  // EXCLUSAO: only "before" exists
+  if (acao === "EXCLUSAO" && antes && !depois) {
+    return (
+      <div className="space-y-1">
+        <p className="text-xs font-semibold text-gray-500 mb-2">Dados do registro excluído</p>
+        <div className="rounded-lg border border-red-200 bg-red-50 overflow-hidden">
+          {Object.entries(antes).map(([k, v]) => (
+            <div key={k} className="flex border-b border-red-100 last:border-0 text-xs">
+              <span className="w-40 shrink-0 bg-red-100 px-2 py-1 text-red-700 font-medium truncate">{k}</span>
+              <span className="flex-1 px-2 py-1 text-red-800 font-mono break-all">{formatVal(v)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // CRIACAO: only "after" exists
+  if (acao === "CRIACAO" && !antes && depois) {
+    return (
+      <div className="space-y-1">
+        <p className="text-xs font-semibold text-gray-500 mb-2">Dados criados</p>
+        <div className="rounded-lg border border-green-200 bg-green-50 overflow-hidden">
+          {Object.entries(depois).map(([k, v]) => (
+            <div key={k} className="flex border-b border-green-100 last:border-0 text-xs">
+              <span className="w-40 shrink-0 bg-green-100 px-2 py-1 text-green-700 font-medium truncate">{k}</span>
+              <span className="flex-1 px-2 py-1 text-green-800 font-mono break-all">{formatVal(v)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ATUALIZACAO: compare before and after
+  if (antes && depois) {
+    const allKeys = Array.from(new Set([...Object.keys(antes), ...Object.keys(depois)]));
+    const changed  = allKeys.filter((k) => JSON.stringify(antes[k]) !== JSON.stringify(depois[k]));
+    const unchanged = allKeys.filter((k) => JSON.stringify(antes[k]) === JSON.stringify(depois[k]));
+
+    return (
+      <div className="space-y-3">
+        {changed.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-1.5">
+              Campos alterados ({changed.length})
+            </p>
+            <div className="rounded-lg border border-gray-200 overflow-hidden">
+              {changed.map((k) => (
+                <div key={k} className="grid grid-cols-[8rem_1fr_1fr] border-b border-gray-100 last:border-0 text-xs">
+                  <span className="bg-gray-50 px-2 py-1.5 font-medium text-gray-600 truncate border-r border-gray-100">{k}</span>
+                  <span className="px-2 py-1.5 bg-red-50 text-red-700 font-mono break-all border-r border-red-100 line-through">
+                    {formatVal(antes[k])}
+                  </span>
+                  <span className="px-2 py-1.5 bg-green-50 text-green-700 font-mono break-all">
+                    {formatVal(depois[k])}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {unchanged.length > 0 && (
+          <details className="group">
+            <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 select-none">
+              {unchanged.length} campo(s) sem alteração
+            </summary>
+            <div className="mt-1.5 rounded-lg border border-gray-100 overflow-hidden">
+              {unchanged.map((k) => (
+                <div key={k} className="flex border-b border-gray-100 last:border-0 text-xs opacity-60">
+                  <span className="w-32 shrink-0 bg-gray-50 px-2 py-1 text-gray-500 font-medium truncate">{k}</span>
+                  <span className="flex-1 px-2 py-1 text-gray-600 font-mono break-all">{formatVal(antes[k])}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback — show raw JSON
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 text-xs">
+      {antes && (
+        <div>
+          <p className="font-semibold text-gray-500 mb-1">Antes</p>
+          <pre className="rounded bg-red-50 border border-red-100 p-2 text-gray-700 overflow-auto max-h-48 whitespace-pre-wrap break-all">
+            {JSON.stringify(antes, null, 2)}
+          </pre>
+        </div>
+      )}
+      {depois && (
+        <div>
+          <p className="font-semibold text-gray-500 mb-1">Depois</p>
+          <pre className="rounded bg-green-50 border border-green-100 p-2 text-gray-700 overflow-auto max-h-48 whitespace-pre-wrap break-all">
+            {JSON.stringify(depois, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Auditoria() {
   const [logs,          setLogs]          = useState<LogAuditoria[]>([]);
   const [loading,       setLoading]       = useState(true);
@@ -327,26 +448,11 @@ export function Auditoria() {
                     {isExpandido && (
                       <TableRow className="bg-blue-50/30">
                         <TableCell colSpan={8} className="px-6 py-3">
-                          <div className="grid gap-4 sm:grid-cols-2 text-xs">
-                            {l.dadosAnteriores && (
-                              <div>
-                                <p className="font-semibold text-gray-700 mb-1">
-                                  {l.acao === "EXCLUSAO" ? "Dados do registro excluído" : "Antes"}
-                                </p>
-                                <pre className="rounded bg-red-50 border border-red-100 p-2 text-gray-700 overflow-auto max-h-48 whitespace-pre-wrap break-all">
-                                  {JSON.stringify(l.dadosAnteriores, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-                            {l.dadosNovos && (
-                              <div>
-                                <p className="font-semibold text-gray-700 mb-1">Depois</p>
-                                <pre className="rounded bg-green-50 border border-green-100 p-2 text-gray-700 overflow-auto max-h-48 whitespace-pre-wrap break-all">
-                                  {JSON.stringify(l.dadosNovos, null, 2)}
-                                </pre>
-                              </div>
-                            )}
-                          </div>
+                          <DiffViewer
+                            antes={l.dadosAnteriores}
+                            depois={l.dadosNovos}
+                            acao={l.acao}
+                          />
                         </TableCell>
                       </TableRow>
                     )}
