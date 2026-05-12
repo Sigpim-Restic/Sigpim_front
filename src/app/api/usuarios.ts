@@ -111,6 +111,10 @@ export const usuariosApi = {
   resetarMfa(id: number): Promise<void> {
     return api.delete<void>(`/usuarios/${id}/mfa`);
   },
+  // Exclusivo para ADMINISTRADOR_SISTEMA — redefine senha de outro usuário
+  resetarSenha(id: number, novaSenha: string): Promise<void> {
+    return api.patch<void>(`/usuarios/${id}/senha`, { novaSenha });
+  },
 };
 
 export const orgaosApi = {
