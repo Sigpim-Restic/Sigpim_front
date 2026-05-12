@@ -308,12 +308,14 @@ export function MainLayout() {
               >
                 <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-[#1351B4]" : "text-slate-400"}`} />
                 {!collapsed && (
-                  <span className="flex-1 overflow-hidden whitespace-nowrap">{item.label}</span>
-                  {item.path === "/dashboard/pendencias" && pendenciasCount > 0 && (
-                    <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                      {pendenciasCount > 9 ? "9+" : pendenciasCount}
-                    </span>
-                  )}
+                  <>
+                    <span className="flex-1 overflow-hidden whitespace-nowrap">{item.label}</span>
+                    {item.path === "/dashboard/pendencias" && pendenciasCount > 0 && (
+                      <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                        {pendenciasCount > 9 ? "9+" : pendenciasCount}
+                      </span>
+                    )}
+                  </>
                 )}
                 {!collapsed && isActive && item.submenu && (
                   <ChevronRight className="h-3.5 w-3.5 text-[#1351B4]/60" />
