@@ -175,7 +175,14 @@ export function MainLayout() {
   const [totalNaoLidos,     setTotalNaoLidos]     = useState(0);
   const [painelAberto,      setPainelAberto]      = useState(false);
   const [carregandoAlertas, setCarregandoAlertas] = useState(false);
-  const [pendenciasCount, setPendenciasCount] = useState(0);
+  const [pendenciasCount,   setPendenciasCount]   = useState(0);
+
+  // 25002500 Idle timer 250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500250025002500
+  const [idleTimeoutMs,  setIdleTimeoutMs]  = useState(30 * 60 * 1000); // default 30 min
+  const [idleWarningMs,  setIdleWarningMs]  = useState(5  * 60 * 1000); // default 5 min
+  const [idleWarning,    setIdleWarning]    = useState(false);
+  const [idleCountdown,  setIdleCountdown]  = useState(0);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -593,6 +600,31 @@ export function MainLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* ── Modal de aviso de inatividade ────────────────────────────────────── */}
+      <AlertDialog open={idleWarning}>
+        <AlertDialogContent className="sm:max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sessão prestes a expirar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está inativo há algum tempo. Sua sessão será encerrada em{" "}
+              <span className="font-semibold text-slate-900">{idleCountdown}s</span>.
+              Clique em "Continuar" para permanecer conectado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleLogout} className="text-red-600 border-red-200 hover:bg-red-50">
+              Sair agora
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleIdleReset}
+              className="bg-[#1351B4] hover:bg-[#0c3b8d]"
+            >
+              Continuar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
