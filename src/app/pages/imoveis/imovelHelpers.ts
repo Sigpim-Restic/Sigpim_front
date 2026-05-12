@@ -43,11 +43,21 @@ export function fmtMoeda(v: number | null | undefined): string {
   return `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 }
 
+/**
+ * Campo de dado cadastral.
+ *
+ * Item #1 (acessibilidade idosos):
+ *   - label: text-xs → text-sm  (hierarquia preservada mas legível)
+ *   - valor: text-sm font-medium → text-base font-semibold  (dado primário destacado)
+ *
+ * text-xs é preservado intencionalmente em badges, contadores de tab,
+ * metadados secundários e rodapés — esses são informação de suporte, não conteúdo primário.
+ */
 export function Campo({ label, valor }: { label: string; valor?: string | number | null }) {
   return (
     <div>
-      <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-      <p className="text-sm font-medium text-gray-800">{valor ?? "—"}</p>
+      <p className="text-sm text-gray-500 mb-0.5">{label}</p>
+      <p className="text-base font-semibold text-gray-800">{valor ?? "—"}</p>
     </div>
   );
 }

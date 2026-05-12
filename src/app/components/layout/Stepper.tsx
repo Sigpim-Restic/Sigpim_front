@@ -23,7 +23,7 @@ export function Stepper({ steps, currentStep, completedSteps = [] }: StepperProp
           const isCompleted = completedSteps.includes(step.number);
           const isCurrent = currentStep === step.number;
           const isPast = step.number < currentStep;
-          
+
           return (
             <li
               key={step.number}
@@ -53,16 +53,17 @@ export function Stepper({ steps, currentStep, completedSteps = [] }: StepperProp
                     step.number
                   )}
                 </div>
+                {/* Item #1: label text-xs → text-sm */}
                 <span
                   className={cn(
-                    "text-xs font-medium text-center max-w-[120px]",
+                    "text-sm font-medium text-center max-w-[120px]",
                     isCurrent ? "text-[#1351B4]" : "text-gray-600"
                   )}
                 >
                   {step.label}
                 </span>
               </div>
-              
+
               {index !== steps.length - 1 && (
                 <div
                   className={cn(
@@ -83,11 +84,12 @@ export function Stepper({ steps, currentStep, completedSteps = [] }: StepperProp
           <span className="text-sm font-medium text-gray-700">
             Etapa {currentStep} de {steps.length}
           </span>
+          {/* percentual continua text-xs — é dado de suporte, não primário */}
           <span className="text-xs text-gray-500">
             {Math.round((currentStep / steps.length) * 100)}% concluído
           </span>
         </div>
-        
+
         {/* Progress Bar */}
         <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
           <div
@@ -95,8 +97,8 @@ export function Stepper({ steps, currentStep, completedSteps = [] }: StepperProp
             style={{ width: `${(currentStep / steps.length) * 100}%` }}
           />
         </div>
-        
-        {/* Current Step Label */}
+
+        {/* Item #1: label da etapa atual text-xs → text-sm */}
         <p className="mt-3 text-sm font-medium text-[#1351B4]">
           {steps.find((s) => s.number === currentStep)?.label}
         </p>

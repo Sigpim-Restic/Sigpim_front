@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import {
-  ArrowLeft, RefreshCw, AlertCircle, MapPin, FileText,
+  ArrowLeft, AlertCircle, MapPin, FileText,
   Building2, Users, Edit, Map, Download, Loader2,
-  CheckCircle2, XCircle, AlertTriangle, Bell, Shield, GitFork,
+  CheckCircle2, XCircle, AlertTriangle, Bell, Shield,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import { Label } from "../../components/ui/label";
+import { Skeleton } from "../../components/ui/skeleton";
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
 import { PainelValidacaoAbas } from "../../components/imoveis/PainelValidacaoAbas";
 import { documentosApi, type DocumentoResponse } from "../../api/documentos";
@@ -17,7 +18,6 @@ import { ocupacoesApi, type OcupacaoResponse } from "../../api/ocupacoes";
 import { localizacoesApi, type LocalizacaoResponse } from "../../api/localizacoes";
 import { relatoriosApi } from "../../api/relatorios";
 import { usePermissoes } from "../../hooks/usePermissoes";
-import { toast } from "sonner";
 import { AbaVistorias } from "./AbaVistorias";
 import { AbaIntervencoes } from "./AbaIntervencoes";
 import { AbaFiscal } from "./AbaFiscal";
@@ -26,6 +26,68 @@ import { AbaInstrumentosUso } from "./AbaInstrumentosUso";
 import { AbaContratosLocacao } from "./AbaContratosLocacao";
 import { ModalDesmembramento } from "./ModalDesmembramento";
 import { STATUS_CFG, fmt, Campo, Secao } from "./imovelHelpers";
+
+// ─── Skeleton: cabeçalho ─────────────────────────────────────────────────────
+
+function SkeletonCabecalho() {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-8 w-16 rounded-md" />
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-28 rounded" />
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+          <Skeleton className="h-5 w-56 rounded" />
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Skeleton className="h-8 w-28 rounded-md" />
+        <Skeleton className="h-8 w-32 rounded-md" />
+        <Skeleton className="h-8 w-24 rounded-md" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Skeleton: seção de dados (grid de campos) ───────────────────────────────
+
+function SkeletonSecao({ linhas = 2 }: { linhas?: number }) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-gray-100 bg-gray-50 px-5 py-3">
+        <Skeleton className="h-4 w-4 rounded" />
+        <Skeleton className="h-4 w-40 rounded" />
+      </div>
+      <div className="p-5 space-y-4">
+        {Array.from({ length: linhas }).map((_, i) => (
+          <div key={i} className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, j) => (
+              <div key={j} className="space-y-1.5">
+                <Skeleton className="h-3 w-20 rounded" />
+                <Skeleton className="h-5 w-full rounded" />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Skeleton: aba Dados completa ────────────────────────────────────────────
+
+function SkeletonAbaDados() {
+  return (
+    <div className="space-y-5 mt-5">
+      <SkeletonSecao linhas={3} />
+      <SkeletonSecao linhas={1} />
+      <SkeletonSecao linhas={2} />
+      <SkeletonSecao linhas={1} />
+    </div>
+  );
+}
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
@@ -46,16 +108,14 @@ export function DetalhesImovel() {
   const [erroValidacao,    setErroValidacao]    = useState<string | null>(null);
   const [pendencias,       setPendencias]       = useState<string[]>([]);
 
-  // Modal de recusa
-  const [modalRecusa,   setModalRecusa]   = useState(false);
-  const [motivoRecusa,  setMotivoRecusa]  = useState("");
-  const [erroRecusa,    setErroRecusa]    = useState<string | null>(null);
+  const [modalRecusa,    setModalRecusa]    = useState(false);
+  const [motivoRecusa,   setMotivoRecusa]   = useState("");
+  const [erroRecusa,     setErroRecusa]     = useState<string | null>(null);
   const [salvandoRecusa, setSalvandoRecusa] = useState(false);
 
-  const [loadingNotificar,  setLoadingNotificar]  = useState(false);
-  const [erroNotificar,     setErroNotificar]      = useState<string | null>(null);
-  const [notificadoOk,      setNotificadoOk]       = useState(false);
-  // Pendências do checklist de validação — consultadas ao carregar o imóvel
+  const [loadingNotificar,    setLoadingNotificar]    = useState(false);
+  const [erroNotificar,       setErroNotificar]       = useState<string | null>(null);
+  const [notificadoOk,        setNotificadoOk]        = useState(false);
   const [pendenciasChecklist, setPendenciasChecklist] = useState<string[]>([]);
 
   const handleNotificarValidador = async () => {
@@ -111,10 +171,8 @@ export function DetalhesImovel() {
       await imoveisApi.recusarValidacao(imovel.id, motivoRecusa.trim());
       setModalRecusa(false);
       setMotivoRecusa("");
-      // Feedback visual: alerta de sucesso temporário
       setErroValidacao(null);
       setPendencias([]);
-      // Mostra confirmação inline usando o mesmo estado de pendências com msg especial
       setPendencias(["✓ Recusa registrada. O órgão gestor foi notificado com o motivo informado."]);
     } catch (e: unknown) {
       setErroRecusa(e instanceof Error ? e.message : "Erro ao registrar recusa.");
@@ -137,7 +195,6 @@ export function DetalhesImovel() {
         setDocumentos(docs.content);
         setOcupacoes(ocup.content);
         setLocalizacao(loc);
-        // Consulta pendências do checklist se imóvel está em PRE_CADASTRO
         if (im.statusCadastro === "PRE_CADASTRO") {
           imoveisApi.verificarPendencias(numId)
             .then(setPendenciasChecklist)
@@ -164,9 +221,16 @@ export function DetalhesImovel() {
     } finally { setLoadingPdf(false); }
   };
 
+  // ── Item #4: skeleton substitui o spinner genérico ───────────────────────
   if (loading) return (
-    <div className="flex items-center justify-center py-24">
-      <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+    <div className="space-y-5">
+      <SkeletonCabecalho />
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Skeleton key={i} className="h-9 w-24 shrink-0 rounded-md" />
+        ))}
+      </div>
+      <SkeletonAbaDados />
     </div>
   );
 
@@ -283,7 +347,6 @@ export function DetalhesImovel() {
             }
           </Button>
 
-          {/* Notificar validador — para membros do órgão gestor em PRE_CADASTRO */}
           {perm.canUpdateImovel && !perm.canValidarImovel &&
            imovel.statusCadastro === "PRE_CADASTRO" && (() => {
             const temPendencias = pendenciasChecklist.length > 0;
@@ -310,43 +373,30 @@ export function DetalhesImovel() {
             );
           })()}
 
-          {/* P → V: botões de aprovação e recusa */}
           {perm.canValidarImovel && imovel.statusCadastro === "PRE_CADASTRO" && (
             <>
-              <Button
-                size="sm"
-                className="bg-green-600 hover:bg-green-700"
-                onClick={handleValidar}
-                disabled={loadingValidacao}
-                title="Aprovar validação — promove para Validado"
-              >
+              <Button size="sm" className="bg-green-600 hover:bg-green-700"
+                onClick={handleValidar} disabled={loadingValidacao}
+                title="Aprovar validação — promove para Validado">
                 {loadingValidacao
                   ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Validando...</>
                   : <><CheckCircle2 className="mr-2 h-4 w-4" />Validar Imóvel</>
                 }
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
+              <Button size="sm" variant="outline"
                 className="text-red-600 border-red-300 hover:bg-red-50"
                 onClick={() => { setPendencias([]); setErroValidacao(null); setModalRecusa(true); }}
                 disabled={loadingValidacao}
-                title="Recusar validação — registra motivo e notifica o órgão gestor"
-              >
+                title="Recusar validação — registra motivo e notifica o órgão gestor">
                 <XCircle className="mr-2 h-4 w-4" />Recusar
               </Button>
             </>
           )}
 
-          {/* V → G: Promover para Gestão Plena */}
           {perm.canPromoverGestaoPlena && imovel.statusCadastro === "VALIDADO" && (
-            <Button
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={handlePromoverGestaoPlena}
-              disabled={loadingValidacao}
-              title="Promover este imóvel de Validado para Gestão Plena"
-            >
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-700"
+              onClick={handlePromoverGestaoPlena} disabled={loadingValidacao}
+              title="Promover este imóvel de Validado para Gestão Plena">
               {loadingValidacao
                 ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Promovendo...</>
                 : <><CheckCircle2 className="mr-2 h-4 w-4" />Gestão Plena</>
@@ -370,8 +420,6 @@ export function DetalhesImovel() {
           <button onClick={() => setErroPdf(null)} className="text-red-400 hover:text-red-600">✕</button>
         </div>
       )}
-
-      {/* Erros e pendências de validação */}
       {erroNotificar && (
         <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -380,7 +428,6 @@ export function DetalhesImovel() {
         </div>
       )}
 
-      {/* Checklist de validação — mostra o que falta para o responsável corrigir */}
       {pendenciasChecklist.length > 0 && imovel?.statusCadastro === "PRE_CADASTRO" && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1.5">
@@ -436,50 +483,31 @@ export function DetalhesImovel() {
       {/* Abas */}
       <Tabs defaultValue="dados">
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="dados">
-            <Building2 className="mr-1.5 h-3.5 w-3.5" />Dados
-          </TabsTrigger>
+          <TabsTrigger value="dados"><Building2 className="mr-1.5 h-3.5 w-3.5" />Dados</TabsTrigger>
           <TabsTrigger value="ocupacao">
-            <Users className="mr-1.5 h-3.5 w-3.5" />
-            Ocupação
+            <Users className="mr-1.5 h-3.5 w-3.5" />Ocupação
             {ocupacoes.length > 0 && (
               <span className="ml-1.5 rounded-full bg-gray-200 px-1.5 py-0.5 text-xs">{ocupacoes.length}</span>
             )}
           </TabsTrigger>
           <TabsTrigger value="documentos">
-            <FileText className="mr-1.5 h-3.5 w-3.5" />
-            Documentos
+            <FileText className="mr-1.5 h-3.5 w-3.5" />Documentos
             {documentos.length > 0 && (
               <span className="ml-1.5 rounded-full bg-gray-200 px-1.5 py-0.5 text-xs">{documentos.length}</span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="vistorias">
-            <ClipboardCheck className="mr-1.5 h-3.5 w-3.5" />Vistorias
-          </TabsTrigger>
-          <TabsTrigger value="intervencoes">
-            <Wrench className="mr-1.5 h-3.5 w-3.5" />Intervenções
-          </TabsTrigger>
-          <TabsTrigger value="fiscal">
-            <DollarSign className="mr-1.5 h-3.5 w-3.5" />Fiscal
-          </TabsTrigger>
-          <TabsTrigger value="avaliacao">
-            <BarChart2 className="mr-1.5 h-3.5 w-3.5" />Avaliação
-          </TabsTrigger>
-          <TabsTrigger value="instrumentos">
-            <FileCheck className="mr-1.5 h-3.5 w-3.5" />Instrumentos
-          </TabsTrigger>
-          <TabsTrigger value="contratos">
-            <FileText className="mr-1.5 h-3.5 w-3.5" />Contratos
-          </TabsTrigger>
-          <TabsTrigger value="validacao">
-            <Shield className="mr-1.5 h-3.5 w-3.5" />Validação
-          </TabsTrigger>
+          <TabsTrigger value="vistorias"><ClipboardCheck className="mr-1.5 h-3.5 w-3.5" />Vistorias</TabsTrigger>
+          <TabsTrigger value="intervencoes"><Wrench className="mr-1.5 h-3.5 w-3.5" />Intervenções</TabsTrigger>
+          <TabsTrigger value="fiscal"><DollarSign className="mr-1.5 h-3.5 w-3.5" />Fiscal</TabsTrigger>
+          <TabsTrigger value="avaliacao"><BarChart2 className="mr-1.5 h-3.5 w-3.5" />Avaliação</TabsTrigger>
+          <TabsTrigger value="instrumentos"><FileCheck className="mr-1.5 h-3.5 w-3.5" />Instrumentos</TabsTrigger>
+          <TabsTrigger value="contratos"><FileText className="mr-1.5 h-3.5 w-3.5" />Contratos</TabsTrigger>
+          <TabsTrigger value="validacao"><Shield className="mr-1.5 h-3.5 w-3.5" />Validação</TabsTrigger>
         </TabsList>
 
         {/* ── ABA DADOS ─────────────────────────────────────────────── */}
         <TabsContent value="dados" className="space-y-5 mt-5">
 
-          {/* ── 1. Identificação e Governança ─────────────────────── */}
           <Secao icone={<Building2 className="h-4 w-4" />} titulo="Identificação e Governança">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               <Campo label="Código SIGPIM"         valor={imovel.codigoSigpim} />
@@ -494,7 +522,6 @@ export function DetalhesImovel() {
               <Campo label="Cadastrado em"         valor={imovel.criadoEm ? new Date(imovel.criadoEm).toLocaleDateString("pt-BR") : null} />
               <Campo label="Atualizado em"         valor={imovel.atualizadoEm ? new Date(imovel.atualizadoEm).toLocaleDateString("pt-BR") : null} />
             </div>
-            {/* Patrimônio histórico — item 3: dois flags independentes */}
             {(imovel.tombadoHistorico || imovel.tombadoCultural) && (
               <div className="mt-4 border-t border-gray-100 pt-4 flex flex-wrap gap-2">
                 <p className="text-xs text-gray-500 w-full mb-1">Proteção patrimonial:</p>
@@ -524,7 +551,6 @@ export function DetalhesImovel() {
             )}
           </Secao>
 
-          {/* ── 2. Gestão e Responsabilidade ──────────────────────── */}
           <Secao icone={<Users className="h-4 w-4" />} titulo="Gestão e Responsabilidade">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               <Campo label="Órgão gestor patrimonial (ID)" valor={imovel.idOrgaoGestorPatrimonial} />
@@ -533,7 +559,7 @@ export function DetalhesImovel() {
               <Campo label="Registro de energia"           valor={imovel.registroEnergia} />
               <Campo label="Registro de água"              valor={imovel.registroAgua} />
               <div>
-                <p className="text-xs text-gray-500 mb-0.5">Situação</p>
+                <p className="text-sm text-gray-500 mb-0.5">Situação</p>
                 <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${imovel.ativo ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                   {imovel.ativo ? "Ativo" : "Inativo"}
                 </span>
@@ -552,11 +578,9 @@ export function DetalhesImovel() {
             )}
           </Secao>
 
-          {/* ── 3. Localização e GIS ──────────────────────────────── */}
           <Secao icone={<MapPin className="h-4 w-4" />} titulo="Localização e GIS">
             {localizacao ? (
               <div className="space-y-5">
-                {/* Endereço */}
                 <div>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Endereço</p>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -568,7 +592,6 @@ export function DetalhesImovel() {
                     <Campo label="CEP"               valor={localizacao.cep} />
                   </div>
                 </div>
-                {/* Geodados */}
                 <div className="border-t border-gray-100 pt-4">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Georeferenciamento</p>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -597,12 +620,11 @@ export function DetalhesImovel() {
                     </div>
                   )}
                 </div>
-                {/* GIS / Validação */}
                 <div className="border-t border-gray-100 pt-4">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Validação GIS</p>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Selo GIS (SEMURH)</p>
+                      <p className="text-sm text-gray-500 mb-0.5">Selo GIS (SEMURH)</p>
                       {localizacao.seloGis ? (
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                           localizacao.seloGis === "VALIDADO" ? "bg-green-100 text-green-800" :
@@ -612,11 +634,11 @@ export function DetalhesImovel() {
                           {localizacao.seloGis === "VALIDADO" ? "✓ Validado" :
                            localizacao.seloGis === "CONFLITO" ? "⚠ Conflito" : "○ Não validado"}
                         </span>
-                      ) : <p className="text-sm font-medium text-gray-400">—</p>}
+                      ) : <p className="text-base font-semibold text-gray-400">—</p>}
                     </div>
                     <Campo label="Data validação GIS" valor={localizacao.dataValidacaoGis?.toString()} />
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Revisão INCID</p>
+                      <p className="text-sm text-gray-500 mb-0.5">Revisão INCID</p>
                       {localizacao.revisaoIncid ? (
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                           localizacao.revisaoIncid === "OK" ? "bg-green-100 text-green-800" :
@@ -625,7 +647,7 @@ export function DetalhesImovel() {
                         }`}>
                           {localizacao.revisaoIncid}
                         </span>
-                      ) : <p className="text-sm font-medium text-gray-400">—</p>}
+                      ) : <p className="text-base font-semibold text-gray-400">—</p>}
                     </div>
                   </div>
                   {localizacao.observacaoGis && (
@@ -646,7 +668,6 @@ export function DetalhesImovel() {
             )}
           </Secao>
 
-          {/* ── 4. Dados Físicos e Construtivos ───────────────────── */}
           <Secao icone={<Building2 className="h-4 w-4" />} titulo="Dados Físicos e Construtivos">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               <Campo label="Área do terreno (m²)"  valor={imovel.areaTerrenoM2} />
@@ -656,7 +677,7 @@ export function DetalhesImovel() {
               <Campo label="Categoria macro"       valor={imovel.categoriaMacro} />
               <Campo label="Tipologia"             valor={imovel.tipologia} />
               <div>
-                <p className="text-xs text-gray-500 mb-0.5">Estado de conservação</p>
+                <p className="text-sm text-gray-500 mb-0.5">Estado de conservação</p>
                 {imovel.estadoConservacaoAtual ? (
                   <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                     imovel.estadoConservacaoAtual === "OTIMO"   ? "bg-green-100 text-green-800"  :
@@ -667,10 +688,9 @@ export function DetalhesImovel() {
                   }`}>
                     {fmt(imovel.estadoConservacaoAtual)}
                   </span>
-                ) : <p className="text-sm font-medium text-gray-400">—</p>}
+                ) : <p className="text-base font-semibold text-gray-400">—</p>}
               </div>
             </div>
-            {/* Campos dominiais adicionais — V30 */}
             {(imovel.proprietarioRegistral || imovel.areaRegistradaM2 || imovel.onusRestricoes) && (
               <div className="mt-4 border-t border-gray-100 pt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 <Campo label="Proprietário registral" valor={(imovel as any).proprietarioRegistral} />
@@ -748,47 +768,29 @@ export function DetalhesImovel() {
           )}
         </TabsContent>
 
-        {/* ── ABA VISTORIAS ─────────────────────────────────────────── */}
         <TabsContent value="vistorias" className="mt-5">
           <AbaVistorias idImovel={Number(id)} />
         </TabsContent>
-
-        {/* ── ABA INTERVENÇÕES ──────────────────────────────────────── */}
         <TabsContent value="intervencoes" className="mt-5">
           <AbaIntervencoes idImovel={Number(id)} />
         </TabsContent>
-
-        {/* ── ABA FISCAL ────────────────────────────────────────────── */}
         <TabsContent value="fiscal" className="mt-5">
           <AbaFiscal idImovel={Number(id)} />
         </TabsContent>
-
-        {/* ── ABA AVALIAÇÃO PATRIMONIAL ──────────────────────────────── */}
         <TabsContent value="avaliacao" className="mt-5">
           <AbaAvaliacaoPatrimonial idImovel={Number(id)} />
         </TabsContent>
-
-        {/* ── ABA INSTRUMENTOS DE USO ────────────────────────────────── */}
         <TabsContent value="instrumentos" className="mt-5">
           <AbaInstrumentosUso idImovel={Number(id)} />
         </TabsContent>
-
-        {/* ── ABA CONTRATOS DE LOCAÇÃO ────────────────────────────────── */}
         <TabsContent value="contratos" className="mt-5">
           <AbaContratosLocacao idImovel={Number(id)} />
         </TabsContent>
-
-        {/* ── ABA VALIDAÇÃO ──────────────────────────────────────────── */}
-        {/* Mostra status de validação por domínio/aba (itens 5,6,7,8,9 do feedback) */}
         <TabsContent value="validacao" className="mt-5">
           <PainelValidacaoAbas
             idImovel={Number(id)}
             onMudanca={() => {
-              // Recarrega o imóvel quando uma aba é validada/revogada
-              // para refletir possível mudança de status
-              imoveisApi.buscarPorId(Number(id))
-                .then(setImovel)
-                .catch(() => {});
+              imoveisApi.buscarPorId(Number(id)).then(setImovel).catch(() => {});
             }}
           />
         </TabsContent>

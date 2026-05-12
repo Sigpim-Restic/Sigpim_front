@@ -23,6 +23,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "../../components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
+import { Skeleton } from "../../components/ui/skeleton";
 import { tiposImovelApi, type TipoImovelResponse } from "../../api/tipos-imovel-alertas";
 import { imoveisApi, type ImovelResponse } from "../../api/imoveis";
 import { relatoriosApi } from "../../api/relatorios";
@@ -75,6 +76,45 @@ function exportarCSV(imoveis: ImovelResponse[]) {
   URL.revokeObjectURL(url);
 }
 
+// ── Skeleton da tabela ─────────────────────────────────────────────────────────
+
+function SkeletonTabela() {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50">
+              {/* Item #1: cabeçalhos text-xs → text-sm font-medium */}
+              <TableHead className="text-sm font-medium">Código</TableHead>
+              <TableHead className="text-sm font-medium">Nome / Tipologia</TableHead>
+              <TableHead className="text-sm font-medium">Tipo</TableHead>
+              <TableHead className="text-sm font-medium">Conservação</TableHead>
+              <TableHead className="text-sm font-medium">Status</TableHead>
+              <TableHead className="text-right text-sm font-medium">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <TableRow key={i}>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell>
+                  <Skeleton className="h-4 w-40 mb-1.5" />
+                  <Skeleton className="h-3 w-24" />
+                </TableCell>
+                <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto rounded-md" /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 // ── Tipos internos ─────────────────────────────────────────────────────────────
 
 interface ConfirmacaoState {
@@ -91,10 +131,6 @@ export function ListaImoveis() {
   const navigate = useNavigate();
   const perm = usePermissoes();
 
-  // BUG 2 CORRIGIDO: chave do rascunho isolada por usuário.
-  // Antes era uma chave global ("sigpim_rascunho_imovel") compartilhada entre
-  // todos os usuários do mesmo navegador. Se um cadastrador salvava rascunho
-  // e deslogava, o próximo usuário (ex: validador) via o banner indevidamente.
   const { usuario } = useAuth();
   const lsKeyRascunho = `sigpim_rascunho_imovel_${usuario?.id ?? 0}`;
 
@@ -108,7 +144,6 @@ export function ListaImoveis() {
   const [search,        setSearch]        = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  // Debounce search by 400ms to avoid firing a request on every keystroke
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
     return () => clearTimeout(t);
@@ -139,8 +174,6 @@ export function ListaImoveis() {
       setErro(e instanceof Error ? e.message : "Erro ao carregar imóveis.");
     } finally { setLoading(false); }
 
-    // Lixeira carregada separadamente — perfis sem canDeleteImovel
-    // recebem 403 neste endpoint e isso não deve afetar a listagem principal
     if (perm.canDeleteImovel) {
       try {
         const excluidos = await imoveisApi.listarDeletados();
@@ -152,11 +185,7 @@ export function ListaImoveis() {
   }, [page, perm.canDeleteImovel]);
 
   useEffect(() => { carregar(); }, [carregar]);
-
-  // Reset to page 0 when filters change
   useEffect(() => { setPage(0); }, [search, filterStatus, filterTipo]);
-
-  // Carrega tipos uma única vez ao montar
   useEffect(() => {
     tiposImovelApi.listarAtivos().then(setTiposImovel).catch(() => {});
   }, []);
@@ -173,8 +202,6 @@ export function ListaImoveis() {
 
   const fecharConfirmacao = () =>
     setConfirmacao((c) => ({ ...c, aberto: false }));
-
-  // ── Ações ────────────────────────────────────────────────────────────────────
 
   const handleExcluir = (im: ImovelResponse) => {
     confirmar({
@@ -216,7 +243,6 @@ export function ListaImoveis() {
     } finally { setPdfLoadingId(null); }
   };
 
-  // Filtering is done server-side; imoveis already contains the filtered page
   const filtrados = imoveis;
 
   return (
@@ -260,7 +286,7 @@ export function ListaImoveis() {
         </div>
       </div>
 
-      {/* Banner rascunho — isolado por usuário (Bug 2 corrigido) */}
+      {/* Banner rascunho */}
       {perm.canVerRascunho && (() => {
         try {
           const r = localStorage.getItem(lsKeyRascunho);
@@ -378,130 +404,128 @@ export function ListaImoveis() {
             </Button>
           </div>
 
-          {/* Tabela de ativos */}
-          <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="text-xs">Código</TableHead>
-                    <TableHead className="text-xs">Nome / Tipologia</TableHead>
-                    <TableHead className="text-xs">Tipo</TableHead>
-                    <TableHead className="text-xs">Conservação</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="text-right text-xs">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-12 text-center text-sm text-gray-400">
-                        <RefreshCw className="mx-auto mb-2 h-5 w-5 animate-spin" />Carregando imóveis...
-                      </TableCell>
+          {/* Item #4: skeleton substitui o spinner inline da tabela */}
+          {loading ? (
+            <SkeletonTabela />
+          ) : (
+            <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      {/* Item #1: text-xs → text-sm font-medium nos cabeçalhos */}
+                      <TableHead className="text-sm font-medium">Código</TableHead>
+                      <TableHead className="text-sm font-medium">Nome / Tipologia</TableHead>
+                      <TableHead className="text-sm font-medium">Tipo</TableHead>
+                      <TableHead className="text-sm font-medium">Conservação</TableHead>
+                      <TableHead className="text-sm font-medium">Status</TableHead>
+                      <TableHead className="text-right text-sm font-medium">Ações</TableHead>
                     </TableRow>
-                  )}
-                  {!loading && !erro && filtrados.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-12 text-center text-sm text-gray-400">
-                        {search || filterStatus !== "todos" || filterTipo !== "todos"
-                          ? "Nenhum imóvel encontrado com esses filtros."
-                          : 'Nenhum imóvel cadastrado. Clique em "Novo Imóvel" para começar.'}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {!loading && filtrados.map((im) => {
-                    const st = STATUS_CONFIG[im.statusCadastro] ?? STATUS_CONFIG.PRE_CADASTRO;
-                    const gerandoPdf = pdfLoadingId === im.id;
-                    const emAcao = acaoLoading === im.id;
-                    return (
-                      <TableRow key={im.id} className="hover:bg-gray-50/80">
-                        <TableCell>
-                          <Link
-                            to={`/dashboard/imoveis/${im.id}`}
-                            className="font-mono text-xs font-semibold text-[#1351B4] hover:underline"
-                          >
-                            {im.codigoSigpim}
-                          </Link>
-                        </TableCell>
-                        <TableCell>
-                          <p className="text-sm font-medium text-gray-900">{im.nomeReferencia ?? "—"}</p>
-                          <p className="text-xs text-gray-500">{im.tipologia ?? "—"}</p>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className={`text-xs ${
-                            im.tipoImovel === "PROPRIO" ? "bg-blue-50 text-blue-700" :
-                            im.tipoImovel === "LOCADO"  ? "bg-purple-50 text-purple-700" :
-                            "bg-gray-100 text-gray-600"
-                          }`}>
-                            {TIPO_LABEL[im.tipoImovel] ?? im.tipoImovel ?? "—"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-gray-600">
-                          {im.estadoConservacaoAtual ?? "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`text-xs ${st.cls}`} variant="secondary">{st.label}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" disabled={gerandoPdf || emAcao}>
-                                {gerandoPdf || emAcao
-                                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                                  : <MoreVertical className="h-4 w-4" />
-                                }
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => navigate(`/dashboard/imoveis/${im.id}`)}>
-                                <Eye className="mr-2 h-4 w-4" />Visualizar
-                              </DropdownMenuItem>
-                              {perm.canUpdateImovel && (
-                                <DropdownMenuItem onClick={() => navigate(`/dashboard/imoveis/${im.id}/editar`)}>
-                                  <Edit className="mr-2 h-4 w-4" />Editar
-                                </DropdownMenuItem>
-                              )}
-                              <DropdownMenuItem onClick={() => navigate(`/dashboard/mapa?imovel=${im.id}`)}>
-                                <MapPin className="mr-2 h-4 w-4" />Ver no Mapa
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleExportarFicha(im)}>
-                                <FileText className="mr-2 h-4 w-4" />Exportar Ficha PDF
-                              </DropdownMenuItem>
-                              {perm.canDeleteImovel && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-red-600 focus:text-red-700"
-                                    onClick={() => handleExcluir(im)}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" />Excluir imóvel
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                  </TableHeader>
+                  <TableBody>
+                    {!erro && filtrados.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-12 text-center text-sm text-gray-400">
+                          {search || filterStatus !== "todos" || filterTipo !== "todos"
+                            ? "Nenhum imóvel encontrado com esses filtros."
+                            : 'Nenhum imóvel cadastrado. Clique em "Novo Imóvel" para começar.'}
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                    )}
+                    {filtrados.map((im) => {
+                      const st = STATUS_CONFIG[im.statusCadastro] ?? STATUS_CONFIG.PRE_CADASTRO;
+                      const gerandoPdf = pdfLoadingId === im.id;
+                      const emAcao = acaoLoading === im.id;
+                      return (
+                        <TableRow key={im.id} className="hover:bg-gray-50/80">
+                          <TableCell>
+                            <Link
+                              to={`/dashboard/imoveis/${im.id}`}
+                              className="font-mono text-xs font-semibold text-[#1351B4] hover:underline"
+                            >
+                              {im.codigoSigpim}
+                            </Link>
+                          </TableCell>
+                          <TableCell>
+                            <p className="text-sm font-medium text-gray-900">{im.nomeReferencia ?? "—"}</p>
+                            <p className="text-xs text-gray-500">{im.tipologia ?? "—"}</p>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className={`text-xs ${
+                              im.tipoImovel === "PROPRIO" ? "bg-blue-50 text-blue-700" :
+                              im.tipoImovel === "LOCADO"  ? "bg-purple-50 text-purple-700" :
+                              "bg-gray-100 text-gray-600"
+                            }`}>
+                              {TIPO_LABEL[im.tipoImovel] ?? im.tipoImovel ?? "—"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {im.estadoConservacaoAtual ?? "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`text-xs ${st.cls}`} variant="secondary">{st.label}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" disabled={gerandoPdf || emAcao}>
+                                  {gerandoPdf || emAcao
+                                    ? <Loader2 className="h-4 w-4 animate-spin" />
+                                    : <MoreVertical className="h-4 w-4" />
+                                  }
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => navigate(`/dashboard/imoveis/${im.id}`)}>
+                                  <Eye className="mr-2 h-4 w-4" />Visualizar
+                                </DropdownMenuItem>
+                                {perm.canUpdateImovel && (
+                                  <DropdownMenuItem onClick={() => navigate(`/dashboard/imoveis/${im.id}/editar`)}>
+                                    <Edit className="mr-2 h-4 w-4" />Editar
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem onClick={() => navigate(`/dashboard/mapa?imovel=${im.id}`)}>
+                                  <MapPin className="mr-2 h-4 w-4" />Ver no Mapa
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleExportarFicha(im)}>
+                                  <FileText className="mr-2 h-4 w-4" />Exportar Ficha PDF
+                                </DropdownMenuItem>
+                                {perm.canDeleteImovel && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="text-red-600 focus:text-red-700"
+                                      onClick={() => handleExcluir(im)}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />Excluir imóvel
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3">
+                <p className="text-xs text-gray-500">
+                  {`${filtrados.length} imóvel(is) • página ${page + 1}`}
+                </p>
+                {totalElements > 20 && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" disabled={page === 0 || loading}
+                      onClick={() => setPage((p) => p - 1)}>Anterior</Button>
+                    <Button variant="outline" size="sm" disabled={(page + 1) * 20 >= totalElements || loading}
+                      onClick={() => setPage((p) => p + 1)}>Próxima</Button>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex items-center justify-between border-t border-gray-200 px-6 py-3">
-              <p className="text-xs text-gray-500">
-                {loading ? "Carregando..." : `${filtrados.length} imóvel(is) • página ${page + 1}`}
-              </p>
-              {totalElements > 20 && (
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" disabled={page === 0 || loading}
-                    onClick={() => setPage((p) => p - 1)}>Anterior</Button>
-                  <Button variant="outline" size="sm" disabled={(page + 1) * 20 >= totalElements || loading}
-                    onClick={() => setPage((p) => p + 1)}>Próxima</Button>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </TabsContent>
 
         {/* ── ABA: LIXEIRA ────────────────────────────────────────────────────── */}
@@ -514,8 +538,31 @@ export function ListaImoveis() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-[#1351B4]" />
+            <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="text-sm font-medium">Código</TableHead>
+                      <TableHead className="text-sm font-medium">Nome / Tipologia</TableHead>
+                      <TableHead className="text-sm font-medium">Status anterior</TableHead>
+                      <TableHead className="text-sm font-medium">Excluído em</TableHead>
+                      <TableHead className="text-right text-sm font-medium">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                        <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto rounded-md" /></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           ) : deletados.length === 0 ? (
             <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-sm text-gray-400 shadow-sm">
@@ -528,11 +575,11 @@ export function ListaImoveis() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
-                      <TableHead className="text-xs">Código</TableHead>
-                      <TableHead className="text-xs">Nome / Tipologia</TableHead>
-                      <TableHead className="text-xs">Status anterior</TableHead>
-                      <TableHead className="text-xs">Excluído em</TableHead>
-                      <TableHead className="text-right text-xs">Ações</TableHead>
+                      <TableHead className="text-sm font-medium">Código</TableHead>
+                      <TableHead className="text-sm font-medium">Nome / Tipologia</TableHead>
+                      <TableHead className="text-sm font-medium">Status anterior</TableHead>
+                      <TableHead className="text-sm font-medium">Excluído em</TableHead>
+                      <TableHead className="text-right text-sm font-medium">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
