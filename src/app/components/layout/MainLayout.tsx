@@ -362,6 +362,14 @@ export function MainLayout() {
 
   const breadcrumbs = getBreadcrumbs(location.pathname);
 
+  // Título dinâmico da aba — último breadcrumb ou "SIGPIM"
+  useEffect(() => {
+    const ultimo = breadcrumbs[breadcrumbs.length - 1];
+    document.title = ultimo && ultimo.label !== "Início"
+      ? `${ultimo.label} · SIGPIM`
+      : "SIGPIM";
+  }, [breadcrumbs]);
+
   return (
     <div className="min-h-screen bg-slate-50">
 
