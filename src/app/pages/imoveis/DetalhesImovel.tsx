@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router";
 import {
   ArrowLeft, AlertCircle, MapPin, FileText,
   Building2, Users, Edit, Map, Download, Loader2,
@@ -94,8 +94,11 @@ function SkeletonAbaDados() {
 
 export function DetalhesImovel() {
   const { id }   = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const perm     = usePermissoes();
+  const navigate       = useNavigate();
+  const [searchParams] = useSearchParams();
+  const perm           = usePermissoes();
+  const abaInicial     = searchParams.get("aba") ?? "dados";
+  const [abaAtiva, setAbaAtiva] = useState(abaInicial);
 
   const [imovel,      setImovel]      = useState<ImovelResponse | null>(null);
   const [documentos,  setDocumentos]  = useState<DocumentoResponse[]>([]);
@@ -482,7 +485,7 @@ export function DetalhesImovel() {
       )}
 
       {/* Abas */}
-      <Tabs defaultValue="dados">
+      <Tabs value={abaAtiva} onValueChange={setAbaAtiva}>
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="dados"><Building2 className="mr-1.5 h-3.5 w-3.5" />Dados</TabsTrigger>
           <TabsTrigger value="ocupacao">
@@ -790,6 +793,7 @@ export function DetalhesImovel() {
         <TabsContent value="validacao" className="mt-5">
           <PainelValidacaoAbas
             idImovel={Number(id)}
+            imovel={imovel}
             onMudanca={() => {
               imoveisApi.buscarPorId(Number(id)).then(setImovel).catch(() => {});
             }}

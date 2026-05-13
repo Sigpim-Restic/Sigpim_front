@@ -72,6 +72,13 @@ export function MeuPerfil() {
   const [erroSenha,      setErroSenha]      = useState<string | null>(null);
   const [sucessoSenha,   setSucessoSenha]   = useState(false);
 
+  // E-mail
+  const [novoEmail,      setNovoEmail]      = useState("");
+  const [senhaEmail,     setSenhaEmail]     = useState("");
+  const [erroEmail,      setErroEmail]      = useState<string | null>(null);
+  const [sucessoEmail,   setSucessoEmail]   = useState(false);
+  const [salvandoEmail,  setSalvandoEmail]  = useState(false);
+
   const validacao  = validarSenha(novaSenha);
   const senhaValida = Object.values(validacao).every(Boolean);
 
@@ -122,6 +129,25 @@ export function MeuPerfil() {
       setUploadandoFoto(false);
       // Limpa o input para permitir selecionar o mesmo arquivo novamente
       if (fotoInputRef.current) fotoInputRef.current.value = "";
+    }
+  };
+
+  const handleAlterarEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErroEmail(null); setSucessoEmail(false);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(novoEmail)) { setErroEmail("E-mail inválido."); return; }
+    if (novoEmail === dados?.email)  { setErroEmail("O novo e-mail é igual ao atual."); return; }
+    setSalvandoEmail(true);
+    try {
+      const atualizado = await usuariosApi.alterarMeuEmail(novoEmail, senhaEmail);
+      setDados(atualizado);
+      setSucessoEmail(true);
+      setNovoEmail(""); setSenhaEmail("");
+    } catch (err) {
+      setErroEmail(err instanceof Error ? err.message : "Erro ao alterar e-mail.");
+    } finally {
+      setSalvandoEmail(false);
     }
   };
 
@@ -260,6 +286,20 @@ export function MeuPerfil() {
               ? dados.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
               : null
           } />
+          {(dados.nomeOrgao || dados.siglaOrgao) && (
+            <Campo
+              icone={<Building2 className="h-4 w-4" />}
+              label="Secretaria / Órgão"
+              valor={[dados.siglaOrgao && `[${dados.siglaOrgao}]`, dados.nomeOrgao].filter(Boolean).join(" ")}
+            />
+          )}
+          {(dados.nomeUnidade || dados.siglaUnidade) && (
+            <Campo
+              icone={<Building2 className="h-4 w-4" />}
+              label="Unidade / Departamento"
+              valor={[dados.siglaUnidade && `[${dados.siglaUnidade}]`, dados.nomeUnidade].filter(Boolean).join(" ")}
+            />
+          )}
         </div>
       </div>
 
@@ -340,6 +380,43 @@ export function MeuPerfil() {
               ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
               : <><Lock className="mr-2 h-4 w-4" />Alterar Senha</>
             }
+          </Button>
+        </form>
+      </div>
+
+
+      {/* Card de alteração de e-mail */}
+      <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2 border-b border-gray-100 bg-gray-50 px-5 py-3">
+          <Mail className="h-4 w-4 text-[#1351B4]" />
+          <h2 className="text-sm font-semibold text-gray-700">Alterar E-mail</h2>
+        </div>
+        <form onSubmit={handleAlterarEmail} className="space-y-4 p-5">
+          {erroEmail && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{erroEmail}</span>
+            </div>
+          )}
+          {sucessoEmail && (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+              ✓ E-mail alterado com sucesso.
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-700">Novo e-mail <span className="text-red-500">*</span></label>
+            <Input type="email" value={novoEmail} onChange={(e) => setNovoEmail(e.target.value)}
+              placeholder="novo@email.com" required />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-gray-700">Confirme sua senha atual <span className="text-red-500">*</span></label>
+            <Input type="password" value={senhaEmail} onChange={(e) => setSenhaEmail(e.target.value)}
+              placeholder="Sua senha atual" required />
+          </div>
+          <Button type="submit" className="w-full bg-[#1351B4] hover:bg-[#0c3b8d]"
+            disabled={salvandoEmail || !novoEmail || !senhaEmail}>
+            {salvandoEmail
+              ? <><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Salvando...</>
+              : <><Mail className="mr-2 h-4 w-4" />Alterar E-mail</>}
           </Button>
         </form>
       </div>

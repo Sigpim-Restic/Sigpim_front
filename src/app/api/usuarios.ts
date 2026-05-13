@@ -52,6 +52,10 @@ export interface UsuarioResponse {
   cargo: string | null;
   idOrgao: number | null;
   idUnidade: number | null;
+  nomeOrgao: string | null;
+  siglaOrgao: string | null;
+  nomeUnidade: string | null;
+  siglaUnidade: string | null;
   perfil: PerfilUsuario | null;
   ativo: boolean;
   criadoEm: string | null;
@@ -97,6 +101,10 @@ export const usuariosApi = {
   excluirPermanentemente(id: number): Promise<void> {
     return api.delete<void>(`/usuarios/${id}/permanente`);
   },
+  alterarMeuEmail(novoEmail: string, senhaAtual: string): Promise<UsuarioResponse> {
+    return api.patch<UsuarioResponse>("/usuarios/meu-email", { novoEmail, senhaAtual });
+  },
+
   alterarMinhaSenha(novaSenha: string): Promise<void> {
     return api.patch<void>("/usuarios/minha-senha", { novaSenha });
   },
