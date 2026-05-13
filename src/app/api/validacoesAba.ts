@@ -14,6 +14,8 @@ export interface StatusValidacaoResponse {
   idImovel: number;
   dominiosValidados: DominioValidado[];
   dominiosPendentes: string[];
+  /** Recusas ativas: domínio → motivo mais recente */
+  recusasAtivas: Record<string, string>;
 }
 
 export interface ValidacaoAbaResponse {
@@ -31,6 +33,21 @@ export interface ValidacaoAbaResponse {
 export interface ValidarAbaRequest {
   dominio: string;
   observacao?: string;
+}
+
+export interface RecusarDominioRequest {
+  dominio: string;
+  motivo: string;
+}
+
+export interface RecusaDominioResponse {
+  id: number;
+  dominio: string;
+  motivo: string;
+  nomeValidador: string;
+  nomeOrgao: string;
+  recusadoEm: string;
+  resolvida: boolean;
 }
 
 // Mapeamento domínio → label legível
@@ -82,6 +99,10 @@ export const validacoesAbaApi = {
 
   validar(idImovel: number, request: ValidarAbaRequest): Promise<ValidacaoAbaResponse> {
     return api.post<ValidacaoAbaResponse>(`/imoveis/${idImovel}/validacoes-aba`, request);
+  },
+
+  recusar(idImovel: number, request: RecusarDominioRequest): Promise<RecusaDominioResponse> {
+    return api.post<RecusaDominioResponse>(`/imoveis/${idImovel}/validacoes-aba/recusar`, request);
   },
 
   revogar(idImovel: number, dominio: string): Promise<void> {
