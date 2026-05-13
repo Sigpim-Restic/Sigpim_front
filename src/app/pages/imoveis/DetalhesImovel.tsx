@@ -4,7 +4,7 @@ import {
   ArrowLeft, AlertCircle, MapPin, FileText,
   Building2, Users, Edit, Map, Download, Loader2,
   CheckCircle2, XCircle, AlertTriangle, Bell, Shield,
-  ClipboardCheck, Wrench, DollarSign, FileCheck,
+  ClipboardCheck, Wrench, DollarSign, FileCheck, BarChart2,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
