@@ -570,8 +570,17 @@ export function MainLayout() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="gap-2 px-2 hover:bg-slate-100">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1351B4]/10 text-[#1351B4] ring-2 ring-[#1351B4]/20">
-                      <User className="h-4 w-4" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1351B4]/10 text-[#1351B4] ring-2 ring-[#1351B4]/20 overflow-hidden">
+                      {usuario?.fotoPerfil ? (
+                        <img
+                          src={usuario.fotoPerfil}
+                          alt={usuario.nomeCompleto ?? "Foto"}
+                          className="h-full w-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
                     </div>
                     <div className="hidden text-left sm:block">
                       <p className="text-xs font-semibold leading-tight text-slate-900">

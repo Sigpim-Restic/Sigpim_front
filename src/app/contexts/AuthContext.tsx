@@ -17,6 +17,7 @@ export interface UsuarioLogado {
    * diretamente no LoginResponse quando o backend for atualizado.
    */
   siglaOrgao: string | null;
+  fotoPerfil: string | null;
 }
 
 interface AuthContextValue {
@@ -53,6 +54,7 @@ function resParaUsuario(res: LoginResponse): UsuarioLogado {
     // siglaOrgao é null inicialmente; deve ser populada após o login
     // via GET /orgaos/{idOrgao} ou quando o backend incluir no LoginResponse.
     siglaOrgao:   null,
+    fotoPerfil:   res.fotoPerfil ?? null,
   };
 }
 

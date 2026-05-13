@@ -22,6 +22,7 @@ export interface LoginResponse {
   mfaToken: string | null;
   // True quando admin sem MFA tenta logar com MFA forçado ativo
   mfaSetupObrigatorio: boolean;
+  fotoPerfil: string | null;
 }
 
 export const authApi = {
