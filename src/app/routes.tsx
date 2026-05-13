@@ -143,7 +143,7 @@ export const router = createBrowserRouter([
       { path: "mapa",                    Component: MapaGIS },
       { path: "usuarios",                Component: ListaUsuarios },
       { path: "usuarios/novo",           Component: CadastroUsuario },
-      { path: "usuarios/:id/permissoes", Component: Permissoes },
+      { path: "permissoes", Component: Permissoes },
       { path: "usuarios/sucesso",        Component: SucessoUsuario },
       { path: "configuracoes",                         Component: Configuracoes },
       { path: "configuracoes/tipos-imovel",            Component: GerenciarTiposImovel },

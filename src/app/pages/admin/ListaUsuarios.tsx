@@ -123,7 +123,7 @@ export function ListaUsuarios() {
     });
   };
 
-  const handleDesativar = (u: UsuarioResponse) => {
+  const handleDesativarNormal = (u: UsuarioResponse) => {
     confirmar({
       titulo:    "Desativar usuário",
       mensagem:  `Deseja desativar "${u.nomeCompleto}"? O acesso será bloqueado.`,
@@ -139,6 +139,56 @@ export function ListaUsuarios() {
       variante:  "destrutivo",
       onConfirmar: () => executarAcao(u.id, () => usuariosApi.excluir(u.id)),
     });
+  };
+
+  // Carregar pendentes de voto ao montar
+  useEffect(() => {
+    desativacaoAdminApi.listarPendentes()
+      .then(setPendentesVoto)
+      .catch(() => {});
+  }, []);
+
+  const handleDesativarAdmin = async (u: UsuarioResponse) => {
+    setModalDesativacaoAdmin({ aberto: true, usuario: u, solicitacaoExistente: null, carregando: true });
+    try {
+      const res = await desativacaoAdminApi.buscarParaAlvo(u.id);
+      setModalDesativacaoAdmin((prev) => ({
+        ...prev, carregando: false,
+        solicitacaoExistente: res.solicitacao ?? null,
+      }));
+    } catch {
+      setModalDesativacaoAdmin((prev) => ({ ...prev, carregando: false }));
+    }
+  };
+
+  const handleSolicitarDesativacaoAdmin = async (idAlvo: number) => {
+    try {
+      const res = await desativacaoAdminApi.solicitar(idAlvo);
+      setModalDesativacaoAdmin((prev) => ({ ...prev, solicitacaoExistente: res }));
+      setPendentesVoto((prev) => prev.filter((p) => p.idAlvo !== idAlvo));
+      toast.success("Solicitação enviada. Aguardando aprovação dos demais administradores.");
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "Erro ao solicitar desativação.");
+    }
+  };
+
+  const handleVotarDesativacaoAdmin = async (idSolicitacao: number, aprovar: boolean) => {
+    try {
+      await desativacaoAdminApi.votar(idSolicitacao, aprovar);
+      setPendentesVoto((prev) => prev.filter((p) => p.idSolicitacao !== idSolicitacao));
+      await carregar();
+      toast.success(aprovar ? "Voto de aprovação registrado." : "Solicitação rejeitada.");
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "Erro ao votar.");
+    }
+  };
+
+  const handleDesativar = (u: UsuarioResponse) => {
+    if (u.perfil === "ADMINISTRADOR_SISTEMA") {
+      handleDesativarAdmin(u);
+      return;
+    }
+    handleDesativarNormal(u);
   };
 
   const handleReativar = (u: UsuarioResponse) => {
@@ -259,6 +309,114 @@ export function ListaUsuarios() {
           aberto={!!resetSenha}
           onFechar={() => setResetSenha(null)}
         />
+      )}
+
+
+      {/* ── Modal de desativação de ADMIN_SISTEMA ── */}
+      {modalDesativacaoAdmin.aberto && modalDesativacaoAdmin.usuario && (
+        <Dialog open onOpenChange={() => setModalDesativacaoAdmin(
+          { aberto: false, usuario: null, solicitacaoExistente: null, carregando: false })}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-700">
+                <Vote className="h-5 w-5" />
+                Desativar Administrador do Sistema
+              </DialogTitle>
+            </DialogHeader>
+
+            {modalDesativacaoAdmin.carregando ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              </div>
+            ) : modalDesativacaoAdmin.solicitacaoExistente ? (
+              <div className="space-y-4 py-2">
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                  <p className="font-semibold mb-1">Solicitação em andamento</p>
+                  <p>Aguardando votos dos demais administradores para desativar{" "}
+                    <strong>{modalDesativacaoAdmin.usuario.nomeCompleto}</strong>.</p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase">Votos</p>
+                  {modalDesativacaoAdmin.solicitacaoExistente.votos.map((v) => (
+                    <div key={v.idVotante}
+                      className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
+                      <span className="text-gray-800">{v.nomeVotante}</span>
+                      {v.aprovado
+                        ? <span className="flex items-center gap-1 text-green-700 text-xs font-medium">
+                            <CheckCircle2 className="h-3.5 w-3.5" />Aprovou
+                          </span>
+                        : <span className="flex items-center gap-1 text-red-600 text-xs font-medium">
+                            <XCircle className="h-3.5 w-3.5" />Rejeitou
+                          </span>}
+                    </div>
+                  ))}
+                  {modalDesativacaoAdmin.solicitacaoExistente.totalPendentes > 0 && (
+                    <p className="text-xs text-gray-400 text-center">
+                      {modalDesativacaoAdmin.solicitacaoExistente.totalPendentes} voto(s) pendente(s)
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 py-2">
+                <div className="rounded-lg bg-orange-50 border border-orange-200 p-3 text-sm text-orange-800">
+                  <p className="font-semibold mb-1">Aprovação coletiva necessária</p>
+                  <p>Para desativar <strong>{modalDesativacaoAdmin.usuario.nomeCompleto}</strong>,
+                    todos os demais Administradores do Sistema devem aprovar a solicitação.
+                    Um único voto de rejeição cancela o processo.</p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Sua aprovação será registrada automaticamente ao criar a solicitação.
+                </p>
+                <DialogFooter>
+                  <Button variant="outline"
+                    onClick={() => setModalDesativacaoAdmin(
+                      { aberto: false, usuario: null, solicitacaoExistente: null, carregando: false })}>
+                    Cancelar
+                  </Button>
+                  <Button className="bg-amber-600 hover:bg-amber-700"
+                    onClick={() => handleSolicitarDesativacaoAdmin(modalDesativacaoAdmin.usuario!.id)}>
+                    <Vote className="mr-2 h-4 w-4" />
+                    Iniciar Votação
+                  </Button>
+                </DialogFooter>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Banner de votos pendentes */}
+      {pendentesVoto.length > 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 mb-4">
+          <p className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-2">
+            <Vote className="h-4 w-4" />
+            {pendentesVoto.length} solicitação(ões) de desativação aguardando seu voto
+          </p>
+          {pendentesVoto.map((s) => (
+            <div key={s.idSolicitacao}
+              className="flex items-center justify-between rounded-md bg-white border border-amber-200 px-3 py-2 mb-1.5 text-sm">
+              <div>
+                <p className="font-medium text-gray-800">{s.nomeAlvo}</p>
+                <p className="text-xs text-gray-500">
+                  Solicitado por {s.nomeSolicitante} · {s.totalAprovacoes}/{s.totalAdminsNecessarios} aprovações
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline"
+                  className="h-7 text-xs border-red-300 text-red-600 hover:bg-red-50"
+                  onClick={() => handleVotarDesativacaoAdmin(s.idSolicitacao, false)}>
+                  <XCircle className="mr-1 h-3 w-3" />Rejeitar
+                </Button>
+                <Button size="sm"
+                  className="h-7 text-xs bg-green-600 hover:bg-green-700"
+                  onClick={() => handleVotarDesativacaoAdmin(s.idSolicitacao, true)}>
+                  <CheckCircle2 className="mr-1 h-3 w-3" />Aprovar
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Cabeçalho */}
@@ -500,7 +658,7 @@ function TabelaUsuarios({
                         <DropdownMenuItem onClick={() => onDefinirPerfil(u)}>
                           <Shield className="mr-2 h-4 w-4" />Definir Perfil
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate(`/dashboard/usuarios/${u.id}/permissoes`)}>
+                        <DropdownMenuItem onClick={() => navigate("/dashboard/permissoes")}>
                           <Shield className="mr-2 h-4 w-4 text-gray-400" />Ver Permissões
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => u.ativo ? onDesativar(u) : onAtivar(u)}>
