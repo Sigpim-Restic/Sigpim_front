@@ -1,12 +1,12 @@
 import { api } from "./client";
 import type { PerfilUsuario } from "./usuarios";
 
-// ─── Tipos espelhando os records do backend ──────────────────────────────────
+// ── Tipos ─────────────────────────────────────────────────────────────────────
 
 export interface PermissaoAcaoResponse {
   concedida: boolean;
-  doPerfil: boolean;
-  grantExtra: boolean;
+  doPerfil: boolean;   // mantido para compatibilidade — sempre igual a concedida no novo modelo
+  grantExtra: boolean; // sempre false no novo modelo
   concedidaPor: string | null;
   concedidaEm: string | null;
 }
@@ -17,12 +17,11 @@ export interface PermissaoModuloResponse {
   criar: PermissaoAcaoResponse;
   editar: PermissaoAcaoResponse;
   excluir: PermissaoAcaoResponse;
+  validar: PermissaoAcaoResponse;
 }
 
-export interface PermissoesUsuarioResponse {
-  idUsuario: number;
-  nomeCompleto: string;
-  perfil: PerfilUsuario | null;
+export interface PermissoesPerfilResponse {
+  perfil: PerfilUsuario;
   modulos: PermissaoModuloResponse[];
 }
 
@@ -36,18 +35,21 @@ export interface PermissaoUsuarioRequest {
   revogar: PermissaoItem[];
 }
 
-// ─── API calls ───────────────────────────────────────────────────────────────
+// ── API ───────────────────────────────────────────────────────────────────────
 
 export const permissoesApi = {
-  buscar(idUsuario: number): Promise<PermissoesUsuarioResponse> {
-    return api.get<PermissoesUsuarioResponse>(`/usuarios/${idUsuario}/permissoes`);
+  /** Lista permissões de todos os perfis */
+  listarPerfis(): Promise<PermissoesPerfilResponse[]> {
+    return api.get<PermissoesPerfilResponse[]>("/permissoes-perfil");
   },
 
-  salvar(idUsuario: number, request: PermissaoUsuarioRequest): Promise<PermissoesUsuarioResponse> {
-    return api.put<PermissoesUsuarioResponse>(`/usuarios/${idUsuario}/permissoes`, request);
+  /** Permissões de um perfil específico */
+  buscarPerfil(perfil: PerfilUsuario): Promise<PermissoesPerfilResponse> {
+    return api.get<PermissoesPerfilResponse>(`/permissoes-perfil/${perfil}`);
   },
 
-  resetar(idUsuario: number): Promise<PermissoesUsuarioResponse> {
-    return api.delete<PermissoesUsuarioResponse>(`/usuarios/${idUsuario}/permissoes`);
+  /** Salva alterações para um perfil */
+  salvarPerfil(perfil: PerfilUsuario, request: PermissaoUsuarioRequest): Promise<PermissoesPerfilResponse> {
+    return api.put<PermissoesPerfilResponse>(`/permissoes-perfil/${perfil}`, request);
   },
 };
