@@ -5,8 +5,10 @@ import type { PerfilUsuario } from "./usuarios";
 
 export interface PermissaoAcaoResponse {
   concedida: boolean;
-  doPerfil: boolean;   // mantido para compatibilidade — sempre igual a concedida no novo modelo
-  grantExtra: boolean; // sempre false no novo modelo
+  /** Sempre igual a concedida no modelo por perfil. Mantido por compatibilidade. */
+  doPerfil: boolean;
+  /** Sempre false no modelo por perfil. Mantido por compatibilidade. */
+  grantExtra: boolean;
   concedidaPor: string | null;
   concedidaEm: string | null;
 }
@@ -30,7 +32,11 @@ export interface PermissaoItem {
   acao: string;
 }
 
-export interface PermissaoUsuarioRequest {
+/**
+ * Payload de alteração de permissões de um perfil.
+ * Permissões são por perfil — todos os usuários do perfil herdam automaticamente.
+ */
+export interface PermissaoPerfilRequest {
   conceder: PermissaoItem[];
   revogar: PermissaoItem[];
 }
@@ -38,18 +44,24 @@ export interface PermissaoUsuarioRequest {
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export const permissoesApi = {
-  /** Lista permissões de todos os perfis */
+  /** Lista permissões de todos os perfis. */
   listarPerfis(): Promise<PermissoesPerfilResponse[]> {
     return api.get<PermissoesPerfilResponse[]>("/permissoes-perfil");
   },
 
-  /** Permissões de um perfil específico */
+  /** Permissões de um perfil específico. */
   buscarPerfil(perfil: PerfilUsuario): Promise<PermissoesPerfilResponse> {
     return api.get<PermissoesPerfilResponse>(`/permissoes-perfil/${perfil}`);
   },
 
-  /** Salva alterações para um perfil */
-  salvarPerfil(perfil: PerfilUsuario, request: PermissaoUsuarioRequest): Promise<PermissoesPerfilResponse> {
-    return api.put<PermissoesPerfilResponse>(`/permissoes-perfil/${perfil}`, request);
+  /** Salva alterações de permissões para um perfil. */
+  salvarPerfil(
+    perfil: PerfilUsuario,
+    request: PermissaoPerfilRequest
+  ): Promise<PermissoesPerfilResponse> {
+    return api.put<PermissoesPerfilResponse>(
+      `/permissoes-perfil/${perfil}`,
+      request
+    );
   },
 };

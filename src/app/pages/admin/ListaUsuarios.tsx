@@ -659,7 +659,7 @@ function TabelaUsuarios({
                           <Shield className="mr-2 h-4 w-4" />Definir Perfil
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => navigate("/dashboard/permissoes")}>
-                          <Shield className="mr-2 h-4 w-4 text-gray-400" />Ver Permissões
+                          <Shield className="mr-2 h-4 w-4 text-gray-400" />Permissões do Perfil
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => u.ativo ? onDesativar(u) : onAtivar(u)}>
                           {u.ativo
