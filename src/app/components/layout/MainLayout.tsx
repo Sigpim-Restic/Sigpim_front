@@ -38,6 +38,7 @@ interface SubItem {
   label: string;
   icon: React.ElementType;
   perfisPermitidos?: Perfil[];
+  permissaoBanco?: string;
 }
 
 interface MenuItem {
@@ -45,6 +46,7 @@ interface MenuItem {
   label: string;
   icon: React.ElementType;
   perfisPermitidos?: Perfil[];
+  permissaoBanco?: string;
   submenu?: SubItem[];
 }
 
@@ -106,12 +108,14 @@ const menuItems: MenuItem[] = [
       "ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL",
       "CADASTRADOR_SETORIAL", "PLANEJAMENTO", "AUDITOR",
     ],
+    permissaoBanco: "relatorios:visualizar",
   },
   {
     path:  "/dashboard/auditoria",
     label: "Auditoria",
     icon:  History,
     perfisPermitidos: ["ADMINISTRADOR_SISTEMA", "AUDITOR"],
+    permissaoBanco: "auditoria:visualizar",
   },
   {
     path:  "/dashboard/mapa",
@@ -158,16 +162,23 @@ interface AlertaItem {
   nomeImovel?: string;
 }
 
-function filtrarMenu(items: MenuItem[], perfil: string): MenuItem[] {
+function filtrarMenu(items: MenuItem[], perfil: string, permissoesPerfil: string[] | null): MenuItem[] {
+  const temNoBanco = (permissao: string | undefined) =>
+    !!permissao && (permissoesPerfil?.includes(permissao) ?? false);
+
+  const itemVisivel = (item: MenuItem | SubItem): boolean => {
+    if (!item.perfisPermitidos) return true;
+    if (item.perfisPermitidos.includes(perfil as Perfil)) return true;
+    return temNoBanco(item.permissaoBanco);
+  };
+
   return items
-    .filter((item) => !item.perfisPermitidos || item.perfisPermitidos.includes(perfil as Perfil))
+    .filter(itemVisivel)
     .map((item) => {
       if (!item.submenu) return item;
       return {
         ...item,
-        submenu: item.submenu.filter(
-          (sub) => !sub.perfisPermitidos || sub.perfisPermitidos.includes(perfil as Perfil)
-        ),
+        submenu: item.submenu.filter(itemVisivel),
       };
     });
 }
@@ -195,7 +206,8 @@ export function MainLayout() {
   const { usuario, logout } = useAuth();
 
   const perfil         = usuario?.perfil ?? "";
-  const itensFiltrados = filtrarMenu(menuItems, perfil);
+  const permissoesPerfil = usuario?.permissoesPerfil ?? null;
+  const itensFiltrados = filtrarMenu(menuItems, perfil, permissoesPerfil);
 
   const handleLogout = () => { logout(); navigate("/login"); };
 
