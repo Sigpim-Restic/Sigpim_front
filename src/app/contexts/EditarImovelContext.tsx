@@ -29,6 +29,7 @@ export interface DadosEtapa3 {
 export interface DadosEtapa4 {
   areaTerrenoM2: string; areaConstruidaM2: string;
   numeroPavimentos: string; estadoConservacaoAtual: string; anoConstrucao: string;
+  registroEnergia: string; registroAgua: string;
 }
 export interface DadosEtapa5 {
   statusOcupacao: string; nivelOcupacao: string;
@@ -86,7 +87,7 @@ const vazios = {
   e1: (): DadosEtapa1 => ({ nomeReferencia: "", idOrigemCadastro: "", idOrgaoGestorPatrimonial: "", idUnidadeGestora: "", observacoesGerais: "" }),
   e2: (): DadosEtapa2 => ({ logradouro: "", numero: "", complemento: "", bairro: "", cep: "", latitude: "", longitude: "", geometriaWkt: "" }),
   e3: (): DadosEtapa3 => ({ idTipoImovel: "", tipologia: "", destinacaoAtual: "", descricaoUso: "" }),
-  e4: (): DadosEtapa4 => ({ areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "" }),
+  e4: (): DadosEtapa4 => ({ areaTerrenoM2: "", areaConstruidaM2: "", numeroPavimentos: "", estadoConservacaoAtual: "", anoConstrucao: "", registroEnergia: "", registroAgua: "" }),
   e5: (): DadosEtapa5 => ({ statusOcupacao: "", nivelOcupacao: "", nomeOcupanteExterno: "", nomeResponsavelLocal: "", contatoResponsavel: "", destinacaoFinalidade: "", dataInicio: "", dataFimPrevista: "", observacoes: "" }),
   e6: (): DadosEtapa6 => ({ possuiInstrumento: "", tipoInstrumento: "", numeroInstrumento: "", dataAssinatura: "", dataInicio: "", dataVencimento: "", observacoes: "" }),
   e7: (): DadosEtapa7 => ({ idSituacaoDominial: "", matriculaRegistro: "", cartorio: "", inscricaoImobiliaria: "", observacoesDominial: "" }),
@@ -159,6 +160,8 @@ export function EditarImovelProvider({ idImovel, children }: { idImovel: number;
           numeroPavimentos:       im.numeroPavimentos    != null ? String(im.numeroPavimentos)    : "",
           estadoConservacaoAtual: im.estadoConservacaoAtual ?? "",
           anoConstrucao:          im.anoConstrucao       != null ? String(im.anoConstrucao)       : "",
+          registroEnergia:        im.registroEnergia     ?? "",
+          registroAgua:           im.registroAgua        ?? "",
         });
 
         // Etapa 5 — Ocupação
@@ -217,6 +220,8 @@ export function EditarImovelProvider({ idImovel, children }: { idImovel: number;
         numeroPavimentos:         etapa4.numeroPavimentos  ? parseInt(etapa4.numeroPavimentos)   : undefined,
         estadoConservacaoAtual:   etapa4.estadoConservacaoAtual || undefined,
         anoConstrucao:            etapa4.anoConstrucao   ? parseInt(etapa4.anoConstrucao)       : undefined,
+        registroEnergia:          etapa4.registroEnergia || undefined,
+        registroAgua:             etapa4.registroAgua    || undefined,
         idSituacaoDominial:       etapa7.idSituacaoDominial ? Number(etapa7.idSituacaoDominial) : undefined,
         inscricaoImobiliaria:     etapa7.inscricaoImobiliaria || undefined,
         matriculaRegistro:        etapa7.matriculaRegistro   || undefined,

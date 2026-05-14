@@ -24,7 +24,7 @@ export function EditarStep2() {
   };
 
   const handleNext = () => {
-    if (validar()) navigate(`/imoveis/${id}/editar/etapa-3`);
+    if (validar()) navigate(`/dashboard/imoveis/${id}/editar/etapa-3`);
   };
 
   const campo = (field: keyof typeof etapa2) => ({

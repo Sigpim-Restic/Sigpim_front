@@ -44,7 +44,12 @@ export function EditarWizardLayout({ currentStep, children, onNext, salvando }: 
 
   const handleNext = () => {
     if (onNext) { onNext(); return; }
-    if (currentStep < TOTAL) navigate(`/dashboard/imoveis/${idImovel}/editar/etapa-${currentStep + 1}`);
+    if (currentStep < TOTAL) {
+      navigate(`/dashboard/imoveis/${idImovel}/editar/etapa-${currentStep + 1}`);
+    } else {
+      // Última etapa sem handler próprio → volta para detalhes
+      navigate(`/dashboard/imoveis/${idImovel}`);
+    }
   };
 
   const isLastStep = currentStep === TOTAL;

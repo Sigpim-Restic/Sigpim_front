@@ -22,7 +22,7 @@ export function EditarStep4() {
   });
 
   return (
-    <EditarWizardLayout currentStep={4} onNext={() => navigate(`/imoveis/${id}/editar/etapa-5`)}>
+    <EditarWizardLayout currentStep={4} onNext={() => navigate(`/dashboard/imoveis/${id}/editar/etapa-5`)}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Dados Físicos</h3>
@@ -74,6 +74,25 @@ export function EditarStep4() {
                 <SelectItem value="PESSIMO">Péssimo</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Registro de Energia</Label>
+            <Input
+              value={etapa4.registroEnergia}
+              onChange={e => setEtapa4({ ...etapa4, registroEnergia: e.target.value })}
+              placeholder="Nº do medidor / UC de energia"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Registro de Água</Label>
+            <Input
+              value={etapa4.registroAgua}
+              onChange={e => setEtapa4({ ...etapa4, registroAgua: e.target.value })}
+              placeholder="Nº do hidrômetro / matrícula"
+            />
           </div>
         </div>
       </div>

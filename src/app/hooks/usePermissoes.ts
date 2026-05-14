@@ -8,9 +8,10 @@ import { useAuth } from "../contexts/AuthContext";
 //   ADMINISTRADOR_SISTEMA = dono da plataforma (TI/SIN).
 //     - Pode: catálogos, usuários, órgãos, unidades, tipos extensíveis,
 //             configurações, auditoria, leitura irrestrita, relatórios.
-//     - NÃO PODE: criar/editar imóveis, validar, promover status patrimonial,
+//     - NÃO PODE: criar/editar imóveis, promover status patrimonial,
 //                 delete patrimonial, upload de documentos, vistorias etc.
 //                 Essas são ações de gestão patrimonial, não de TI.
+//     - PODE: validar domínios (poder administrativo superior).
 //
 //   ADMINISTRADOR_PATRIMONIAL = dono do dado patrimonial (SEMAD/COBP).
 //     - Pode: tudo no ciclo patrimonial (criar, editar, validar, promover).
@@ -34,16 +35,16 @@ export function usePermissoes() {
 
   return {
     // ── Imóveis — CRUD ───────────────────────────────────────────────────────
-    // ADMIN_SISTEMA não cria/edita/deleta imóveis
+    // ADMIN_SISTEMA faz tudo. ADMIN_PATRIMONIAL e CADASTRADOR também criam/editam.
     canCreateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
     canUpdateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
     canDeleteImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // ── Imóveis — Ciclo de status ────────────────────────────────────────────
-    // P → V: ADMIN_SISTEMA EXCLUÍDO — validar é ato patrimonial, não de TI
+    // P → V: ADMIN_SISTEMA e VALIDADOR_DOCUMENTAL validam/recusam
     canValidarImovel:       tem("ADMINISTRADOR_SISTEMA", "VALIDADOR_DOCUMENTAL"),
     canRecusarValidacao:    tem("ADMINISTRADOR_SISTEMA", "VALIDADOR_DOCUMENTAL"),
-    // V → G: apenas ADMIN_PATRIMONIAL fecha o ciclo completo
+    // V → G: ADMIN_SISTEMA e ADMIN_PATRIMONIAL promovem para gestão plena
     canPromoverGestaoPlena: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // ── Documentos ───────────────────────────────────────────────────────────
@@ -102,11 +103,14 @@ export function usePermissoes() {
     canVerRascunho: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
 
     // ── Validação por domínio/aba ────────────────────────────────────────────
-    // Retorna true se o usuário é VALIDADOR_DOCUMENTAL do órgão responsável
-    // pelo domínio informado, ou ADMIN_PATRIMONIAL (valida qualquer domínio).
-    // ADMIN_SISTEMA nunca valida.
+    // Retorna true se:
+    //   ADMINISTRADOR_SISTEMA → valida qualquer domínio (poder administrativo superior)
+    //   VALIDADOR_DOCUMENTAL do órgão responsável pelo domínio → valida pelo mapa RACI
+    //   ADMINISTRADOR_PATRIMONIAL NÃO valida domínios
     canValidarDominio: (dominio: string): boolean => {
-      if (!tem("VALIDADOR_DOCUMENTAL"))    return false;
+      // Apenas ADMIN_SISTEMA valida qualquer domínio sem restrição de órgão
+      if (tem("ADMINISTRADOR_SISTEMA")) return true;
+      if (!tem("VALIDADOR_DOCUMENTAL")) return false;
       if (!idOrgao) return false;
 
       // Mapeamento domínio → sigla do órgão (espelha SecurityExpressions.java)

@@ -45,7 +45,7 @@ export function EditarStep1() {
   };
 
   const handleNext = () => {
-    if (validar()) navigate(`/imoveis/${id}/editar/etapa-2`);
+    if (validar()) navigate(`/dashboard/imoveis/${id}/editar/etapa-2`);
   };
 
   return (

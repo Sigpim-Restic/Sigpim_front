@@ -33,7 +33,7 @@ export function EditarStep3() {
   return (
     <EditarWizardLayout
       currentStep={3}
-      onNext={() => navigate(`/imoveis/${id}/editar/etapa-4`)}
+      onNext={() => navigate(`/dashboard/imoveis/${id}/editar/etapa-4`)}
     >
       <div className="p-6 space-y-6">
         <div>

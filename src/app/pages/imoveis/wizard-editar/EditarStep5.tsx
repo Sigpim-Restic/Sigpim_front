@@ -16,7 +16,7 @@ export function EditarStep5() {
   const set = (field: string, value: string) =>
     setEtapa5({ ...etapa5, [field]: value });
 
-  const handleNext = () => navigate(`/imoveis/${id}/editar/etapa-6`);
+  const handleNext = () => navigate(`/dashboard/imoveis/${id}/editar/etapa-6`);
 
   return (
     <EditarWizardLayout currentStep={5} onNext={handleNext} salvando={salvando}>

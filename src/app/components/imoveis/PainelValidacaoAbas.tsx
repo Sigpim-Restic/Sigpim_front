@@ -214,12 +214,7 @@ export function PainelValidacaoAbas({ idImovel, imovel, onMudanca }: Props) {
       {expandido && (
         <div className="space-y-2">
 
-          {perm.isAdminSistema && (
-            <div className="flex items-start gap-2 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2 text-xs text-gray-600">
-              <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-              Administradores do Sistema têm acesso de leitura mas não podem validar domínios.
-            </div>
-          )}
+
 
           {/* Domínios validados */}
           {status.dominiosValidados.length > 0 && (
@@ -234,7 +229,7 @@ export function PainelValidacaoAbas({ idImovel, imovel, onMudanca }: Props) {
                   estado="validado"
                   infoValidado={v}
                   imovel={imovel}
-                  podeRevogar={perm.isAdminPatrimonial}
+                  podeRevogar={perm.isAdminPatrimonial || perm.isAdminSistema}
                   onRevogar={() => setModalRevogar({ aberto: true, dominio: v.dominio, salvando: false })}
                   idImovel={idImovel}
                   onMudanca={async () => { await carregar(); onMudanca?.(); }}

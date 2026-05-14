@@ -45,7 +45,12 @@ export interface ImovelResponse {
   latitude: number | null;
   longitude: number | null;
   // Patrimônio histórico — ativa gate FUMPH em intervenções N1+
-  imovelHistorico: boolean | null;
+  tombadoHistorico: boolean | null;
+  tombadoCultural:  boolean | null;
+  imovelHistorico:  boolean | null;
+  // Registros de infraestrutura (energia e água)
+  registroEnergia: string | null;
+  registroAgua:    string | null;
   ultimaRecusaEm: string | null;
 }
 
@@ -71,7 +76,11 @@ export interface ImovelRequest {
   idOrgaoGestorOperacional?: number;
   idUnidadeGestora?: number;
   observacoesGerais?: string;
+  tombadoHistorico?: boolean;
+  tombadoCultural?: boolean;
   imovelHistorico?: boolean;
+  registroEnergia?: string;
+  registroAgua?: string;
 }
 
 export interface PageResponse<T> {

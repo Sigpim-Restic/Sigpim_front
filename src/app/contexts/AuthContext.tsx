@@ -51,9 +51,8 @@ function resParaUsuario(res: LoginResponse): UsuarioLogado {
     idOrgao:      res.idOrgao ?? null,
     idUnidade:    res.idUnidade ?? null,
     mfaAtivo:     false,
-    // siglaOrgao é null inicialmente; deve ser populada após o login
-    // via GET /orgaos/{idOrgao} ou quando o backend incluir no LoginResponse.
-    siglaOrgao:   null,
+    // siglaOrgao vem direto no LoginResponse — sem GET extra em /orgaos/{id}
+    siglaOrgao:   res.siglaOrgao ?? null,
     fotoPerfil:   res.fotoPerfil ?? null,
   };
 }
