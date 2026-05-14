@@ -47,6 +47,37 @@ const ACOES: { id: string; nome: string; tooltip?: string }[] = [
 const ACOES_IDS = ACOES.map((a) => a.id);
 const MODULOS_IDS = Object.keys(MODULOS_META);
 
+// Permissões base por perfil — não podem ser revogadas (definem a identidade do perfil)
+const PERMISSOES_BASE: Partial<Record<PerfilUsuario, Set<string>>> = {
+  ADMINISTRADOR_PATRIMONIAL: new Set([
+    "imoveis:visualizar", "imoveis:criar", "imoveis:editar",
+    "vistorias:visualizar", "vistorias:criar",
+    "intervencoes:visualizar", "intervencoes:criar",
+  ]),
+  CADASTRADOR_SETORIAL: new Set([
+    "imoveis:visualizar", "imoveis:criar", "imoveis:editar",
+  ]),
+  VALIDADOR_DOCUMENTAL: new Set([
+    "imoveis:visualizar", "imoveis:validar",
+  ]),
+  VISTORIADOR: new Set([
+    "imoveis:visualizar",
+    "vistorias:visualizar", "vistorias:criar", "vistorias:editar",
+    "intervencoes:visualizar", "intervencoes:criar", "intervencoes:editar",
+  ]),
+  PLANEJAMENTO: new Set([
+    "imoveis:visualizar",
+    "intervencoes:visualizar", "intervencoes:criar", "intervencoes:editar",
+  ]),
+  AUDITOR: new Set([
+    "auditoria:visualizar",
+  ]),
+};
+
+function ehPermissaoBase(perfil: PerfilUsuario, modulo: string, acao: string): boolean {
+  return PERMISSOES_BASE[perfil]?.has(`${modulo}:${acao}`) ?? false;
+}
+
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export function Permissoes() {
@@ -374,23 +405,32 @@ export function Permissoes() {
                               : null;
                             const efetiva  = getEfetiva(perfilData.perfil, moduloData.modulo, acao.id, perfilData);
 
+                            const eBase = ehPermissaoBase(perfilData.perfil, moduloData.modulo, acao.id);
+                            const bloqueado = imutavel || eBase;
                             return (
                               <td key={acao.id} className="px-3 py-3 text-center">
                                 <button
-                                  disabled={imutavel}
-                                  onClick={() => handleCelulaChange(
+                                  disabled={bloqueado}
+                                  onClick={() => !bloqueado && handleCelulaChange(
                                     perfilData.perfil, moduloData.modulo, acao.id, !efetiva, perfilData)}
-                                  title={imutavel ? "Imutável" : efetiva ? "Clique para revogar" : "Clique para conceder"}
+                                  title={
+                                    imutavel ? "Imutável" :
+                                    eBase ? "Permissão base — não pode ser revogada" :
+                                    efetiva ? "Clique para revogar" : "Clique para conceder"
+                                  }
                                   className={[
                                     "inline-flex h-7 w-7 items-center justify-center rounded-full transition-all border-2 text-xs font-bold",
-                                    imutavel ? "cursor-not-allowed opacity-60" : "",
-                                    pendente !== null && !imutavel
+                                    bloqueado ? "cursor-not-allowed" : "",
+                                    eBase && efetiva ? "opacity-100 bg-green-100 text-green-700 border-green-400" : "",
+                                    !bloqueado && pendente !== null
                                       ? "ring-2 ring-amber-400 ring-offset-1"
                                       : "",
-                                    efetiva
+                                    !bloqueado && efetiva
                                       ? "bg-green-100 text-green-700 border-green-400 hover:bg-red-50 hover:border-red-400 hover:text-red-600"
-                                      : "bg-gray-100 text-gray-300 border-gray-200 hover:bg-blue-50 hover:border-[#1351B4] hover:text-[#1351B4]",
-                                    imutavel ? "hover:bg-green-100 hover:border-green-400 hover:text-green-700" : "",
+                                      : !bloqueado
+                                      ? "bg-gray-100 text-gray-300 border-gray-200 hover:bg-blue-50 hover:border-[#1351B4] hover:text-[#1351B4]"
+                                      : "",
+                                    imutavel ? "opacity-60" : "",
                                   ].join(" ")}>
                                   {efetiva ? "✓" : "✕"}
                                 </button>
