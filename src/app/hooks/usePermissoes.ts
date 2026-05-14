@@ -30,15 +30,25 @@ export function usePermissoes() {
   const { usuario } = useAuth();
   const perfil = (usuario?.perfil ?? "") as Perfil;
   const idOrgao = usuario?.idOrgao ?? null;
+  const permissoesPerfil = usuario?.permissoesPerfil ?? null;
 
+  // hardcoded: regras base imutáveis por perfil (fallback de segurança)
   const tem = (...perfis: Perfil[]) => perfis.includes(perfil);
+
+  // banco: permissão concedida pelo admin via tela de "Perfis e Permissões"
+  const temNoBanco = (modulo: string, acao: string): boolean =>
+    permissoesPerfil?.has(`${modulo}:${acao}`) ?? false;
+
+  // OR: passa se hardcoded OU banco conceder
+  const pode = (moduloBanco: string, acaoBanco: string, ...perfisHardcoded: Perfil[]): boolean =>
+    tem(...perfisHardcoded) || temNoBanco(moduloBanco, acaoBanco);
 
   return {
     // ── Imóveis — CRUD ───────────────────────────────────────────────────────
     // ADMIN_SISTEMA faz tudo. ADMIN_PATRIMONIAL e CADASTRADOR também criam/editam.
-    canCreateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
-    canUpdateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
-    canDeleteImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
+    canCreateImovel: pode("imoveis", "criar", "ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canUpdateImovel: pode("imoveis", "editar", "ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canDeleteImovel: pode("imoveis", "excluir", "ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // ── Imóveis — Ciclo de status ────────────────────────────────────────────
     // P → V: ADMIN_SISTEMA e VALIDADOR_DOCUMENTAL validam/recusam
@@ -77,7 +87,7 @@ export function usePermissoes() {
     canWriteInstrumentoUso: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
 
     // ── Plataforma — exclusivo ADMIN_SISTEMA ─────────────────────────────────
-    canManageUsuario:              tem("ADMINISTRADOR_SISTEMA"),
+    canManageUsuario:              pode("usuarios", "visualizar", "ADMINISTRADOR_SISTEMA"),
     canManageCatalogo:             tem("ADMINISTRADOR_SISTEMA"),
     canManageTipoImovel:           tem("ADMINISTRADOR_SISTEMA"),
     canManageSituacaoDominial:     tem("ADMINISTRADOR_SISTEMA"),
@@ -87,16 +97,13 @@ export function usePermissoes() {
     canManageUnidadeOrganizacional: tem("ADMINISTRADOR_SISTEMA"),
 
     // ── Auditoria ────────────────────────────────────────────────────────────
-    canReadAuditoria: tem("ADMINISTRADOR_SISTEMA", "AUDITOR"),
+    canReadAuditoria: pode("auditoria", "visualizar", "ADMINISTRADOR_SISTEMA", "AUDITOR"),
 
     // ── Relatórios ───────────────────────────────────────────────────────────
     // ADMIN_SISTEMA pode gerar relatórios (leitura), mas não validar
-    canCreateRelatorio: tem(
-      "ADMINISTRADOR_SISTEMA",
-      "ADMINISTRADOR_PATRIMONIAL",
-      "CADASTRADOR_SETORIAL",
-      "PLANEJAMENTO",
-      "AUDITOR"
+    canCreateRelatorio: pode("relatorios", "visualizar",
+      "ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL",
+      "CADASTRADOR_SETORIAL", "PLANEJAMENTO", "AUDITOR"
     ),
 
     // ── Rascunho — apenas quem cria imóveis vê o banner ─────────────────────

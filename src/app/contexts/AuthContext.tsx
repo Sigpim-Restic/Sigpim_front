@@ -18,6 +18,8 @@ export interface UsuarioLogado {
    */
   siglaOrgao: string | null;
   fotoPerfil: string | null;
+  /** Conjunto de "modulo:acao" concedidas pelo admin via tela de permissões */
+  permissoesPerfil: Set<string> | null;
 }
 
 interface AuthContextValue {
@@ -35,6 +37,7 @@ interface AuthContextValue {
   salvarSessao: (res: LoginResponse) => void;
   atualizarMfa: (ativo: boolean) => void;
   atualizarSiglaOrgao: (sigla: string) => void;
+  atualizarPermissoesPerfil: (perms: Set<string>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -53,7 +56,8 @@ function resParaUsuario(res: LoginResponse): UsuarioLogado {
     mfaAtivo:     false,
     // siglaOrgao vem direto no LoginResponse — sem GET extra em /orgaos/{id}
     siglaOrgao:   res.siglaOrgao ?? null,
-    fotoPerfil:   res.fotoPerfil ?? null,
+    fotoPerfil:        res.fotoPerfil ?? null,
+    permissoesPerfil:  null,
   };
 }
 
@@ -112,6 +116,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const atualizarPermissoesPerfil = useCallback((perms: Set<string>) => {
+    setUsuario((prev) => prev ? { ...prev, permissoesPerfil: perms } : null);
+  }, []);
+
   const login = useCallback(async (data: LoginRequest) => {
     setLoading(true);
     try {
@@ -141,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         usuario, token, loading, autenticado: !!token,
-        login, logout, salvarSessao, atualizarMfa, atualizarSiglaOrgao,
+        login, logout, salvarSessao, atualizarMfa, atualizarSiglaOrgao, atualizarPermissoesPerfil,
       }}
     >
       {children}
