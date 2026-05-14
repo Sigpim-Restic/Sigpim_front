@@ -4,7 +4,11 @@ import {
   Plus, Search, MoreVertical, Shield,
   UserCheck, UserX, Loader2, AlertCircle, RefreshCw,
   Clock, Trash2, RotateCcw, ShieldOff, KeyRound,
+  Vote, CheckCircle2, XCircle,
 } from "lucide-react";
+import {
+  desativacaoAdminApi, type DesativacaoAdminResponse,
+} from "../../api/desativacaoAdmin";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
@@ -81,6 +85,14 @@ export function ListaUsuarios() {
 
   // Estado do modal de reset de senha
   const [resetSenha, setResetSenha] = useState<{ id: number; nome: string } | null>(null);
+
+  const [pendentesVoto, setPendentesVoto] = useState<DesativacaoAdminResponse[]>([]);
+  const [modalDesativacaoAdmin, setModalDesativacaoAdmin] = useState<{
+    aberto: boolean;
+    usuario: UsuarioResponse | null;
+    solicitacaoExistente: DesativacaoAdminResponse | null;
+    carregando: boolean;
+  }>({ aberto: false, usuario: null, solicitacaoExistente: null, carregando: false });
 
   const carregar = useCallback(() => {
     setLoading(true);
@@ -659,7 +671,7 @@ function TabelaUsuarios({
                           <Shield className="mr-2 h-4 w-4" />Definir Perfil
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => navigate("/dashboard/permissoes")}>
-                          <Shield className="mr-2 h-4 w-4 text-gray-400" />Permissões do Perfil
+                          <Shield className="mr-2 h-4 w-4 text-gray-400" />Ver Permissões
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => u.ativo ? onDesativar(u) : onAtivar(u)}>
                           {u.ativo

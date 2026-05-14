@@ -35,45 +35,45 @@ export function usePermissoes() {
   return {
     // ── Imóveis — CRUD ───────────────────────────────────────────────────────
     // ADMIN_SISTEMA não cria/edita/deleta imóveis
-    canCreateImovel: tem("ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
-    canUpdateImovel: tem("ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
-    canDeleteImovel: tem("ADMINISTRADOR_PATRIMONIAL"),
+    canCreateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canUpdateImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canDeleteImovel: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // ── Imóveis — Ciclo de status ────────────────────────────────────────────
     // P → V: ADMIN_SISTEMA EXCLUÍDO — validar é ato patrimonial, não de TI
-    canValidarImovel:       tem("ADMINISTRADOR_PATRIMONIAL", "VALIDADOR_DOCUMENTAL"),
-    canRecusarValidacao:    tem("ADMINISTRADOR_PATRIMONIAL", "VALIDADOR_DOCUMENTAL"),
+    canValidarImovel:       tem("ADMINISTRADOR_SISTEMA", "VALIDADOR_DOCUMENTAL"),
+    canRecusarValidacao:    tem("ADMINISTRADOR_SISTEMA", "VALIDADOR_DOCUMENTAL"),
     // V → G: apenas ADMIN_PATRIMONIAL fecha o ciclo completo
-    canPromoverGestaoPlena: tem("ADMINISTRADOR_PATRIMONIAL"),
+    canPromoverGestaoPlena: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // ── Documentos ───────────────────────────────────────────────────────────
     // ADMIN_SISTEMA não faz upload de documentos patrimoniais
-    canUploadDocumento: tem("ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL", "VALIDADOR_DOCUMENTAL"),
-    canDeleteDocumento: tem("ADMINISTRADOR_PATRIMONIAL"),
+    canUploadDocumento: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL", "VALIDADOR_DOCUMENTAL"),
+    canDeleteDocumento: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // ── Ocupações ────────────────────────────────────────────────────────────
-    canWriteOcupacao:  tem("ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
-    canDeleteOcupacao: tem("ADMINISTRADOR_PATRIMONIAL"),
+    canWriteOcupacao:  tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canDeleteOcupacao: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // ── Vistorias (SEMOSP) ───────────────────────────────────────────────────
-    canWriteVistoria:  tem("ADMINISTRADOR_PATRIMONIAL", "VISTORIADOR"),
-    canDeleteVistoria: tem("ADMINISTRADOR_PATRIMONIAL"),
+    canWriteVistoria:  tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VISTORIADOR"),
+    canDeleteVistoria: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // ── Intervenções (SEMOSP / SEPLAN) ───────────────────────────────────────
-    canWriteIntervencao:  tem("ADMINISTRADOR_PATRIMONIAL", "VISTORIADOR", "PLANEJAMENTO"),
-    canDeleteIntervencao: tem("ADMINISTRADOR_PATRIMONIAL"),
+    canWriteIntervencao:  tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VISTORIADOR", "PLANEJAMENTO"),
+    canDeleteIntervencao: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 
     // ── Parecer FUMPH ────────────────────────────────────────────────────────
-    canWriteParecerFumph: tem("ADMINISTRADOR_PATRIMONIAL", "VISTORIADOR"),
+    canWriteParecerFumph: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VISTORIADOR"),
 
     // ── Dados Fiscais (SEMFAZ → VALIDADOR_DOCUMENTAL) ────────────────────────
-    canWriteDadoFiscal: tem("ADMINISTRADOR_PATRIMONIAL", "VALIDADOR_DOCUMENTAL"),
+    canWriteDadoFiscal: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "VALIDADOR_DOCUMENTAL"),
 
     // ── Avaliações Patrimoniais (SEMAD / SEPLAN) ─────────────────────────────
-    canWriteAvaliacaoPatrimonial: tem("ADMINISTRADOR_PATRIMONIAL", "PLANEJAMENTO"),
+    canWriteAvaliacaoPatrimonial: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "PLANEJAMENTO"),
 
     // ── Instrumentos de Uso (SEMAD) ──────────────────────────────────────────
-    canWriteInstrumentoUso: tem("ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canWriteInstrumentoUso: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
 
     // ── Plataforma — exclusivo ADMIN_SISTEMA ─────────────────────────────────
     canManageUsuario:              tem("ADMINISTRADOR_SISTEMA"),
@@ -99,14 +99,13 @@ export function usePermissoes() {
     ),
 
     // ── Rascunho — apenas quem cria imóveis vê o banner ─────────────────────
-    canVerRascunho: tem("ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
+    canVerRascunho: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
 
     // ── Validação por domínio/aba ────────────────────────────────────────────
     // Retorna true se o usuário é VALIDADOR_DOCUMENTAL do órgão responsável
     // pelo domínio informado, ou ADMIN_PATRIMONIAL (valida qualquer domínio).
     // ADMIN_SISTEMA nunca valida.
     canValidarDominio: (dominio: string): boolean => {
-      if (tem("ADMINISTRADOR_PATRIMONIAL")) return true;
       if (!tem("VALIDADOR_DOCUMENTAL"))    return false;
       if (!idOrgao) return false;
 
