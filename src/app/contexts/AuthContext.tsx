@@ -19,7 +19,7 @@ export interface UsuarioLogado {
   siglaOrgao: string | null;
   fotoPerfil: string | null;
   /** Conjunto de "modulo:acao" concedidas pelo admin via tela de permissões */
-  permissoesPerfil: Set<string> | null;
+  permissoesPerfil: string[] | null; // array para sobreviver ao JSON.stringify/parse do localStorage
 }
 
 interface AuthContextValue {
