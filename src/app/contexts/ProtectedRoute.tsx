@@ -49,14 +49,14 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
     permissoesApi.buscarPerfil(usuario.perfil as PerfilUsuario)
       .then((data) => {
-        const conj = new Set<string>();
+        const lista: string[] = [];
         for (const mod of data.modulos) {
           const acoes = ["visualizar", "criar", "editar", "excluir", "validar"] as const;
           for (const acao of acoes) {
-            if (mod[acao]?.concedida) conj.add(`${mod.modulo}:${acao}`);
+            if (mod[acao]?.concedida) lista.push(`${mod.modulo}:${acao}`);
           }
         }
-        atualizarPermissoesPerfil(conj);
+        atualizarPermissoesPerfil(lista);
       })
       .catch(() => {
         // Falha silenciosa — usePermissoes cai no fallback hardcoded

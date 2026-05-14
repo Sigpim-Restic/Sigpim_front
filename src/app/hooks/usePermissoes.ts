@@ -30,14 +30,14 @@ export function usePermissoes() {
   const { usuario } = useAuth();
   const perfil = (usuario?.perfil ?? "") as Perfil;
   const idOrgao = usuario?.idOrgao ?? null;
-  const permissoesPerfil = usuario?.permissoesPerfil ?? null;
+  const permissoesPerfil: string[] | null = usuario?.permissoesPerfil ?? null;
 
   // hardcoded: regras base imutáveis por perfil (fallback de segurança)
   const tem = (...perfis: Perfil[]) => perfis.includes(perfil);
 
   // banco: permissão concedida pelo admin via tela de "Perfis e Permissões"
   const temNoBanco = (modulo: string, acao: string): boolean =>
-    permissoesPerfil?.has(`${modulo}:${acao}`) ?? false;
+    permissoesPerfil?.includes(`${modulo}:${acao}`) ?? false;
 
   // OR: passa se hardcoded OU banco conceder
   const pode = (moduloBanco: string, acaoBanco: string, ...perfisHardcoded: Perfil[]): boolean =>

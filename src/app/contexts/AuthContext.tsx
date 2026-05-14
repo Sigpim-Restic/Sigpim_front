@@ -37,7 +37,7 @@ interface AuthContextValue {
   salvarSessao: (res: LoginResponse) => void;
   atualizarMfa: (ativo: boolean) => void;
   atualizarSiglaOrgao: (sigla: string) => void;
-  atualizarPermissoesPerfil: (perms: Set<string>) => void;
+  atualizarPermissoesPerfil: (perms: string[]) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const atualizarPermissoesPerfil = useCallback((perms: Set<string>) => {
+  const atualizarPermissoesPerfil = useCallback((perms: string[]) => {
     setUsuario((prev) => prev ? { ...prev, permissoesPerfil: perms } : null);
   }, []);
 
