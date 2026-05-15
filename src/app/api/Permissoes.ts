@@ -5,9 +5,7 @@ import type { PerfilUsuario } from "./usuarios";
 
 export interface PermissaoAcaoResponse {
   concedida: boolean;
-  /** Sempre igual a concedida no modelo por perfil. Mantido por compatibilidade. */
   doPerfil: boolean;
-  /** Sempre false no modelo por perfil. Mantido por compatibilidade. */
   grantExtra: boolean;
   concedidaPor: string | null;
   concedidaEm: string | null;
@@ -23,7 +21,16 @@ export interface PermissaoModuloResponse {
 }
 
 export interface PermissoesPerfilResponse {
+  /** Perfil base do enum. */
   perfil: PerfilUsuario;
+  /** Chave efetiva — igual a perfil.name() para padrões, ou chave customizada. */
+  chave: string;
+  /** Nome amigável — null para perfis padrão. */
+  nome: string | null;
+  /** Descrição — null para perfis padrão. */
+  descricao: string | null;
+  /** True se for um perfil customizado. */
+  customizado: boolean;
   modulos: PermissaoModuloResponse[];
 }
 
@@ -32,10 +39,6 @@ export interface PermissaoItem {
   acao: string;
 }
 
-/**
- * Payload de alteração de permissões de um perfil.
- * Permissões são por perfil — todos os usuários do perfil herdam automaticamente.
- */
 export interface PermissaoPerfilRequest {
   conceder: PermissaoItem[];
   revogar: PermissaoItem[];
@@ -44,23 +47,39 @@ export interface PermissaoPerfilRequest {
 // ── API ───────────────────────────────────────────────────────────────────────
 
 export const permissoesApi = {
-  /** Lista permissões de todos os perfis. */
+  /** Lista permissões de todos os perfis (padrão + customizados ativos). */
   listarPerfis(): Promise<PermissoesPerfilResponse[]> {
     return api.get<PermissoesPerfilResponse[]>("/permissoes-perfil");
   },
 
-  /** Permissões de um perfil específico. */
+  /** Permissões de um perfil padrão específico. */
   buscarPerfil(perfil: PerfilUsuario): Promise<PermissoesPerfilResponse> {
     return api.get<PermissoesPerfilResponse>(`/permissoes-perfil/${perfil}`);
   },
 
-  /** Salva alterações de permissões para um perfil. */
+  /** Permissões de um perfil customizado pela chave. */
+  buscarPerfilCustomizado(chave: string): Promise<PermissoesPerfilResponse> {
+    return api.get<PermissoesPerfilResponse>(`/permissoes-perfil/customizado/${chave}`);
+  },
+
+  /** Salva alterações de permissões para um perfil padrão. */
   salvarPerfil(
     perfil: PerfilUsuario,
     request: PermissaoPerfilRequest
   ): Promise<PermissoesPerfilResponse> {
     return api.put<PermissoesPerfilResponse>(
       `/permissoes-perfil/${perfil}`,
+      request
+    );
+  },
+
+  /** Salva alterações de permissões para um perfil customizado. */
+  salvarPerfilCustomizado(
+    chave: string,
+    request: PermissaoPerfilRequest
+  ): Promise<PermissoesPerfilResponse> {
+    return api.put<PermissoesPerfilResponse>(
+      `/permissoes-perfil/customizado/${chave}`,
       request
     );
   },

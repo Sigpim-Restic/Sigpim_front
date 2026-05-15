@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 import {
   Shield, AlertTriangle, Loader2,
-  AlertCircle, Save, ChevronDown, ChevronRight, Info, CheckSquare, Square,
+  AlertCircle, Save, ChevronDown, ChevronRight, Info, CheckSquare, Square, Plus,
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
@@ -81,12 +82,13 @@ function ehPermissaoBase(perfil: PerfilUsuario, modulo: string, acao: string): b
 // ── Componente ────────────────────────────────────────────────────────────────
 
 export function Permissoes() {
+  const navigate = useNavigate();
   const [todos,    setTodos]    = useState<PermissoesPerfilResponse[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [erro,     setErro]     = useState<string | null>(null);
-  const [salvando, setSalvando] = useState<PerfilUsuario | null>(null);
+  const [salvando, setSalvando] = useState<string | null>(null);
 
-  // pending: perfilKey → { "modulo:acao" → boolean (true=conceder, false=revogar) }
+  // pending: chave → { "modulo:acao" → boolean (true=conceder, false=revogar) }
   const [pending, setPending] = useState<Record<string, Record<string, boolean>>>({});
   const [abertos, setAbertos] = useState<Set<string>>(new Set(["ADMINISTRADOR_PATRIMONIAL"]));
 
@@ -104,11 +106,11 @@ export function Permissoes() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
-  const toggleAcordeon = (perfil: string) => {
+  const toggleAcordeon = (chave: string) => {
     setAbertos((prev) => {
       const next = new Set(prev);
-      if (next.has(perfil)) next.delete(perfil);
-      else next.add(perfil);
+      if (next.has(chave)) next.delete(chave);
+      else next.add(chave);
       return next;
     });
   };
@@ -116,65 +118,63 @@ export function Permissoes() {
   // ── Helpers de estado ──────────────────────────────────────────────────────
 
   const getEfetiva = (
-    perfil: string,
+    chave: string,
     modulo: string,
     acao: string,
     perfilData: PermissoesPerfilResponse
   ): boolean => {
-    const chave = `${modulo}:${acao}`;
-    const perfilPending = pending[perfil] ?? {};
-    if (chave in perfilPending) return perfilPending[chave];
+    const k = `${modulo}:${acao}`;
+    const perfilPending = pending[chave] ?? {};
+    if (k in perfilPending) return perfilPending[k];
     const moduloDados = perfilData.modulos.find((m) => m.modulo === modulo);
     const acaoDados = moduloDados?.[acao as keyof typeof moduloDados] as { concedida: boolean } | undefined;
     return acaoDados?.concedida ?? false;
   };
 
-  // ── Handlers de célula, linha e perfil completo ────────────────────────────
+  // ── Handlers ─────────────────────────────────────────────────────────────────
 
   const handleCelulaChange = (
-    perfil: string,
+    chave: string,
     modulo: string,
     acao: string,
     conceder: boolean,
     perfilData: PermissoesPerfilResponse
   ) => {
-    const chave = `${modulo}:${acao}`;
+    const k = `${modulo}:${acao}`;
     const moduloDados = perfilData.modulos.find((m) => m.modulo === modulo);
     const acaoDados = moduloDados?.[acao as keyof typeof moduloDados] as { concedida: boolean } | undefined;
     const original = acaoDados?.concedida ?? false;
 
     setPending((prev) => {
-      const perfilPending = { ...(prev[perfil] ?? {}) };
-      if (conceder === original) delete perfilPending[chave];
-      else perfilPending[chave] = conceder;
-      return { ...prev, [perfil]: perfilPending };
+      const perfilPending = { ...(prev[chave] ?? {}) };
+      if (conceder === original) delete perfilPending[k];
+      else perfilPending[k] = conceder;
+      return { ...prev, [chave]: perfilPending };
     });
   };
 
-  /** Seleciona/desmarca todas as ações de um módulo de uma vez. */
   const handleSelecionarLinha = (
-    perfil: string,
+    chave: string,
     modulo: string,
     marcar: boolean,
     perfilData: PermissoesPerfilResponse
   ) => {
     setPending((prev) => {
-      const perfilPending = { ...(prev[perfil] ?? {}) };
+      const perfilPending = { ...(prev[chave] ?? {}) };
       for (const acao of ACOES_IDS) {
-        const chave = `${modulo}:${acao}`;
+        const k = `${modulo}:${acao}`;
         const moduloDados = perfilData.modulos.find((m) => m.modulo === modulo);
         const acaoDados = moduloDados?.[acao as keyof typeof moduloDados] as { concedida: boolean } | undefined;
         const original = acaoDados?.concedida ?? false;
-        if (marcar === original) delete perfilPending[chave];
-        else perfilPending[chave] = marcar;
+        if (marcar === original) delete perfilPending[k];
+        else perfilPending[k] = marcar;
       }
-      return { ...prev, [perfil]: perfilPending };
+      return { ...prev, [chave]: perfilPending };
     });
   };
 
-  /** Seleciona/desmarca TODAS as permissões do perfil de uma vez. */
   const handleSelecionarTudo = (
-    perfil: string,
+    chave: string,
     marcar: boolean,
     perfilData: PermissoesPerfilResponse
   ) => {
@@ -182,35 +182,42 @@ export function Permissoes() {
       const perfilPending: Record<string, boolean> = {};
       for (const modulo of MODULOS_IDS) {
         for (const acao of ACOES_IDS) {
-          const chave = `${modulo}:${acao}`;
+          const k = `${modulo}:${acao}`;
           const moduloDados = perfilData.modulos.find((m) => m.modulo === modulo);
           const acaoDados = moduloDados?.[acao as keyof typeof moduloDados] as { concedida: boolean } | undefined;
           const original = acaoDados?.concedida ?? false;
-          if (marcar !== original) perfilPending[chave] = marcar;
+          if (marcar !== original) perfilPending[k] = marcar;
         }
       }
-      return { ...prev, [perfil]: perfilPending };
+      return { ...prev, [chave]: perfilPending };
     });
   };
 
-  const handleSalvar = async (perfil: PerfilUsuario) => {
-    const perfilPending = pending[perfil] ?? {};
+  const handleSalvar = async (perfilData: PermissoesPerfilResponse) => {
+    const chave = perfilData.chave;
+    const perfilPending = pending[chave] ?? {};
     if (Object.keys(perfilPending).length === 0) return;
 
-    setSalvando(perfil);
+    setSalvando(chave);
     const conceder: PermissaoItem[] = [];
     const revogar:  PermissaoItem[] = [];
-    for (const [chave, flag] of Object.entries(perfilPending)) {
-      const [modulo, acao] = chave.split(":");
+    for (const [k, flag] of Object.entries(perfilPending)) {
+      const [modulo, acao] = k.split(":");
       if (flag) conceder.push({ modulo, acao });
       else      revogar.push({ modulo, acao });
     }
 
     try {
-      const novo = await permissoesApi.salvarPerfil(perfil, { conceder, revogar });
-      setTodos((prev) => prev.map((p) => p.perfil === perfil ? novo : p));
-      setPending((prev) => { const n = { ...prev }; delete n[perfil]; return n; });
-      toast.success(`Permissões do perfil ${PERFIL_META[perfil]?.nome} salvas.`);
+      let novo: PermissoesPerfilResponse;
+      if (perfilData.customizado) {
+        novo = await permissoesApi.salvarPerfilCustomizado(chave, { conceder, revogar });
+      } else {
+        novo = await permissoesApi.salvarPerfil(perfilData.perfil, { conceder, revogar });
+      }
+      setTodos((prev) => prev.map((p) => p.chave === chave ? novo : p));
+      setPending((prev) => { const n = { ...prev }; delete n[chave]; return n; });
+      const nome = perfilData.nome ?? PERFIL_META[perfilData.perfil]?.nome ?? chave;
+      toast.success(`Permissões do perfil "${nome}" salvas.`);
     } catch (e: unknown) {
       toast.error((e as Error)?.message ?? "Erro ao salvar.");
     } finally {
@@ -218,8 +225,8 @@ export function Permissoes() {
     }
   };
 
-  const descartarPerfil = (perfil: string) => {
-    setPending((prev) => { const n = { ...prev }; delete n[perfil]; return n; });
+  const descartarPerfil = (chave: string) => {
+    setPending((prev) => { const n = { ...prev }; delete n[chave]; return n; });
   };
 
   if (loading) return (
@@ -236,6 +243,10 @@ export function Permissoes() {
     </div>
   );
 
+  // Separar padrões de customizados
+  const perfisPadrao = todos.filter((p) => !p.customizado);
+  const perfisCustomizados = todos.filter((p) => p.customizado);
+
   return (
     <div className="mx-auto max-w-5xl space-y-4">
 
@@ -250,6 +261,14 @@ export function Permissoes() {
             Configure o que cada perfil pode fazer. Todos os usuários de um perfil herdam automaticamente as mesmas permissões.
           </p>
         </div>
+        <Button
+          onClick={() => navigate("/dashboard/permissoes/customizados")}
+          variant="outline"
+          className="gap-1.5"
+        >
+          <Plus className="h-4 w-4" />
+          Perfis Customizados
+        </Button>
       </div>
 
       <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-xs text-blue-800">
@@ -258,23 +277,23 @@ export function Permissoes() {
         <AlertTriangle className="inline h-3.5 w-3.5 text-yellow-600" /> são críticos para segurança do sistema.</span>
       </div>
 
-      {/* Um accordion por perfil */}
-      {todos.map((perfilData) => {
+      {/* Perfis padrão */}
+      {perfisPadrao.map((perfilData) => {
         const meta          = PERFIL_META[perfilData.perfil];
-        const isAberto      = abertos.has(perfilData.perfil);
-        const perfilPending = pending[perfilData.perfil] ?? {};
+        const chave         = perfilData.chave;
+        const isAberto      = abertos.has(chave);
+        const perfilPending = pending[chave] ?? {};
         const temMudancas   = Object.keys(perfilPending).length > 0;
-        const isSalvando    = salvando === perfilData.perfil;
+        const isSalvando    = salvando === chave;
         const imutavel      = meta?.imutavel === true;
 
         return (
-          <div key={perfilData.perfil}
-            className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div key={chave} className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
 
             {/* Cabeçalho do accordion */}
             <div
               className="flex items-center justify-between px-5 py-3.5 cursor-pointer hover:bg-gray-50 select-none"
-              onClick={() => toggleAcordeon(perfilData.perfil)}
+              onClick={() => toggleAcordeon(chave)}
             >
               <div className="flex items-center gap-3">
                 {isAberto
@@ -285,9 +304,7 @@ export function Permissoes() {
                     <span className="font-semibold text-gray-900">{meta?.nome ?? perfilData.perfil}</span>
                     <Badge className={`text-xs border ${meta?.cor ?? ""}`}>{perfilData.perfil}</Badge>
                     {imutavel && (
-                      <Badge className="text-xs bg-red-50 text-red-600 border-red-200">
-                        Imutável
-                      </Badge>
+                      <Badge className="text-xs bg-red-50 text-red-600 border-red-200">Imutável</Badge>
                     )}
                     {temMudancas && !imutavel && (
                       <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-300">
@@ -299,21 +316,17 @@ export function Permissoes() {
                 </div>
               </div>
 
-              {/* Ações do header — visíveis apenas se aberto e editável */}
               {isAberto && !imutavel && (
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                  {/* Atalhos selecionar tudo / limpar tudo */}
                   <Button variant="outline" size="sm"
                     className="h-7 text-xs text-gray-600 gap-1"
-                    title="Conceder todas as permissões deste perfil"
-                    onClick={() => handleSelecionarTudo(perfilData.perfil, true, perfilData)}
+                    onClick={() => handleSelecionarTudo(chave, true, perfilData)}
                     disabled={isSalvando}>
                     <CheckSquare className="h-3.5 w-3.5" />Todas
                   </Button>
                   <Button variant="outline" size="sm"
                     className="h-7 text-xs text-gray-600 gap-1"
-                    title="Revogar todas as permissões deste perfil"
-                    onClick={() => handleSelecionarTudo(perfilData.perfil, false, perfilData)}
+                    onClick={() => handleSelecionarTudo(chave, false, perfilData)}
                     disabled={isSalvando}>
                     <Square className="h-3.5 w-3.5" />Nenhuma
                   </Button>
@@ -323,13 +336,13 @@ export function Permissoes() {
                       <div className="w-px h-5 bg-gray-200 mx-1" />
                       <Button variant="outline" size="sm"
                         className="h-7 text-xs text-gray-600"
-                        onClick={() => descartarPerfil(perfilData.perfil)}
+                        onClick={() => descartarPerfil(chave)}
                         disabled={isSalvando}>
                         Descartar
                       </Button>
                       <Button size="sm"
                         className="h-7 text-xs bg-[#1351B4] hover:bg-[#0c3b8d]"
-                        onClick={() => handleSalvar(perfilData.perfil)}
+                        onClick={() => handleSalvar(perfilData)}
                         disabled={isSalvando}>
                         {isSalvando
                           ? <><Loader2 className="mr-1.5 h-3 w-3 animate-spin" />Salvando...</>
@@ -341,7 +354,6 @@ export function Permissoes() {
               )}
             </div>
 
-            {/* Aviso de perfil imutável */}
             {isAberto && imutavel && (
               <div className="border-t border-gray-100 px-5 py-3 bg-red-50 flex items-center gap-2 text-xs text-red-700">
                 <AlertCircle className="h-4 w-4 shrink-0" />
@@ -352,7 +364,6 @@ export function Permissoes() {
               </div>
             )}
 
-            {/* Tabela de permissões */}
             {isAberto && (
               <div className="border-t border-gray-100 overflow-x-auto">
                 <table className="w-full text-sm">
@@ -360,16 +371,12 @@ export function Permissoes() {
                     <tr className="bg-gray-50 border-b border-gray-100">
                       <th className="text-left px-5 py-2.5 font-medium text-gray-600 w-64">Módulo</th>
                       {ACOES.map((a) => (
-                        <th key={a.id} className="text-center px-3 py-2.5 font-medium text-gray-600"
-                          title={a.tooltip}>
+                        <th key={a.id} className="text-center px-3 py-2.5 font-medium text-gray-600" title={a.tooltip}>
                           {a.nome}
                         </th>
                       ))}
-                      {/* Coluna de atalho por linha */}
                       {!imutavel && (
-                        <th className="text-center px-3 py-2.5 font-medium text-gray-400 text-xs w-20">
-                          Linha
-                        </th>
+                        <th className="text-center px-3 py-2.5 font-medium text-gray-400 text-xs w-20">Linha</th>
                       )}
                     </tr>
                   </thead>
@@ -377,10 +384,10 @@ export function Permissoes() {
                     {perfilData.modulos.map((moduloData, idx) => {
                       const mmeta = MODULOS_META[moduloData.modulo];
                       const todasLinha = ACOES_IDS.every((acao) =>
-                        getEfetiva(perfilData.perfil, moduloData.modulo, acao, perfilData)
+                        getEfetiva(chave, moduloData.modulo, acao, perfilData)
                       );
                       const nenhumaLinha = ACOES_IDS.every((acao) =>
-                        !getEfetiva(perfilData.perfil, moduloData.modulo, acao, perfilData)
+                        !getEfetiva(chave, moduloData.modulo, acao, perfilData)
                       );
 
                       return (
@@ -399,12 +406,9 @@ export function Permissoes() {
                             </div>
                           </td>
                           {ACOES.map((acao) => {
-                            const chave    = `${moduloData.modulo}:${acao.id}`;
-                            const pendente = chave in (pending[perfilData.perfil] ?? {})
-                              ? (pending[perfilData.perfil] ?? {})[chave]
-                              : null;
-                            const efetiva  = getEfetiva(perfilData.perfil, moduloData.modulo, acao.id, perfilData);
-
+                            const k = `${moduloData.modulo}:${acao.id}`;
+                            const pendente = k in (pending[chave] ?? {}) ? (pending[chave] ?? {})[k] : null;
+                            const efetiva  = getEfetiva(chave, moduloData.modulo, acao.id, perfilData);
                             const eBase = ehPermissaoBase(perfilData.perfil, moduloData.modulo, acao.id);
                             const bloqueado = imutavel || eBase;
                             return (
@@ -412,7 +416,7 @@ export function Permissoes() {
                                 <button
                                   disabled={bloqueado}
                                   onClick={() => !bloqueado && handleCelulaChange(
-                                    perfilData.perfil, moduloData.modulo, acao.id, !efetiva, perfilData)}
+                                    chave, moduloData.modulo, acao.id, !efetiva, perfilData)}
                                   title={
                                     imutavel ? "Imutável" :
                                     eBase ? "Permissão base — não pode ser revogada" :
@@ -422,9 +426,7 @@ export function Permissoes() {
                                     "inline-flex h-7 w-7 items-center justify-center rounded-full transition-all border-2 text-xs font-bold",
                                     bloqueado ? "cursor-not-allowed" : "",
                                     eBase && efetiva ? "opacity-100 bg-green-100 text-green-700 border-green-400" : "",
-                                    !bloqueado && pendente !== null
-                                      ? "ring-2 ring-amber-400 ring-offset-1"
-                                      : "",
+                                    !bloqueado && pendente !== null ? "ring-2 ring-amber-400 ring-offset-1" : "",
                                     !bloqueado && efetiva
                                       ? "bg-green-100 text-green-700 border-green-400 hover:bg-red-50 hover:border-red-400 hover:text-red-600"
                                       : !bloqueado
@@ -437,12 +439,10 @@ export function Permissoes() {
                               </td>
                             );
                           })}
-                          {/* Botão atalho: selecionar/limpar linha */}
                           {!imutavel && (
                             <td className="px-3 py-3 text-center">
                               <button
-                                onClick={() => handleSelecionarLinha(
-                                  perfilData.perfil, moduloData.modulo, !todasLinha, perfilData)}
+                                onClick={() => handleSelecionarLinha(chave, moduloData.modulo, !todasLinha, perfilData)}
                                 title={todasLinha ? "Revogar todas desta linha" : "Conceder todas desta linha"}
                                 className={[
                                   "inline-flex h-6 w-6 items-center justify-center rounded transition-all border text-xs",
@@ -466,6 +466,23 @@ export function Permissoes() {
           </div>
         );
       })}
+
+      {/* Banner de perfis customizados */}
+      {perfisCustomizados.length > 0 && (
+        <div className="rounded-lg border border-dashed border-[#1351B4]/30 bg-blue-50/30 px-5 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-[#1351B4]">
+              {perfisCustomizados.length} perfil(is) customizado(s) ativo(s)
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Gerencie e configure as permissões dos perfis customizados criados pelo Admin do Sistema.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/permissoes/customizados")}>
+            Gerenciar
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

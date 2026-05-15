@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Shield, Bell, Tag, Scale, Info, MapPin, RefreshCw, Layers, Users, Loader2, Save } from "lucide-react";
+import { Shield, Bell, Tag, Scale, Info, MapPin, RefreshCw, Layers, Users, Loader2, Save, Building2, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -70,6 +70,30 @@ export function Configuracoes() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <p className="text-sm text-gray-500">Configurações do sistema — restrito ao Administrador do Sistema (SIN/SEMAD)</p>
+
+      {/* Estrutura Organizacional */}
+      <Card className="p-6">
+        <div className="mb-5 flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-[#1351B4]" />
+          <h3 className="text-sm font-semibold text-gray-900">Estrutura Organizacional</h3>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Gerencie órgãos, secretarias e departamentos. Como o SIGPIM é político-administrativo,
+          órgãos podem ser criados, fundidos ou extintos a qualquer momento.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            onClick={() => navigate("/dashboard/configuracoes/orgaos")}
+            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-left hover:bg-blue-50 hover:border-blue-300 transition-colors"
+          >
+            <Building2 className="h-5 w-5 text-[#1351B4] shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Órgãos e Secretarias</p>
+              <p className="text-xs text-gray-500">SEMAD, SEPLAN, FUMPH e outros — criar, extinguir ou restabelecer</p>
+            </div>
+          </button>
+        </div>
+      </Card>
 
       {/* Catálogos Administrativos */}
       <Card className="p-6">
@@ -142,10 +166,10 @@ export function Configuracoes() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            { label: "Versão",             value: "2.0.0 — Fase 2" },
+            { label: "Versão",             value: "2.0.0 — Fase 3" },
             { label: "Ambiente",           value: "Produção" },
             { label: "Banco de dados",     value: "PostgreSQL 18 + PostGIS" },
-            { label: "Última atualização", value: "01/05/2026" },
+            { label: "Última atualização", value: "15/05/2026" },
           ].map((i) => (
             <div key={i.label} className="rounded-lg bg-gray-50 px-4 py-3">
               <p className="text-xs text-gray-500">{i.label}</p>
@@ -277,7 +301,6 @@ export function Configuracoes() {
           </div>
         </div>
       </Card>
-
 
     </div>
   );

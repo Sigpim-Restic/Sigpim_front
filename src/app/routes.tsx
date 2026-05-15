@@ -11,6 +11,8 @@ import { CadastroUsuario } from "./pages/admin/CadastroUsuario";
 import { Permissoes } from "./pages/admin/Permissoes";
 import { SucessoUsuario } from "./pages/admin/SucessoUsuario";
 import { GerenciarPessoas } from "./pages/admin/GerenciarPessoas";
+import { GerenciarOrgaos } from "./pages/admin/GerenciarOrgaos";
+import { GerenciarPerfisCustomizados } from "./pages/admin/GerenciarPerfisCustomizados";
 import { ListaImoveis } from "./pages/imoveis/ListaImoveis";
 import { DetalhesImovel } from "./pages/imoveis/DetalhesImovel";
 import { EditarImovel } from "./pages/imoveis/EditarImovel";
@@ -143,9 +145,15 @@ export const router = createBrowserRouter([
       { path: "mapa",                    Component: MapaGIS },
       { path: "usuarios",                Component: ListaUsuarios },
       { path: "usuarios/novo",           Component: CadastroUsuario },
-      { path: "permissoes", Component: Permissoes },
       { path: "usuarios/sucesso",        Component: SucessoUsuario },
+
+      // ── Permissões ──────────────────────────────────────────────────────────
+      { path: "permissoes",                   Component: Permissoes },
+      { path: "permissoes/customizados",       Component: GerenciarPerfisCustomizados },
+
+      // ── Configurações ───────────────────────────────────────────────────────
       { path: "configuracoes",                         Component: Configuracoes },
+      { path: "configuracoes/orgaos",                  Component: GerenciarOrgaos },
       { path: "configuracoes/tipos-imovel",            Component: GerenciarTiposImovel },
       { path: "configuracoes/situacoes-dominiais",     Component: GerenciarSituacoesDominiais },
       { path: "configuracoes/origens-cadastro",        Component: GerenciarOrigensCadastro },
