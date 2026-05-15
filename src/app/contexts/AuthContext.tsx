@@ -73,9 +73,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
   const [loading, setLoading] = useState(false);
 
+  // Marca esta aba como ativa ao montar (refresh ou abertura direta)
+  // sessionStorage some automaticamente quando a aba e fechada
+  React.useEffect(() => {
+    if (localStorage.getItem(TOKEN_KEY)) {
+      sessionStorage.setItem("sigpim_tab_ativa", "1");
+    }
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USUARIO_KEY);
+    sessionStorage.removeItem("sigpim_tab_ativa");
     setToken(null);
     setUsuario(null);
   }, []);
@@ -84,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const u = resParaUsuario(res);
     localStorage.setItem(TOKEN_KEY,   res.accessToken!);
     localStorage.setItem(USUARIO_KEY, JSON.stringify(u));
+    sessionStorage.setItem("sigpim_tab_ativa", "1");
     setToken(res.accessToken!);
     setUsuario(u);
   }, []);
@@ -128,20 +138,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (data: LoginRequest) => {
     setLoading(true);
     try {
+      // Bloqueia login apenas se ha uma aba ativamente aberta com sessao
+      // sessionStorage e por aba e some quando a aba e fechada
       const tokenExistente = localStorage.getItem(TOKEN_KEY);
       const usuarioExistente = localStorage.getItem(USUARIO_KEY);
-      if (tokenExistente && usuarioExistente) {
+      const tabAtiva = sessionStorage.getItem("sigpim_tab_ativa");
+      if (tokenExistente && usuarioExistente && tabAtiva) {
         try {
           const u = JSON.parse(usuarioExistente);
           const nome = u?.nomeCompleto || u?.email || "outro usuario";
           throw new Error(`Ja existe uma sessao ativa para ${nome}. Faca logout antes de entrar com outra conta.`);
         } catch (parseErr) {
-          if (parseErr instanceof SyntaxError) {
-            localStorage.removeItem(TOKEN_KEY);
-            localStorage.removeItem(USUARIO_KEY);
-          } else {
-            throw parseErr;
-          }
+          if (!(parseErr instanceof SyntaxError)) throw parseErr;
         }
       }
       const res = await authApi.login(data);
