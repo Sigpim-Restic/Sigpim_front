@@ -83,6 +83,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Se outra aba mudar o token (login/logout), redireciona esta aba para login
+  // Evita que esta aba "vire" silenciosamente outra conta no proximo F5
+  React.useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key !== TOKEN_KEY) return;
+      const naPaginaDeLogin = window.location.pathname === "/login"
+        || window.location.pathname === "/";
+      if (!naPaginaDeLogin) {
+        sessionStorage.removeItem("sigpim_tab_ativa");
+        window.location.replace("/login");
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USUARIO_KEY);

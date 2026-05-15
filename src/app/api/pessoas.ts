@@ -7,7 +7,6 @@ export interface PessoaResponse {
   tipoPessoa: TipoPessoa;
   nome: string;
   cpfCnpj: string | null;
-  rg: string | null;
   inscricaoMunicipal: string | null;
   numeroCredor: string | null;
   logradouro: string | null;
@@ -31,7 +30,6 @@ export interface PessoaRequest {
   tipoPessoa: TipoPessoa;
   nome: string;
   cpfCnpj?: string;
-  rg?: string;
   inscricaoMunicipal?: string;
   numeroCredor?: string;
   logradouro?: string;

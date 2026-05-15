@@ -70,7 +70,6 @@ function ModalPessoa({ aberto, editando, onFechar, onSalvo }: ModalPessoaProps) 
           tipoPessoa:       editando.tipoPessoa,
           nome:             editando.nome,
           cpfCnpj:          editando.cpfCnpj ?? undefined,
-          rg:               editando.rg ?? undefined,
           inscricaoMunicipal: editando.inscricaoMunicipal ?? undefined,
           numeroCredor:     editando.numeroCredor ?? undefined,
           logradouro:       editando.logradouro ?? undefined,
@@ -142,7 +141,7 @@ function ModalPessoa({ aberto, editando, onFechar, onSalvo }: ModalPessoaProps) 
             </div>
           </div>
 
-          {/* CPF/CNPJ + RG */}
+          {/* CPF/CNPJ + Inscricao Municipal (PJ apenas) */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs text-gray-600">
@@ -151,15 +150,15 @@ function ModalPessoa({ aberto, editando, onFechar, onSalvo }: ModalPessoaProps) 
               <Input value={form.cpfCnpj ?? ""} onChange={(e) => set("cpfCnpj", e.target.value)}
                 placeholder={form.tipoPessoa === "PF" ? "000.000.000-00" : "00.000.000/0000-00"} />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-gray-600">
-                {form.tipoPessoa === "PF" ? "RG" : "Inscrição Municipal"}
-              </Label>
-              <Input
-                value={form.tipoPessoa === "PF" ? (form.rg ?? "") : (form.inscricaoMunicipal ?? "")}
-                onChange={(e) => set(form.tipoPessoa === "PF" ? "rg" : "inscricaoMunicipal", e.target.value)}
-                placeholder={form.tipoPessoa === "PF" ? "Documento de identidade" : "Inscrição municipal"} />
-            </div>
+            {form.tipoPessoa !== "PF" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-gray-600">Inscrição Municipal</Label>
+                <Input
+                  value={form.inscricaoMunicipal ?? ""}
+                  onChange={(e) => set("inscricaoMunicipal", e.target.value)}
+                  placeholder="Inscrição municipal" />
+              </div>
+            )}
           </div>
 
           {/* Nº Credor + Contato */}
