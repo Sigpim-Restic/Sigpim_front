@@ -125,19 +125,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Sincroniza sessao entre abas: token mudou em outra aba -> redireciona para login
-  React.useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key !== TOKEN_KEY) return;
-      window.location.replace("/login");
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
-
   const login = useCallback(async (data: LoginRequest) => {
     setLoading(true);
     try {
+      const tokenExistente = localStorage.getItem(TOKEN_KEY);
+      const usuarioExistente = localStorage.getItem(USUARIO_KEY);
+      if (tokenExistente && usuarioExistente) {
+        try {
+          const u = JSON.parse(usuarioExistente);
+          const nome = u?.nomeCompleto || u?.email || "outro usuario";
+          throw new Error(`Ja existe uma sessao ativa para ${nome}. Faca logout antes de entrar com outra conta.`);
+        } catch (parseErr) {
+          if (parseErr instanceof SyntaxError) {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(USUARIO_KEY);
+          } else {
+            throw parseErr;
+          }
+        }
+      }
       const res = await authApi.login(data);
 
       if (res.mfaRequired && res.mfaToken) {
