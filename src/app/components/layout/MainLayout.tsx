@@ -165,13 +165,20 @@ interface AlertaItem {
 }
 
 function filtrarMenu(items: MenuItem[], perfil: string, permissoesPerfil: string[] | null): MenuItem[] {
-  const temNoBanco = (permissao: string | undefined) =>
-    !!permissao && (permissoesPerfil?.includes(permissao) ?? false);
+  // null = permissoes ainda nao carregadas; [] = carregadas, nenhuma concedida
+  const bancoPronto = permissoesPerfil !== null;
 
   const itemVisivel = (item: MenuItem | SubItem): boolean => {
     if (!item.perfisPermitidos) return true;
-    if (item.perfisPermitidos.includes(perfil as Perfil)) return true;
-    return temNoBanco(item.permissaoBanco);
+
+    if (item.permissaoBanco && bancoPronto) {
+      // Banco carregado e item tem permissao configuravel:
+      // banco prevalece sobre hardcoded em ambos os sentidos
+      return permissoesPerfil!.includes(item.permissaoBanco);
+    }
+
+    // Sem permissaoBanco ou banco ainda nao carregado: usa hardcoded
+    return item.perfisPermitidos.includes(perfil as Perfil);
   };
 
   return items
