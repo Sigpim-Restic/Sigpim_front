@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useCallback } from "react";
 import { useNavigate, useBlocker } from "react-router";
 import { ArrowLeft, ArrowRight, Save, CheckCircle2 } from "lucide-react";
 import { Button } from "../ui/button";
@@ -34,23 +34,17 @@ interface WizardLayoutProps {
 
 export function WizardLayout({ currentStep, children, onNext, onBack, salvando, nextDisabled }: WizardLayoutProps) {
   const navigate = useNavigate();
-  const { salvarRascunhoManual } = useCadastroImovel();
+  const { salvarRascunhoManual, temDadosPreenchidos } = useCadastroImovel();
   const [rascunhoSalvo, setRascunhoSalvo] = useState(false);
-  const [temDadosNaoSalvos, setTemDadosNaoSalvos] = useState(false);
-  const montadoRef = useRef(false);
 
-  useEffect(() => {
-    if (!montadoRef.current) { montadoRef.current = true; return; }
-    setTemDadosNaoSalvos(true);
-  }, [currentStep]);
 
   const blocker = useBlocker(
     useCallback(({ currentLocation, nextLocation }) => {
       const dentroDoWizard = nextLocation.pathname.startsWith("/dashboard/imoveis/novo");
       const indo_para_sucesso = nextLocation.pathname.includes("/sucesso");
       if (dentroDoWizard || indo_para_sucesso) return false;
-      return temDadosNaoSalvos;
-    }, [temDadosNaoSalvos])
+      return temDadosPreenchidos;
+    }, [temDadosPreenchidos])
   );
 
   const handleBack = () => {
@@ -75,7 +69,6 @@ export function WizardLayout({ currentStep, children, onNext, onBack, salvando, 
 
   const handleConfirmarSaida = () => {
     salvarRascunhoManual();
-    setTemDadosNaoSalvos(false);
     blocker.proceed?.();
   };
 

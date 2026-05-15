@@ -93,6 +93,7 @@ interface Ctx {
   resetar: () => void;
   salvarRascunhoManual: () => void;
   temRascunho: boolean;
+  temDadosPreenchidos: boolean;
 }
 
 const Ctx = createContext<Ctx | null>(null);
@@ -280,6 +281,17 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
     }
   }, [userId, etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8, arquivos, resetar]);
 
+  const temDadosPreenchidos =
+    JSON.stringify(etapa1) !== JSON.stringify(e1) ||
+    JSON.stringify(etapa2) !== JSON.stringify(e2) ||
+    JSON.stringify(etapa3) !== JSON.stringify(e3) ||
+    JSON.stringify(etapa4) !== JSON.stringify(e4) ||
+    JSON.stringify(etapa5) !== JSON.stringify(e5) ||
+    JSON.stringify(etapa6) !== JSON.stringify(e6) ||
+    JSON.stringify(etapa7) !== JSON.stringify(e7) ||
+    JSON.stringify(etapa8) !== JSON.stringify(e8) ||
+    arquivos.length > 0;
+
   return (
     <Ctx.Provider value={{
       etapa1, etapa2, etapa3, etapa4, etapa5, etapa6, etapa7, etapa8,
@@ -288,6 +300,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
       setEtapa6, setEtapa7, setEtapa8, setArquivos,
       finalizar, resetar, salvarRascunhoManual,
       temRascunho: carregarRascunho(userId) !== null,
+      temDadosPreenchidos,
     }}>
       {children}
     </Ctx.Provider>
