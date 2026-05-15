@@ -73,10 +73,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
   const [loading, setLoading] = useState(false);
 
-  // Marca esta aba como ativa ao montar (refresh ou abertura direta)
-  // sessionStorage some automaticamente quando a aba e fechada
+  // Marca aba como ativa apenas se ja estiver no dashboard (nao na pagina de login)
   React.useEffect(() => {
-    if (localStorage.getItem(TOKEN_KEY)) {
+    const temToken = !!localStorage.getItem(TOKEN_KEY);
+    const naPaginaDeLogin = window.location.pathname === "/login"
+      || window.location.pathname === "/";
+    if (temToken && !naPaginaDeLogin) {
       sessionStorage.setItem("sigpim_tab_ativa", "1");
     }
   }, []);
