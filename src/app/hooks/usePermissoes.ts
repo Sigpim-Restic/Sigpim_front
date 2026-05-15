@@ -87,7 +87,8 @@ export function usePermissoes() {
     canWriteInstrumentoUso: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL", "CADASTRADOR_SETORIAL"),
 
     // ── Plataforma — exclusivo ADMIN_SISTEMA ─────────────────────────────────
-    canManageUsuario:              pode("usuarios", "visualizar", "ADMINISTRADOR_SISTEMA"),
+    canReadUsuario:                pode("usuarios", "visualizar", "ADMINISTRADOR_SISTEMA"),
+    canManageUsuario:              tem("ADMINISTRADOR_SISTEMA"),
     canManageCatalogo:             tem("ADMINISTRADOR_SISTEMA"),
     canManageTipoImovel:           tem("ADMINISTRADOR_SISTEMA"),
     canManageSituacaoDominial:     tem("ADMINISTRADOR_SISTEMA"),

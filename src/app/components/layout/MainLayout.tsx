@@ -134,7 +134,6 @@ const menuItems: MenuItem[] = [
     label: "Perfis e Permissões",
     icon:  Shield,
     perfisPermitidos: ["ADMINISTRADOR_SISTEMA"],
-    permissaoBanco: "usuarios:visualizar",
   },
   {
     path:  "/dashboard/configuracoes",
