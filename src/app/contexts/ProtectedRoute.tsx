@@ -41,6 +41,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       });
   }, [autenticado, usuario?.idOrgao, usuario?.siglaOrgao, atualizarSiglaOrgao]);
 
+  // Reseta o flag quando o perfil muda (ex: logout + login com outro usuário)
+  useEffect(() => {
+    permissoesCarregadas.current = false;
+  }, [usuario?.perfil]);
+
   // Busca permissões do perfil do usuário e armazena no contexto
   // Executado uma vez por sessão — resultado usado como OR com regras hardcoded
   useEffect(() => {

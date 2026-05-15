@@ -118,11 +118,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const atualizarPermissoesPerfil = useCallback((perms: string[]) => {
     setUsuario((prev) => {
-    if (!prev) return prev;
-    const atualizado = { ...prev, permissoesPerfil: perms };
-    localStorage.setItem(USUARIO_KEY, JSON.stringify(atualizado));
-    return atualizado;
-  });
+      if (!prev) return prev;
+      const atualizado = { ...prev, permissoesPerfil: perms };
+      localStorage.setItem(USUARIO_KEY, JSON.stringify(atualizado));
+      return atualizado;
+    });
   }, []);
 
   const login = useCallback(async (data: LoginRequest) => {
