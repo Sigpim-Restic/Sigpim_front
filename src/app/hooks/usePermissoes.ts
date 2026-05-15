@@ -52,8 +52,8 @@ export function usePermissoes() {
 
     // ── Imóveis — Ciclo de status ────────────────────────────────────────────
     // P → V: ADMIN_SISTEMA e VALIDADOR_DOCUMENTAL validam/recusam
-    canValidarImovel:       tem("ADMINISTRADOR_SISTEMA", "VALIDADOR_DOCUMENTAL"),
-    canRecusarValidacao:    tem("ADMINISTRADOR_SISTEMA", "VALIDADOR_DOCUMENTAL"),
+    canValidarImovel:       pode("imoveis", "validar", "ADMINISTRADOR_SISTEMA", "VALIDADOR_DOCUMENTAL"),
+    canRecusarValidacao:    pode("imoveis", "validar", "ADMINISTRADOR_SISTEMA", "VALIDADOR_DOCUMENTAL"),
     // V → G: ADMIN_SISTEMA e ADMIN_PATRIMONIAL promovem para gestão plena
     canPromoverGestaoPlena: tem("ADMINISTRADOR_SISTEMA", "ADMINISTRADOR_PATRIMONIAL"),
 

@@ -127,18 +127,21 @@ const menuItems: MenuItem[] = [
     label: "Usuários e Perfis",
     icon:  Users,
     perfisPermitidos: ["ADMINISTRADOR_SISTEMA"],
+    permissaoBanco: "usuarios:visualizar",
   },
   {
     path:  "/dashboard/permissoes",
     label: "Perfis e Permissões",
     icon:  Shield,
     perfisPermitidos: ["ADMINISTRADOR_SISTEMA"],
+    permissaoBanco: "usuarios:visualizar",
   },
   {
     path:  "/dashboard/configuracoes",
     label: "Configurações",
     icon:  Settings,
     perfisPermitidos: ["ADMINISTRADOR_SISTEMA"],
+    permissaoBanco: "configuracoes:visualizar",
   },
 ];
 
@@ -182,7 +185,6 @@ function filtrarMenu(items: MenuItem[], perfil: string, permissoesPerfil: string
       };
     });
 }
-
 // ── Componente principal ───────────────────────────────────────────────────────
 
 export function MainLayout() {
