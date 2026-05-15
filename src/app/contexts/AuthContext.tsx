@@ -125,23 +125,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Sincroniza estado entre abas: se outra aba fizer login/logout,
-  // esta aba atualiza imediatamente para evitar sessoes conflitantes
+  // Sincroniza sessao entre abas: token mudou em outra aba -> redireciona para login
   React.useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === TOKEN_KEY) {
-        const novoToken = e.newValue;
-        const usuarioRaw = localStorage.getItem(USUARIO_KEY);
-        if (!novoToken) {
-          // Outra aba fez logout
-          setToken(null);
-          setUsuario(null);
-        } else {
-          // Outra aba fez login (possivelmente outro usuario)
-          setToken(novoToken);
-          try { setUsuario(usuarioRaw ? JSON.parse(usuarioRaw) : null); } catch {}
-        }
-      }
+      if (e.key !== TOKEN_KEY) return;
+      window.location.replace("/login");
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
