@@ -97,10 +97,13 @@ export function ListaUsuarios() {
   const carregar = useCallback(() => {
     setLoading(true);
     setErro(null);
+    const deletadosPromise = perm.canManageUsuario
+      ? usuariosApi.listarDeletados()
+      : Promise.resolve([] as UsuarioResponse[]);
     Promise.all([
       usuariosApi.listar(),
       usuariosApi.listarInativos(),
-      usuariosApi.listarDeletados(),
+      deletadosPromise,
     ])
       .then(([todos, pendentes, excluidos]) => {
         setUsuarios(todos.filter((u) => u.ativo));
@@ -109,7 +112,7 @@ export function ListaUsuarios() {
       })
       .catch((e) => setErro(e.message ?? "Erro ao carregar usuários."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [perm.canManageUsuario]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -153,12 +156,13 @@ export function ListaUsuarios() {
     });
   };
 
-  // Carregar pendentes de voto ao montar
+  // Carregar pendentes de voto ao montar — apenas admin
   useEffect(() => {
+    if (!perm.canManageUsuario) return;
     desativacaoAdminApi.listarPendentes()
       .then(setPendentesVoto)
       .catch(() => {});
-  }, []);
+  }, [perm.canManageUsuario]);
 
   const handleDesativarAdmin = async (u: UsuarioResponse) => {
     setModalDesativacaoAdmin({ aberto: true, usuario: u, solicitacaoExistente: null, carregando: true });
