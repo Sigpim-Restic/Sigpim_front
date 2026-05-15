@@ -31,7 +31,6 @@ import type { PerfilUsuario } from "../../api/usuarios";
 
 // ── Meta ──────────────────────────────────────────────────────────────────────
 
-// "DO_ZERO" é um valor sentinela interno do UI — nunca vai para a API
 const DO_ZERO = "__DO_ZERO__";
 
 const PERFIS_BASE: { value: PerfilUsuario | typeof DO_ZERO; label: string; descricao: string; destaque?: boolean }[] = [
@@ -85,7 +84,6 @@ const formVazio: FormState = {
   aberto: false, modo: "criar", id: null, nome: "", descricao: "", perfilBase: "",
 };
 
-// Badge do perfil base
 function BaseLabel({ perfil }: { perfil: PerfilCustomizadoResponse }) {
   if (!perfil.perfilBase) {
     return (
@@ -109,6 +107,8 @@ export function GerenciarPerfisCustomizados() {
 
   const [perfis,      setPerfis]      = useState<PerfilCustomizadoResponse[]>([]);
   const [permissoes,  setPermissoes]  = useState<Record<string, PermissoesPerfilResponse>>({});
+  // "carregados" rastreia quais chaves já foram buscadas (mesmo que vazias ou com erro)
+  const [carregados,  setCarregados]  = useState<Set<string>>(new Set());
   const [expanded,    setExpanded]    = useState<Set<number>>(new Set());
   const [loading,     setLoading]     = useState(true);
   const [erro,        setErro]        = useState<string | null>(null);
@@ -136,11 +136,31 @@ export function GerenciarPerfisCustomizados() {
   useEffect(() => { carregar(); }, [carregar]);
 
   const carregarPermissoes = useCallback(async (chave: string) => {
+    // Marca como "em carregamento" adicionando ao Set antes da requisição
+    // para evitar chamadas duplicadas se o usuário expandir/recolher rápido
+    setCarregados((prev) => new Set(prev).add(chave));
     try {
       const data = await permissoesApi.buscarPerfilCustomizado(chave);
       setPermissoes((p) => ({ ...p, [chave]: data }));
     } catch {
-      // permissões ainda vazias para este perfil — tudo bem
+      // Backend retornou erro (ex: perfil recém-criado sem permissões ainda)
+      // Cria uma resposta vazia para que a matriz seja exibida com tudo desmarcado
+      const vazio: PermissoesPerfilResponse = {
+        perfil: null as unknown as PerfilUsuario,
+        chave,
+        nome: null,
+        descricao: null,
+        customizado: true,
+        modulos: MODULOS_IDS.map((modulo) => ({
+          modulo,
+          visualizar: { concedida: false, doPerfil: false, grantExtra: false, concedidaPor: null, concedidaEm: null },
+          criar:      { concedida: false, doPerfil: false, grantExtra: false, concedidaPor: null, concedidaEm: null },
+          editar:     { concedida: false, doPerfil: false, grantExtra: false, concedidaPor: null, concedidaEm: null },
+          excluir:    { concedida: false, doPerfil: false, grantExtra: false, concedidaPor: null, concedidaEm: null },
+          validar:    { concedida: false, doPerfil: false, grantExtra: false, concedidaPor: null, concedidaEm: null },
+        })),
+      };
+      setPermissoes((p) => ({ ...p, [chave]: vazio }));
     }
   }, []);
 
@@ -151,7 +171,8 @@ export function GerenciarPerfisCustomizados() {
       const next = new Set(prev);
       if (next.has(perfil.id)) { next.delete(perfil.id); return next; }
       next.add(perfil.id);
-      if (!permissoes[perfil.chave]) carregarPermissoes(perfil.chave);
+      // Carrega apenas se ainda não foi tentado (evita re-fetch ao expandir novamente)
+      if (!carregados.has(perfil.chave)) carregarPermissoes(perfil.chave);
       return next;
     });
   };
@@ -172,26 +193,31 @@ export function GerenciarPerfisCustomizados() {
   const handleSalvar = async () => {
     setFormErro(null);
     if (!form.nome.trim()) { setFormErro("Nome é obrigatório."); return; }
-    if (!form.perfilBase) { setFormErro("Selecione um perfil base ou 'Do zero'."); return; }
+    if (!form.perfilBase)  { setFormErro("Selecione uma origem das permissões."); return; }
 
     const req: PerfilCustomizadoRequest = {
       nome: form.nome.trim(),
       descricao: form.descricao.trim() || undefined,
-      // DO_ZERO → envia null para a API (sem herança)
       perfilBase: form.perfilBase === DO_ZERO ? undefined : form.perfilBase as PerfilUsuario,
     };
 
     setSalvando(true);
     try {
       if (form.modo === "criar") {
-        await perfisCustomizadosApi.criar(req);
+        const criado = await perfisCustomizadosApi.criar(req);
         toast.success("Perfil criado com sucesso.");
+        fecharForm();
+        carregar();
+        // Pré-carrega as permissões (vazias) já que o usuário provavelmente vai configurar agora
+        await carregarPermissoes(criado.chave);
+        // Expande automaticamente após criação para o usuário já configurar as permissões
+        setExpanded((prev) => new Set(prev).add(criado.id));
       } else {
         await perfisCustomizadosApi.atualizar(form.id!, req);
         toast.success("Perfil atualizado.");
+        fecharForm();
+        carregar();
       }
-      fecharForm();
-      carregar();
     } catch (e: unknown) {
       setFormErro((e as Error)?.message ?? "Erro ao salvar perfil.");
     } finally {
@@ -217,6 +243,9 @@ export function GerenciarPerfisCustomizados() {
     try {
       await perfisCustomizadosApi.excluir(p.id);
       setPerfis((prev) => prev.filter((x) => x.id !== p.id));
+      // Limpa o estado de permissões do perfil excluído
+      setPermissoes((prev) => { const n = { ...prev }; delete n[p.chave]; return n; });
+      setCarregados((prev) => { const n = new Set(prev); n.delete(p.chave); return n; });
       toast.success(`Perfil "${p.nome}" excluído.`);
     } catch { toast.error("Erro ao excluir perfil."); }
     finally { setAcaoLoading(null); }
@@ -241,7 +270,6 @@ export function GerenciarPerfisCustomizados() {
     const mod = perm?.modulos.find((m) => m.modulo === modulo);
     const ac = mod?.[acao as keyof typeof mod] as { concedida: boolean } | undefined;
     const original = ac?.concedida ?? false;
-
     setPending((prev) => {
       const pp = { ...(prev[chave] ?? {}) };
       if (conceder === original) delete pp[k]; else pp[k] = conceder;
@@ -271,7 +299,7 @@ export function GerenciarPerfisCustomizados() {
 
     setSalvandoPerm(chave);
     const conceder: PermissaoItem[] = [];
-    const revogar: PermissaoItem[] = [];
+    const revogar:  PermissaoItem[] = [];
     for (const [k, flag] of Object.entries(pp)) {
       const [modulo, acao] = k.split(":");
       if (flag) conceder.push({ modulo, acao }); else revogar.push({ modulo, acao });
@@ -305,7 +333,7 @@ export function GerenciarPerfisCustomizados() {
             Perfis Customizados
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Crie perfis com permissões específicas para sua estrutura. Pode partir do zero ou herdar de um perfil existente.
+            Crie perfis com permissões específicas. Pode partir do zero ou herdar de um perfil existente.
           </p>
         </div>
         <Button onClick={abrirCriar} className="bg-[#1351B4] hover:bg-[#0c3b8d] gap-1.5">
@@ -313,7 +341,7 @@ export function GerenciarPerfisCustomizados() {
         </Button>
       </div>
 
-      {/* Aviso sobre herança */}
+      {/* Cards informativos */}
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="flex items-start gap-3 rounded-lg bg-purple-50 border border-purple-200 px-4 py-3 text-xs text-purple-800">
           <Sparkles className="h-4 w-4 shrink-0 mt-0.5 text-purple-500" />
@@ -358,6 +386,8 @@ export function GerenciarPerfisCustomizados() {
             const temMudancas   = Object.keys(perfilPending).length > 0;
             const isSalvando    = salvandoPerm === chave;
             const isAcao        = acaoLoading === p.id;
+            // Permissões carregadas quando chave já está no Set E no mapa de permissões
+            const permCarregadas = carregados.has(chave) && chave in permissoes;
 
             return (
               <div key={p.id} className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -391,7 +421,7 @@ export function GerenciarPerfisCustomizados() {
                   </div>
 
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    {isExpanded && (
+                    {isExpanded && permCarregadas && (
                       <>
                         <Button variant="outline" size="sm" className="h-7 text-xs gap-1"
                           onClick={() => handleSelecionarTudo(chave, true)} disabled={isSalvando}>
@@ -421,7 +451,7 @@ export function GerenciarPerfisCustomizados() {
                       </>
                     )}
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-400 hover:text-[#1351B4]"
-                      title="Editar nome/descrição" onClick={() => abrirEditar(p)} disabled={isAcao}>
+                      title="Editar" onClick={() => abrirEditar(p)} disabled={isAcao}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button variant="ghost" size="sm"
@@ -431,19 +461,19 @@ export function GerenciarPerfisCustomizados() {
                       {p.ativo ? <PowerOff className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5" />}
                     </Button>
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-gray-400 hover:text-red-600"
-                      title="Excluir perfil" onClick={() => setExcluirConf(p)} disabled={isAcao}>
+                      title="Excluir" onClick={() => setExcluirConf(p)} disabled={isAcao}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
 
-                {/* Info herança */}
+                {/* Banner de tipo */}
                 {isExpanded && p.perfilBase && (
                   <div className="border-t border-blue-100 bg-blue-50/50 px-5 py-2 flex items-center gap-2 text-xs text-blue-700">
                     <Info className="h-3.5 w-3.5 shrink-0" />
                     <span>
-                      Este perfil herda as verificações estruturais de <strong>{PERFIS_BASE.find((b) => b.value === p.perfilBase)?.label}</strong>.
-                      As permissões de módulo abaixo complementam essa herança — você pode expandir ou restringir livremente.
+                      Herda as verificações estruturais de <strong>{PERFIS_BASE.find((b) => b.value === p.perfilBase)?.label}</strong>.
+                      As permissões de módulo abaixo complementam essa herança.
                     </span>
                   </div>
                 )}
@@ -452,7 +482,6 @@ export function GerenciarPerfisCustomizados() {
                     <Sparkles className="h-3.5 w-3.5 shrink-0" />
                     <span>
                       Perfil <strong>do zero</strong> — todas as permissões são definidas exclusivamente pela matriz abaixo.
-                      Nenhuma verificação estrutural é herdada.
                     </span>
                   </div>
                 )}
@@ -460,8 +489,9 @@ export function GerenciarPerfisCustomizados() {
                 {/* Matriz de permissões */}
                 {isExpanded && (
                   <div className="border-t border-gray-100 overflow-x-auto">
-                    {!permissoes[chave] ? (
-                      <div className="flex items-center gap-2 px-5 py-4 text-sm text-gray-400">
+                    {!permCarregadas ? (
+                      // Loading real — apenas enquanto a requisição está em voo
+                      <div className="flex items-center gap-2 px-5 py-5 text-sm text-gray-400">
                         <RefreshCw className="h-4 w-4 animate-spin" />Carregando permissões...
                       </div>
                     ) : (
@@ -573,21 +603,18 @@ export function GerenciarPerfisCustomizados() {
                 </SelectContent>
               </Select>
               {form.modo === "editar" && (
-                <p className="text-xs text-gray-500">
-                  A origem não pode ser alterada após a criação.
-                </p>
+                <p className="text-xs text-gray-500">A origem não pode ser alterada após a criação.</p>
               )}
               {form.perfilBase === DO_ZERO && form.modo === "criar" && (
                 <div className="rounded-md bg-purple-50 border border-purple-200 px-3 py-2 text-xs text-purple-700">
-                  Você poderá configurar exatamente quais permissões este perfil terá após criá-lo.
-                  Nenhuma permissão estará ativa por padrão.
+                  Nenhuma permissão estará ativa por padrão. A matriz de permissões abrirá automaticamente após criar.
                 </div>
               )}
               {form.perfilBase && form.perfilBase !== DO_ZERO && form.modo === "criar" && (
                 <div className="rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-xs text-blue-700">
-                  Este perfil herdará as verificações estruturais de <strong>
+                  Herda as verificações estruturais de <strong>
                     {PERFIS_BASE.find((b) => b.value === form.perfilBase)?.label}
-                  </strong>. Você ainda pode configurar as permissões de módulo livremente.
+                  </strong>. Permissões de módulo configuráveis livremente após criar.
                 </div>
               )}
             </div>
@@ -600,7 +627,7 @@ export function GerenciarPerfisCustomizados() {
           <DialogFooter>
             <Button variant="outline" onClick={fecharForm} disabled={salvando}>Cancelar</Button>
             <Button onClick={handleSalvar} disabled={salvando} className="bg-[#1351B4] hover:bg-[#0c3b8d]">
-              {salvando ? "Salvando..." : form.modo === "criar" ? "Criar Perfil" : "Salvar"}
+              {salvando ? "Criando..." : form.modo === "criar" ? "Criar Perfil" : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -616,8 +643,8 @@ export function GerenciarPerfisCustomizados() {
             <AlertDialogDescription>
               Deseja excluir o perfil <strong>"{excluirConf?.nome}"</strong>?
               <br /><br />
-              Usuários que possuem este perfil ficarão sem perfil atribuído até que o administrador
-              redefina o perfil deles. Esta ação não pode ser desfeita.
+              Usuários com este perfil ficarão sem perfil atribuído até que o administrador redefina.
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

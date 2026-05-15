@@ -22,6 +22,58 @@ import {
 import { orgaosApi, type OrgaoResponse, type OrgaoRequest } from "../../api/orgaos";
 import { unidadesApi, type UnidadeOrganizacionalResponse, type UnidadeOrganizacionalRequest } from "../../api/unidades";
 
+// ── Helpers de geração automática ─────────────────────────────────────────────
+
+/**
+ * Gera sigla a partir do nome:
+ * - Palavras com 3+ letras que não sejam artigos/preposições → iniciais maiúsculas
+ * - Ex: "Secretaria Municipal de Administração" → "SMA"
+ * - Ex: "Departamento de Patrimônio Imobiliário" → "DPI"
+ */
+function gerarSiglaDeNome(nome: string): string {
+  const ignorar = new Set(["de", "do", "da", "dos", "das", "e", "em", "a", "o", "para", "com", "por", "sem"]);
+  return nome
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .split(/\s+/)
+    .filter((p) => p.length >= 2 && !ignorar.has(p.toLowerCase()))
+    .map((p) => p[0].toUpperCase())
+    .join("")
+    .slice(0, 10);
+}
+
+/**
+ * Gera próximo código de órgão a partir da lista existente.
+ * Pega o maior número ORG-NNN e incrementa.
+ */
+function proximoCodigoOrgao(orgaos: OrgaoResponse[]): string {
+  const nums = orgaos
+    .map((o) => o.codigo)
+    .filter((c): c is string => !!c && /^ORG-\d+$/.test(c))
+    .map((c) => parseInt(c.replace("ORG-", ""), 10));
+  const proximo = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+  return `ORG-${String(proximo).padStart(3, "0")}`;
+}
+
+/**
+ * Gera próximo código de unidade para um órgão específico.
+ * Padrão: UO-{idxOrgao}-{idxUnidade}
+ * Se o órgão tem código ORG-003, unidades ficam UO-003-01, UO-003-02, etc.
+ */
+function proximoCodigoUnidade(
+  unidades: UnidadeOrganizacionalResponse[],
+  codigoOrgao: string | null
+): string {
+  const prefixoOrgao = codigoOrgao?.replace("ORG-", "") ?? "??";
+  const prefixo = `UO-${prefixoOrgao}-`;
+  const nums = unidades
+    .map((u) => u.codigo)
+    .filter((c): c is string => !!c && c.startsWith(prefixo))
+    .map((c) => parseInt(c.replace(prefixo, ""), 10))
+    .filter((n) => !isNaN(n));
+  const proximo = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+  return `${prefixo}${String(proximo).padStart(2, "0")}`;
+}
+
 // ── Form states ────────────────────────────────────────────────────────────────
 
 interface OrgaoForm {
@@ -39,6 +91,7 @@ interface UnidadeForm {
   id: number | null;
   idOrgao: number | null;
   nomeOrgao: string;
+  codigoOrgao: string | null;
   nome: string;
   sigla: string;
   codigo: string;
@@ -49,7 +102,7 @@ const orgaoFormVazio: OrgaoForm = {
 };
 const unidadeFormVazio: UnidadeForm = {
   aberto: false, modo: "criar", id: null, idOrgao: null, nomeOrgao: "",
-  nome: "", sigla: "", codigo: "",
+  codigoOrgao: null, nome: "", sigla: "", codigo: "",
 };
 
 // ── Componente ─────────────────────────────────────────────────────────────────
@@ -107,9 +160,23 @@ export function GerenciarOrgaos() {
     });
   };
 
+  // ── Órgão — handlers de nome (auto-gera sigla e codigo em modo criar) ────────
+
+  const handleOrgaoNomeChange = (nome: string) => {
+    setOrgaoForm((f) => ({
+      ...f,
+      nome,
+      // Só auto-gera em modo criar
+      sigla: f.modo === "criar" ? gerarSiglaDeNome(nome) : f.sigla,
+    }));
+  };
+
   // ── Órgão CRUD ───────────────────────────────────────────────────────────────
 
-  const abrirCriarOrgao = () => setOrgaoForm({ ...orgaoFormVazio, aberto: true });
+  const abrirCriarOrgao = () => {
+    const codigo = proximoCodigoOrgao(orgaos);
+    setOrgaoForm({ ...orgaoFormVazio, aberto: true, codigo });
+  };
 
   const abrirEditarOrgao = (o: OrgaoResponse) =>
     setOrgaoForm({ aberto: true, modo: "editar", id: o.id, nome: o.nome, sigla: o.sigla, codigo: o.codigo ?? "" });
@@ -154,11 +221,8 @@ export function GerenciarOrgaos() {
         : await orgaosApi.ativar(o.id);
       setOrgaos((prev) => prev.map((x) => x.id === o.id ? atualizado : x));
       toast.success("Órgão ativado.");
-    } catch {
-      toast.error("Erro ao ativar órgão.");
-    } finally {
-      setAcaoLoading(null);
-    }
+    } catch { toast.error("Erro ao ativar órgão."); }
+    finally { setAcaoLoading(null); }
   };
 
   const handleDesativarOrgao = async (o: OrgaoResponse) => {
@@ -168,11 +232,8 @@ export function GerenciarOrgaos() {
       const atualizado = await orgaosApi.desativar(o.id);
       setOrgaos((prev) => prev.map((x) => x.id === o.id ? atualizado : x));
       toast.success("Órgão desativado.");
-    } catch {
-      toast.error("Erro ao desativar órgão.");
-    } finally {
-      setAcaoLoading(null);
-    }
+    } catch { toast.error("Erro ao desativar órgão."); }
+    finally { setAcaoLoading(null); }
   };
 
   const handleExtinguir = async (o: OrgaoResponse) => {
@@ -183,20 +244,38 @@ export function GerenciarOrgaos() {
       const atualizado = await orgaosApi.extinguir(o.id);
       setOrgaos((prev) => prev.map((x) => x.id === o.id ? atualizado : x));
       toast.success(`Órgão "${o.sigla}" extinto.`);
-    } catch {
-      toast.error("Erro ao extinguir órgão.");
-    } finally {
-      setAcaoLoading(null);
-    }
+    } catch { toast.error("Erro ao extinguir órgão."); }
+    finally { setAcaoLoading(null); }
+  };
+
+  // ── Unidade — handlers de nome (auto-gera sigla em modo criar) ───────────────
+
+  const handleUnidadeNomeChange = (nome: string) => {
+    setUnidadeForm((f) => ({
+      ...f,
+      nome,
+      sigla: f.modo === "criar" ? gerarSiglaDeNome(nome) : f.sigla,
+    }));
   };
 
   // ── Unidade CRUD ─────────────────────────────────────────────────────────────
 
-  const abrirCriarUnidade = (orgao: OrgaoResponse) =>
-    setUnidadeForm({ aberto: true, modo: "criar", id: null, idOrgao: orgao.id, nomeOrgao: orgao.sigla, nome: "", sigla: "", codigo: "" });
+  const abrirCriarUnidade = (orgao: OrgaoResponse) => {
+    const unidadesOrgao = unidades[orgao.id] ?? [];
+    const codigo = proximoCodigoUnidade(unidadesOrgao, orgao.codigo ?? null);
+    setUnidadeForm({
+      aberto: true, modo: "criar", id: null,
+      idOrgao: orgao.id, nomeOrgao: orgao.sigla, codigoOrgao: orgao.codigo ?? null,
+      nome: "", sigla: "", codigo,
+    });
+  };
 
-  const abrirEditarUnidade = (u: UnidadeOrganizacionalResponse, nomeOrgao: string) =>
-    setUnidadeForm({ aberto: true, modo: "editar", id: u.id, idOrgao: u.idOrgao, nomeOrgao, nome: u.nome, sigla: u.sigla ?? "", codigo: u.codigo ?? "" });
+  const abrirEditarUnidade = (u: UnidadeOrganizacionalResponse, orgao: OrgaoResponse) =>
+    setUnidadeForm({
+      aberto: true, modo: "editar", id: u.id,
+      idOrgao: u.idOrgao, nomeOrgao: orgao.sigla, codigoOrgao: orgao.codigo ?? null,
+      nome: u.nome, sigla: u.sigla ?? "", codigo: u.codigo ?? "",
+    });
 
   const fecharUnidadeForm = () => { setUnidadeForm(unidadeFormVazio); setFormErro(null); };
 
@@ -241,11 +320,8 @@ export function GerenciarOrgaos() {
         [u.idOrgao]: (prev[u.idOrgao] ?? []).map((x) => x.id === u.id ? atualizado : x),
       }));
       toast.success(u.ativo ? "Departamento desativado." : "Departamento ativado.");
-    } catch {
-      toast.error("Erro ao alterar departamento.");
-    } finally {
-      setAcaoLoading(null);
-    }
+    } catch { toast.error("Erro ao alterar departamento."); }
+    finally { setAcaoLoading(null); }
   };
 
   // ── Status badge ──────────────────────────────────────────────────────────────
@@ -317,7 +393,7 @@ export function GerenciarOrgaos() {
                 </TableRow>
               )}
               {orgaos.map((o) => {
-                const isExpanded = expanded.has(o.id);
+                const isExpanded    = expanded.has(o.id);
                 const isLoadingUnid = loadingUnid[o.id];
                 const orgaoUnidades = unidades[o.id] ?? [];
                 const isAcaoLoading = acaoLoading === `orgao-${o.id}`;
@@ -342,54 +418,34 @@ export function GerenciarOrgaos() {
                       <TableCell><StatusBadge o={o} /></TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost" size="sm"
+                          <Button variant="ghost" size="sm"
                             className="h-7 w-7 p-0 text-gray-400 hover:text-[#1351B4]"
-                            title="Editar"
-                            onClick={() => abrirEditarOrgao(o)}
-                            disabled={isAcaoLoading}
-                          >
+                            title="Editar" onClick={() => abrirEditarOrgao(o)} disabled={isAcaoLoading}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           {o.extinto ? (
-                            <Button
-                              variant="ghost" size="sm"
+                            <Button variant="ghost" size="sm"
                               className="h-7 w-7 p-0 text-gray-400 hover:text-green-600"
-                              title="Restabelecer"
-                              onClick={() => handleAtivarOrgao(o)}
-                              disabled={isAcaoLoading}
-                            >
+                              title="Restabelecer" onClick={() => handleAtivarOrgao(o)} disabled={isAcaoLoading}>
                               <Power className="h-3.5 w-3.5" />
                             </Button>
                           ) : o.ativo ? (
                             <>
-                              <Button
-                                variant="ghost" size="sm"
+                              <Button variant="ghost" size="sm"
                                 className="h-7 w-7 p-0 text-gray-400 hover:text-yellow-600"
-                                title="Desativar"
-                                onClick={() => handleDesativarOrgao(o)}
-                                disabled={isAcaoLoading}
-                              >
+                                title="Desativar" onClick={() => handleDesativarOrgao(o)} disabled={isAcaoLoading}>
                                 <PowerOff className="h-3.5 w-3.5" />
                               </Button>
-                              <Button
-                                variant="ghost" size="sm"
+                              <Button variant="ghost" size="sm"
                                 className="h-7 w-7 p-0 text-gray-400 hover:text-red-600"
-                                title="Extinguir órgão"
-                                onClick={() => setExtinguirConfirm(o)}
-                                disabled={isAcaoLoading}
-                              >
+                                title="Extinguir órgão" onClick={() => setExtinguirConfirm(o)} disabled={isAcaoLoading}>
                                 <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </>
                           ) : (
-                            <Button
-                              variant="ghost" size="sm"
+                            <Button variant="ghost" size="sm"
                               className="h-7 w-7 p-0 text-gray-400 hover:text-green-600"
-                              title="Ativar"
-                              onClick={() => handleAtivarOrgao(o)}
-                              disabled={isAcaoLoading}
-                            >
+                              title="Ativar" onClick={() => handleAtivarOrgao(o)} disabled={isAcaoLoading}>
                               <Power className="h-3.5 w-3.5" />
                             </Button>
                           )}
@@ -408,11 +464,8 @@ export function GerenciarOrgaos() {
                                 Departamentos / Unidades de {o.sigla}
                               </span>
                               {!o.extinto && (
-                                <Button
-                                  variant="outline" size="sm"
-                                  className="h-7 text-xs gap-1"
-                                  onClick={() => abrirCriarUnidade(o)}
-                                >
+                                <Button variant="outline" size="sm" className="h-7 text-xs gap-1"
+                                  onClick={() => abrirCriarUnidade(o)}>
                                   <Plus className="h-3 w-3" />Novo Departamento
                                 </Button>
                               )}
@@ -449,16 +502,14 @@ export function GerenciarOrgaos() {
                                         </Badge>
                                         <Button variant="ghost" size="sm"
                                           className="h-6 w-6 p-0 text-gray-400 hover:text-[#1351B4]"
-                                          title="Editar"
-                                          onClick={() => abrirEditarUnidade(u, o.sigla)}
+                                          title="Editar" onClick={() => abrirEditarUnidade(u, o)}
                                           disabled={isUnidLoading}>
                                           <Pencil className="h-3 w-3" />
                                         </Button>
                                         <Button variant="ghost" size="sm"
                                           className={`h-6 w-6 p-0 text-gray-400 ${u.ativo ? "hover:text-yellow-600" : "hover:text-green-600"}`}
                                           title={u.ativo ? "Desativar" : "Ativar"}
-                                          onClick={() => handleToggleUnidade(u)}
-                                          disabled={isUnidLoading}>
+                                          onClick={() => handleToggleUnidade(u)} disabled={isUnidLoading}>
                                           {u.ativo ? <PowerOff className="h-3 w-3" /> : <Power className="h-3 w-3" />}
                                         </Button>
                                       </div>
@@ -492,12 +543,17 @@ export function GerenciarOrgaos() {
               <Label htmlFor="orgao-nome">Nome completo *</Label>
               <Input id="orgao-nome" placeholder="Secretaria Municipal de ..."
                 value={orgaoForm.nome}
-                onChange={(e) => setOrgaoForm((f) => ({ ...f, nome: e.target.value }))}
+                onChange={(e) => handleOrgaoNomeChange(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="orgao-sigla">Sigla *</Label>
+                <Label htmlFor="orgao-sigla">
+                  Sigla *
+                  {orgaoForm.modo === "criar" && (
+                    <span className="text-xs text-gray-400 font-normal ml-1">(gerada automaticamente)</span>
+                  )}
+                </Label>
                 <Input id="orgao-sigla" placeholder="SEMAD"
                   value={orgaoForm.sigla}
                   onChange={(e) => setOrgaoForm((f) => ({ ...f, sigla: e.target.value.toUpperCase() }))}
@@ -505,13 +561,23 @@ export function GerenciarOrgaos() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="orgao-codigo">Código</Label>
+                <Label htmlFor="orgao-codigo">
+                  Código
+                  {orgaoForm.modo === "criar" && (
+                    <span className="text-xs text-gray-400 font-normal ml-1">(gerado automaticamente)</span>
+                  )}
+                </Label>
                 <Input id="orgao-codigo" placeholder="ORG-001"
                   value={orgaoForm.codigo}
                   onChange={(e) => setOrgaoForm((f) => ({ ...f, codigo: e.target.value }))}
                 />
               </div>
             </div>
+            {orgaoForm.modo === "criar" && (
+              <p className="text-xs text-gray-400">
+                Sigla e código são gerados a partir do nome. Você pode ajustá-los antes de salvar.
+              </p>
+            )}
             {formErro && (
               <p className="text-sm text-red-600 flex items-center gap-1.5">
                 <AlertCircle className="h-4 w-4" />{formErro}
@@ -520,8 +586,7 @@ export function GerenciarOrgaos() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={fecharOrgaoForm} disabled={salvando}>Cancelar</Button>
-            <Button onClick={handleSalvarOrgao} disabled={salvando}
-              className="bg-[#1351B4] hover:bg-[#0c3b8d]">
+            <Button onClick={handleSalvarOrgao} disabled={salvando} className="bg-[#1351B4] hover:bg-[#0c3b8d]">
               {salvando ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
@@ -544,12 +609,17 @@ export function GerenciarOrgaos() {
               <Label htmlFor="unid-nome">Nome do departamento *</Label>
               <Input id="unid-nome" placeholder="Departamento de Patrimônio Imobiliário"
                 value={unidadeForm.nome}
-                onChange={(e) => setUnidadeForm((f) => ({ ...f, nome: e.target.value }))}
+                onChange={(e) => handleUnidadeNomeChange(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label htmlFor="unid-sigla">Sigla</Label>
+                <Label htmlFor="unid-sigla">
+                  Sigla
+                  {unidadeForm.modo === "criar" && (
+                    <span className="text-xs text-gray-400 font-normal ml-1">(gerada automaticamente)</span>
+                  )}
+                </Label>
                 <Input id="unid-sigla" placeholder="DPI"
                   value={unidadeForm.sigla}
                   onChange={(e) => setUnidadeForm((f) => ({ ...f, sigla: e.target.value.toUpperCase() }))}
@@ -557,13 +627,23 @@ export function GerenciarOrgaos() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="unid-codigo">Código</Label>
+                <Label htmlFor="unid-codigo">
+                  Código
+                  {unidadeForm.modo === "criar" && (
+                    <span className="text-xs text-gray-400 font-normal ml-1">(gerado automaticamente)</span>
+                  )}
+                </Label>
                 <Input id="unid-codigo" placeholder="UO-001-02"
                   value={unidadeForm.codigo}
                   onChange={(e) => setUnidadeForm((f) => ({ ...f, codigo: e.target.value }))}
                 />
               </div>
             </div>
+            {unidadeForm.modo === "criar" && (
+              <p className="text-xs text-gray-400">
+                Sigla e código são gerados automaticamente. Você pode ajustá-los antes de salvar.
+              </p>
+            )}
             {formErro && (
               <p className="text-sm text-red-600 flex items-center gap-1.5">
                 <AlertCircle className="h-4 w-4" />{formErro}
@@ -572,8 +652,7 @@ export function GerenciarOrgaos() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={fecharUnidadeForm} disabled={salvando}>Cancelar</Button>
-            <Button onClick={handleSalvarUnidade} disabled={salvando}
-              className="bg-[#1351B4] hover:bg-[#0c3b8d]">
+            <Button onClick={handleSalvarUnidade} disabled={salvando} className="bg-[#1351B4] hover:bg-[#0c3b8d]">
               {salvando ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
