@@ -37,8 +37,10 @@ export function WizardLayout({ currentStep, children, onNext, onBack, salvando, 
   const { salvarRascunhoManual } = useCadastroImovel();
   const [rascunhoSalvo, setRascunhoSalvo] = useState(false);
   const [temDadosNaoSalvos, setTemDadosNaoSalvos] = useState(false);
+  const montadoRef = useRef(false);
 
   useEffect(() => {
+    if (!montadoRef.current) { montadoRef.current = true; return; }
     setTemDadosNaoSalvos(true);
   }, [currentStep]);
 
