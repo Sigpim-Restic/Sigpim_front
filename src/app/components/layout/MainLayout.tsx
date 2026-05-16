@@ -164,7 +164,7 @@ interface AlertaItem {
   nomeImovel?: string;
 }
 
-function filtrarMenu(items: MenuItem[], perfil: string, permissoesPerfil: string[] | null): MenuItem[] {
+function filtrarMenu(items: MenuItem[], perfil: string, permissoesPerfil: string[] | null, isPerfilCustomizado: boolean): MenuItem[] {
   // null = permissoes ainda nao carregadas; [] = carregadas, nenhuma concedida
   const bancoPronto = permissoesPerfil !== null;
 
@@ -176,6 +176,10 @@ function filtrarMenu(items: MenuItem[], perfil: string, permissoesPerfil: string
       // banco prevalece sobre hardcoded em ambos os sentidos
       return permissoesPerfil!.includes(item.permissaoBanco);
     }
+
+    // Perfil customizado sem base: sem permissaoBanco, esconde o item
+    // (não tem como saber hardcoded — o banco é a única fonte de verdade)
+    if (isPerfilCustomizado && !item.permissaoBanco) return false;
 
     // Sem permissaoBanco ou banco ainda nao carregado: usa hardcoded
     return item.perfisPermitidos.includes(perfil as Perfil);
@@ -215,7 +219,8 @@ export function MainLayout() {
 
   const perfil         = usuario?.perfil ?? "";
   const permissoesPerfil = usuario?.permissoesPerfil ?? null;
-  const itensFiltrados = filtrarMenu(menuItems, perfil, permissoesPerfil);
+  const isPerfilCustomizado = !perfil && !!usuario?.perfilExtra;
+  const itensFiltrados = filtrarMenu(menuItems, perfil, permissoesPerfil, isPerfilCustomizado);
 
   const handleLogout = () => { logout(); navigate("/login"); };
 
@@ -613,7 +618,7 @@ export function MainLayout() {
                         {usuario?.nomeCompleto ?? usuario?.email ?? "—"}
                       </p>
                       <p className="text-[11px] text-slate-500 leading-tight">
-                        {PERFIL_LABEL[usuario?.perfil ?? ""] ?? usuario?.perfil ?? "—"}
+                        {PERFIL_LABEL[usuario?.perfil ?? ""] ?? usuario?.nomePerfilCustomizado ?? usuario?.perfil ?? "—"}
                       </p>
                     </div>
                   </Button>
