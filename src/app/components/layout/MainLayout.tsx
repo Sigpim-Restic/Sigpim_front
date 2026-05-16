@@ -251,7 +251,12 @@ export function MainLayout() {
     } catch { /* silencia */ }
   };
 
-  useEffect(() => { carregarAlertas(); }, [carregarAlertas, location.pathname]);
+  useEffect(() => {
+    // Não recarrega alertas durante navegação entre etapas do wizard
+    // para evitar requests desnecessários (9 etapas = 9 requests)
+    const noWizard = !location.pathname.includes("/etapa-");
+    if (noWizard) carregarAlertas();
+  }, [carregarAlertas, location.pathname]);
 
   // Carrega configurações de inatividade do servidor
   useEffect(() => {
@@ -307,7 +312,10 @@ export function MainLayout() {
   });
 
   // Busca contagem de pendências críticas para o badge do sidebar
+  // Não recarrega durante navegação entre etapas do wizard
   useEffect(() => {
+    const noWizard = !location.pathname.includes("/etapa-");
+    if (!noWizard) return;
     pendenciasApi.listarMinhas("ABERTA", 0, 100)
       .then((res) => {
         const criticas = res.content.filter((p) => p.prioridade === "CRITICA").length;
