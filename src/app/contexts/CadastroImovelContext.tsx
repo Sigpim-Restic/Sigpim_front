@@ -287,7 +287,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
 
       if (errosUpload.length > 0) {
         // Seta erro informativo após navegar — o usuário pode re-enviar na tela de detalhes
-        setErro(\`Imóvel cadastrado. Falha no upload de: \${errosUpload.join(", ")}. Acesse o imóvel para reenviar.\`);
+        setErro(`Imóvel cadastrado. Falha no upload de: ${errosUpload.join(", ")}. Acesse o imóvel para reenviar.`);
       }
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao salvar imóvel.");
