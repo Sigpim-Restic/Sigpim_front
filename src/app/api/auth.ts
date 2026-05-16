@@ -15,6 +15,7 @@ export interface LoginResponse {
   email: string | null;
   nomeCompleto: string | null;
   perfil: string | null;
+  perfilExtra: string | null;
   idOrgao: number | null;
   idUnidade: number | null;
   trocarSenhaNoProximoLogin: boolean;

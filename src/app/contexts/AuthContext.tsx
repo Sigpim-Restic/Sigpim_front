@@ -5,7 +5,8 @@ export interface UsuarioLogado {
   id: number;
   email: string;
   nomeCompleto: string;
-  perfil: string;
+  perfil: string | null;
+  perfilExtra: string | null;
   idOrgao: number | null;
   idUnidade: number | null;
   mfaAtivo: boolean;
@@ -50,7 +51,8 @@ function resParaUsuario(res: LoginResponse): UsuarioLogado {
     id:           res.idUsuario!,
     email:        res.email!,
     nomeCompleto: res.nomeCompleto ?? res.email ?? "",
-    perfil:       res.perfil as string ?? "",
+    perfil:       res.perfil as string ?? null,
+    perfilExtra:  res.perfilExtra ?? null,
     idOrgao:      res.idOrgao ?? null,
     idUnidade:    res.idUnidade ?? null,
     mfaAtivo:     false,

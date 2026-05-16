@@ -44,15 +44,22 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Reseta o flag quando o perfil muda (ex: logout + login com outro usuário)
   useEffect(() => {
     permissoesCarregadas.current = false;
-  }, [usuario?.perfil]);
+  }, [usuario?.perfil, usuario?.perfilExtra]);
 
-  // Busca permissões do perfil do usuário e armazena no contexto
-  // Executado uma vez por sessão — resultado usado como OR com regras hardcoded
+  // Busca permissões do perfil do usuário e armazena no contexto.
+  // Suporta perfis padrão (enum) e perfis customizados (perfilExtra).
+  // Executado uma vez por sessão — resultado usado como OR com regras hardcoded.
   useEffect(() => {
-    if (!autenticado || !usuario?.perfil || permissoesCarregadas.current) return;
+    const temPerfilPadrao  = !!usuario?.perfil;
+    const temPerfilCustom  = !!usuario?.perfilExtra;
+    if (!autenticado || (!temPerfilPadrao && !temPerfilCustom) || permissoesCarregadas.current) return;
     permissoesCarregadas.current = true;
 
-    permissoesApi.buscarPerfil(usuario.perfil as PerfilUsuario)
+    const busca = temPerfilCustom
+      ? permissoesApi.buscarPerfilCustomizado(usuario!.perfilExtra!)
+      : permissoesApi.buscarPerfil(usuario!.perfil as PerfilUsuario);
+
+    busca
       .then((data) => {
         const lista: string[] = [];
         for (const mod of data.modulos) {
@@ -66,7 +73,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       .catch(() => {
         // Falha silenciosa — usePermissoes cai no fallback hardcoded
       });
-  }, [autenticado, usuario?.perfil, atualizarPermissoesPerfil]);
+  }, [autenticado, usuario?.perfil, usuario?.perfilExtra, atualizarPermissoesPerfil]);
 
   if (!autenticado) return <Navigate to="/login" replace />;
   return <>{children}</>;
