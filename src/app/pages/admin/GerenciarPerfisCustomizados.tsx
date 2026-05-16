@@ -49,7 +49,6 @@ const PERFIS_BASE: { value: PerfilUsuario | typeof DO_ZERO; label: string; descr
 ];
 
 const MODULOS_META: Record<string, { nome: string; descricao: string; critical?: boolean }> = {
-  dashboard:     { nome: "Painel Geral",      descricao: "Estatísticas e indicadores" },
   imoveis:       { nome: "Gestão de Imóveis", descricao: "Cadastro, edição e consulta de imóveis" },
   pendencias:    { nome: "Pendências",         descricao: "Gestão de pendências e validações" },
   gis:           { nome: "Mapa GIS",           descricao: "Visualização georreferenciada" },
