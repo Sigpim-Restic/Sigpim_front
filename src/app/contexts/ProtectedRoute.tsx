@@ -18,7 +18,7 @@ import type { PerfilUsuario } from "../api/usuarios";
  * a chamada em re-renders.
  */
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { autenticado, usuario, atualizarSiglaOrgao, atualizarPermissoesPerfil } = useAuth();
+  const { autenticado, usuario, atualizarSiglaOrgao, atualizarPermissoesPerfil, atualizarNomePerfilCustomizado } = useAuth();
   const inicializado = useRef(false);
   const permissoesCarregadas = useRef(false);
 
@@ -69,6 +69,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           }
         }
         atualizarPermissoesPerfil(lista);
+        // Salva o nome amigável do perfil customizado para exibição no header
+        if (temPerfilCustom && data.nome) {
+          atualizarNomePerfilCustomizado(data.nome);
+        }
       })
       .catch(() => {
         // Falha silenciosa — usePermissoes cai no fallback hardcoded
