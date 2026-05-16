@@ -54,7 +54,7 @@ export function CadastroImovelStep7() {
               <Label>Número da Matrícula</Label>
               <Input
                 value={etapa7.matriculaRegistro}
-                onChange={(e) => setEtapa7({ ...etapa7, matriculaRegistro: e.target.value })}
+                onChange={(e) => setEtapa7({ ...etapa7, matriculaRegistro: e.target.value.replace(/[^a-zA-Z0-9\-\.\s]/g, "") })}
                 placeholder="Ex: 12345"
               />
             </div>
@@ -62,7 +62,7 @@ export function CadastroImovelStep7() {
               <Label>Cartório de Registro</Label>
               <Input
                 value={etapa7.cartorio}
-                onChange={(e) => setEtapa7({ ...etapa7, cartorio: e.target.value })}
+                onChange={(e) => setEtapa7({ ...etapa7, cartorio: e.target.value.replace(/[^a-zA-ZÀ-ÿ0-9\s\-\.\/°ºª]/g, "") })}
                 placeholder="Ex: 1º Ofício de Registro de Imóveis"
               />
             </div>
@@ -73,7 +73,7 @@ export function CadastroImovelStep7() {
             <Label>Inscrição Imobiliária (SEMFAZ)</Label>
             <Input
               value={etapa7.inscricaoImobiliaria}
-              onChange={(e) => setEtapa7({ ...etapa7, inscricaoImobiliaria: e.target.value })}
+              onChange={(e) => setEtapa7({ ...etapa7, inscricaoImobiliaria: e.target.value.replace(/[^a-zA-Z0-9\-\.\s]/g, "") })}
               placeholder="Ex: 01.234.567-8"
             />
           </div>
