@@ -57,6 +57,8 @@ export interface UsuarioResponse {
   nomeUnidade: string | null;
   siglaUnidade: string | null;
   perfil: PerfilUsuario | null;
+  perfilExtra: string | null;
+  nomePerfilCustomizado: string | null;
   ativo: boolean;
   criadoEm: string | null;
   atualizadoEm: string | null;
@@ -83,7 +85,7 @@ export const usuariosApi = {
   buscarMe(): Promise<UsuarioResponse> {
     return api.get<UsuarioResponse>("/usuarios/me");
   },
-  definirPerfil(id: number, perfil: PerfilUsuario): Promise<UsuarioResponse> {
+  definirPerfil(id: number, perfil: string): Promise<UsuarioResponse> {
     return api.patch<UsuarioResponse>(`/usuarios/${id}/perfil`, { perfil });
   },
   ativar(id: number): Promise<UsuarioResponse> {

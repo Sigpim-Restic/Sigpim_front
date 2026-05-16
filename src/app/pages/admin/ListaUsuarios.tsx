@@ -29,9 +29,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import {
   usuariosApi, type UsuarioResponse, type PerfilUsuario,
 } from "../../api/usuarios";
-import {
-  perfisCustomizadosApi, type PerfilCustomizadoResponse,
-} from "../../api/perfisCustomizados";
 import { usePermissoes } from "../../hooks/usePermissoes";
 import { useAuth } from "../../contexts/AuthContext";
 import { ModalResetSenha } from "./ModalResetSenha";
@@ -59,7 +56,7 @@ interface ConfirmacaoState {
 interface DefinirPerfilState {
   aberto: boolean;
   usuario: UsuarioResponse | null;
-  perfilSelecionado: string;
+  perfilSelecionado: PerfilUsuario | "";
 }
 
 export function ListaUsuarios() {
@@ -86,8 +83,6 @@ export function ListaUsuarios() {
     aberto: false, usuario: null, perfilSelecionado: "",
   });
 
-  const [perfisCustomizados, setPerfisCustomizados] = useState<PerfilCustomizadoResponse[]>([]);
-
   // Estado do modal de reset de senha
   const [resetSenha, setResetSenha] = useState<{ id: number; nome: string } | null>(null);
 
@@ -98,10 +93,6 @@ export function ListaUsuarios() {
     solicitacaoExistente: DesativacaoAdminResponse | null;
     carregando: boolean;
   }>({ aberto: false, usuario: null, solicitacaoExistente: null, carregando: false });
-
-  useEffect(() => {
-    perfisCustomizadosApi.listarAtivos().then(setPerfisCustomizados).catch(() => {});
-  }, []);
 
   const carregar = useCallback(() => {
     setLoading(true);
@@ -307,18 +298,6 @@ export function ListaUsuarios() {
                   {TODOS_PERFIS.map(([value, label]) => (
                     <SelectItem key={value} value={value}>{label}</SelectItem>
                   ))}
-                  {perfisCustomizados.length > 0 && (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-gray-400 border-t mt-1 pt-2">
-                        Perfis customizados
-                      </div>
-                      {perfisCustomizados.map((p) => (
-                        <SelectItem key={p.chave} value={p.chave}>
-                          {p.nome}
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -667,6 +646,10 @@ function TabelaUsuarios({
                       className={u.perfil.startsWith("ADMINISTRADOR") ? "bg-[#1351B4]" : ""}
                     >
                       {PERFIL_LABELS[u.perfil] ?? u.perfil}
+                    </Badge>
+                  ) : u.nomePerfilCustomizado ? (
+                    <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
+                      {u.nomePerfilCustomizado}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-yellow-700 border-yellow-400 bg-yellow-50">
