@@ -261,6 +261,10 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
       }
 
       // ── Documentos/anexos ──────────────────────────────────────────────────
+      // Imóvel e localização já foram salvos. Tentamos o upload dos arquivos,
+      // mas mesmo que falhe, o imóvel existe e o rascunho deve ser limpo.
+      // Erros de upload são reportados mas não impedem a conclusão do wizard.
+      const errosUpload: string[] = [];
       for (const arq of arquivos.filter((a) => a.file.size <= 10 * 1024 * 1024)) {
         const params: DocumentoUploadParams = {
           idImovel:        imovel.id,
@@ -269,11 +273,22 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
           dataDocumento:   arq.dataDocumento || undefined,
           imagemPrincipal: arq.tipo === "FOTO",
         };
-        await documentosApi.upload(arq.file, params);
+        try {
+          await documentosApi.upload(arq.file, params);
+        } catch (uploadErr) {
+          errosUpload.push(arq.file.name);
+        }
       }
 
+      // Sempre limpa o rascunho e navega para sucesso,
+      // mesmo que algum upload tenha falhado
       resetar();
       onSuccess();
+
+      if (errosUpload.length > 0) {
+        // Seta erro informativo após navegar — o usuário pode re-enviar na tela de detalhes
+        setErro(\`Imóvel cadastrado. Falha no upload de: \${errosUpload.join(", ")}. Acesse o imóvel para reenviar.\`);
+      }
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : "Erro ao salvar imóvel.");
     } finally {

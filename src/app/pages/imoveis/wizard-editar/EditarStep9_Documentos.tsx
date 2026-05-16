@@ -59,7 +59,10 @@ function dataValida(mascara: string): boolean {
   const dia = parseInt(n.slice(0, 2), 10);
   const mes = parseInt(n.slice(2, 4), 10);
   const ano = parseInt(n.slice(4, 8), 10);
-  return mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31 && ano >= 1500 && ano <= new Date().getFullYear();
+  if (mes < 1 || mes > 12) return false;
+  if (ano < 1500 || ano > new Date().getFullYear()) return false;
+  const diasNoMes = new Date(ano, mes, 0).getDate();
+  return dia >= 1 && dia <= diasNoMes;
 }
 
 function mascaraParaIso(mascara: string): string {
