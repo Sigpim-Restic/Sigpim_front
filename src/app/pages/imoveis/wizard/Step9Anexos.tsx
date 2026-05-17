@@ -9,7 +9,7 @@ import { Upload, FileText, Image, File, X, AlertTriangle, Loader2 } from "lucide
 import { useCadastroImovel, type ArquivoAnexo } from "../../../contexts/CadastroImovelContext";
 import { useNavigate } from "react-router";
 
-const MAX_MB = 10;
+const MAX_MB = 100;
 
 const TIPOS = [
   { value: "MATRICULA", label: "Matrícula do Imóvel" },
@@ -53,10 +53,7 @@ function dataValida(mascara: string): boolean {
   const dia = parseInt(n.slice(0, 2), 10);
   const mes = parseInt(n.slice(2, 4), 10);
   const ano = parseInt(n.slice(4, 8), 10);
-  if (mes < 1 || mes > 12) return false;
-  if (ano < 1500 || ano > new Date().getFullYear()) return false;
-  const diasNoMes = new Date(ano, mes, 0).getDate();
-  return dia >= 1 && dia <= diasNoMes;
+  return mes >= 1 && mes <= 12 && dia >= 1 && dia <= 31 && ano >= 1500 && ano <= new Date().getFullYear();
 }
 
 // dd/mm/aaaa → aaaa-mm-dd (ISO para envio ao backend)
@@ -119,18 +116,6 @@ export function CadastroImovelStep9() {
       setErroEvidencia(
         "Anexe ao menos uma evidência (foto, planta, documento) antes de finalizar. Isso é obrigatório no pré-cadastro."
       );
-      return;
-    }
-    // Verifica se algum arquivo tem data inválida
-    const temDataInvalida = arquivos.some((a) => {
-      if (!a.dataDocumento) return false;
-      // dataDocumento já está em ISO (aaaa-mm-dd) se passou pela validação
-      // mas precisa confirmar que é uma data válida
-      const d = new Date(a.dataDocumento);
-      return isNaN(d.getTime());
-    });
-    if (temDataInvalida) {
-      setErroEvidencia("Um ou mais documentos têm data inválida. Corrija antes de finalizar.");
       return;
     }
     setErroEvidencia(null);

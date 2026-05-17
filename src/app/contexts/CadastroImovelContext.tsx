@@ -265,7 +265,7 @@ export function CadastroImovelProvider({ children }: { children: React.ReactNode
       // mas mesmo que falhe, o imóvel existe e o rascunho deve ser limpo.
       // Erros de upload são reportados mas não impedem a conclusão do wizard.
       const errosUpload: string[] = [];
-      for (const arq of arquivos.filter((a) => a.file.size <= 10 * 1024 * 1024)) {
+      for (const arq of arquivos.filter((a) => a.file.size <= 100 * 1024 * 1024)) {
         const params: DocumentoUploadParams = {
           idImovel:        imovel.id,
           tipoDocumento:   arq.tipo    || "OUTRO",

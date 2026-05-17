@@ -44,18 +44,8 @@ function dataValida(mascara: string): boolean {
   const ano = parseInt(n.slice(4, 8), 10);
   if (mes < 1 || mes > 12) return false;
   if (ano < 1500 || ano > new Date().getFullYear() + 100) return false;
-  // Verifica dias válidos para o mês (incluindo bissexto)
   const diasNoMes = new Date(ano, mes, 0).getDate();
   return dia >= 1 && dia <= diasNoMes;
-}
-
-function mascaraParaDate(mascara: string): Date | null {
-  const n = mascara.replace(/\D/g, "");
-  if (n.length !== 8) return null;
-  const dia = parseInt(n.slice(0, 2), 10);
-  const mes = parseInt(n.slice(2, 4), 10);
-  const ano = parseInt(n.slice(4, 8), 10);
-  return new Date(ano, mes - 1, dia);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -89,20 +79,12 @@ export function CadastroImovelStep5() {
 
   const erroInicio = mascaraInicio.replace(/\D/g, "").length === 8 && !dataValida(mascaraInicio);
   const erroFim    = mascaraFimPrev.replace(/\D/g, "").length === 8 && !dataValida(mascaraFimPrev);
-  const erroOrdem  = !erroInicio && !erroFim
-    && mascaraInicio.replace(/\D/g, "").length === 8
-    && mascaraFimPrev.replace(/\D/g, "").length === 8
-    && (() => {
-      const d1 = mascaraParaDate(mascaraInicio);
-      const d2 = mascaraParaDate(mascaraFimPrev);
-      return d1 && d2 && d2 < d1;
-    })();
   const fimAntesDeInicio =
     etapa5.dataInicio && etapa5.dataFimPrevista &&
     etapa5.dataFimPrevista < etapa5.dataInicio;
 
   return (
-    <WizardLayout currentStep={5} onNext={() => navigate("/dashboard/imoveis/novo/etapa-6")}>
+    <WizardLayout currentStep={5} onNext={() => navigate("/dashboard/imoveis/novo/etapa-6")} nextDisabled={erroInicio || erroFim || !!fimAntesDeInicio}>
       <div className="p-6 space-y-6">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Ocupação e Destinação</h3>
