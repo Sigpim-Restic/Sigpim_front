@@ -7,7 +7,6 @@ export interface UsuarioLogado {
   nomeCompleto: string;
   perfil: string | null;
   perfilExtra: string | null;
-  nomePerfilCustomizado: string | null;
   idOrgao: number | null;
   idUnidade: number | null;
   mfaAtivo: boolean;
@@ -40,7 +39,6 @@ interface AuthContextValue {
   atualizarMfa: (ativo: boolean) => void;
   atualizarSiglaOrgao: (sigla: string) => void;
   atualizarPermissoesPerfil: (perms: string[]) => void;
-  atualizarNomePerfilCustomizado: (nome: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -55,7 +53,6 @@ function resParaUsuario(res: LoginResponse): UsuarioLogado {
     nomeCompleto: res.nomeCompleto ?? res.email ?? "",
     perfil:       res.perfil as string ?? null,
     perfilExtra:  res.perfilExtra ?? null,
-    nomePerfilCustomizado: null,
     idOrgao:      res.idOrgao ?? null,
     idUnidade:    res.idUnidade ?? null,
     mfaAtivo:     false,
@@ -102,6 +99,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  // Quando a sessão expira (token JWT inválido), o client.ts dispara este evento.
+  // Aqui limpamos o estado React e redirecionamos para login.
+  React.useEffect(() => {
+    const handleSessaoExpirada = () => {
+      setToken(null);
+      setUsuario(null);
+      sessionStorage.removeItem("sigpim_tab_ativa");
+      window.location.replace("/login");
+    };
+    window.addEventListener("sigpim:sessao-expirada", handleSessaoExpirada);
+    return () => window.removeEventListener("sigpim:sessao-expirada", handleSessaoExpirada);
   }, []);
 
   const logout = useCallback(() => {
@@ -158,15 +168,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const atualizarNomePerfilCustomizado = useCallback((nome: string) => {
-    setUsuario((prev) => {
-      if (!prev) return prev;
-      const atualizado = { ...prev, nomePerfilCustomizado: nome };
-      localStorage.setItem(USUARIO_KEY, JSON.stringify(atualizado));
-      return atualizado;
-    });
-  }, []);
-
   const login = useCallback(async (data: LoginRequest) => {
     setLoading(true);
     try {
@@ -210,7 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         usuario, token, loading, autenticado: !!token,
-        login, logout, salvarSessao, atualizarMfa, atualizarSiglaOrgao, atualizarPermissoesPerfil, atualizarNomePerfilCustomizado,
+        login, logout, salvarSessao, atualizarMfa, atualizarSiglaOrgao, atualizarPermissoesPerfil,
       }}
     >
       {children}
